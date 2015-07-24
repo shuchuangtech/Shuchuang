@@ -1,0 +1,8 @@
+Include/Poco
+Include/Poco_x86
+Include/stlport
+Include/openssl
+Bin
+Build
+Lib
+Compile
