@@ -1,0 +1,13 @@
+#include "Poco/MD5Engine.h"
+#include <iostream>
+using namespace Poco;
+int main()
+{
+	std::string message("admin");
+	MD5Engine md5;
+	md5.update(message);
+	const DigestEngine::Digest& digest = md5.digest();
+	std::string md5str(DigestEngine::digestToHex(digest));
+	std::cout << md5str << std::endl;
+	return 0;
+}

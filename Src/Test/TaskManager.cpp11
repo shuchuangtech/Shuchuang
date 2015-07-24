@@ -1,0 +1,105 @@
+#include "Poco/TaskManager.h"
+#include "Poco/Task.h"
+#include "Poco/Notification.h"
+#include "Poco/NotificationQueue.h"
+#include "Poco/AutoPtr.h"
+#include "Poco/Thread.h"
+#include "Poco/ThreadPool.h"
+#include "Poco/TaskNotification.h"
+#include "Poco/Observer.h"
+#include <iostream>
+using namespace Poco;
+class RequestNotification : public Notification
+{
+public:
+	typedef AutoPtr<RequestNotification> Ptr;
+	RequestNotification(int data)
+	:m_data(data)
+	{}
+	const int data()
+	{
+		return m_data;
+	}
+private:
+	int m_data;
+};
+
+class MyTask : public Task
+{
+public:
+	MyTask(const std::string& name, NotificationQueue& queue)
+	:Task(name), m_name(name), m_queue(queue)
+	{}
+	void runTask()
+	{
+		printf("in runtask\n");
+	/*
+		for(;;)
+		{
+			Notification::Ptr pNf = m_queue.waitDequeueNotification();
+			if(pNf)
+			{
+				RequestNotification::Ptr pRequestNf = pNf.cast<RequestNotification>();
+				if(pRequestNf)
+				{
+					std::cout << m_name << " get task: " << pRequestNf->data() << std::endl;
+					postNotification(new TaskFinishedNotification(this));
+				}
+				Thread::sleep(200);
+			}
+			else
+			{
+				break;
+			}
+		}
+	*/
+	}
+private:
+	std::string m_name;
+	NotificationQueue& m_queue;
+};
+
+class MyReceiver
+{
+public:
+	void handleFinish(TaskFinishedNotification* pNf)
+	{
+		AutoPtr<TaskNotification> p(pNf);
+		std::cout << "Receiver receive finished notification." << std::endl;
+		Task* pTask = p->task();
+		pTask->reset();
+	}
+};
+
+int main(int argc, char** argv)
+{
+	ThreadPool tp("hj");
+	TaskManager tm(tp);
+	MyReceiver receiver;
+	Observer<MyReceiver, TaskFinishedNotification> observer(receiver, &MyReceiver::handleFinish);
+	tm.addObserver(observer);
+	NotificationQueue queue;
+	Task* t1 = new MyTask("task1", queue);
+	tm.start(t1);
+/*	Task* t2 = new MyTask("task2", queue);
+	tm.start(t2);
+	Task* t3 = new MyTask("task3", queue);
+	tm.start(t3);
+	Task* t4 = new MyTask("task4", queue);
+	tm.start(t4);
+*/
+	for(int i = 1 ; i < 50 ; i++)
+	{
+		queue.enqueueNotification(new RequestNotification(i));
+	}
+	while(!queue.empty())
+	{
+		Thread::sleep(200);
+	}
+	Thread::sleep(500);
+	std::cout << "notification queue is empty()." << std::endl;
+	queue.wakeUpAll();
+	tm.joinAll();
+	return 0;
+}
+

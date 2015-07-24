@@ -1,0 +1,12 @@
+#include "Poco/Dynamic/Array.h"
+#include "Poco/JSON.h"
+using namespace Poco;
+int main()
+{
+	JSON::Array jsonarr;
+	Dynamic::Array dynarr;
+	dynarr["type"] = "request";
+	dynarr["param"]["username"] = "hj";
+	std::cout << 
+	return 0;
+}

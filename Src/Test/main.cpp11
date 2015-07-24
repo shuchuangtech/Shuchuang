@@ -1,0 +1,101 @@
+#include <iostream>
+#include "Poco/Net/SocketAddress.h"
+#include "Poco/Net/StreamSocket.h"
+#include "Poco/Net/SocketStream.h"
+#include "Poco/Net/SecureStreamSocket.h"
+#include "Poco/JSON/Object.h"
+#include "Poco/JSON/Parser.h"
+#include "Poco/Dynamic/Struct.h"
+#include "Poco/Net/Context.h"
+#include "Poco/Timestamp.h"
+#include "Poco/DateTimeFormatter.h"
+#include "Poco/DateTimeFormat.h"
+#include "Poco/Thread.h"
+#include <stdio.h>
+#include "../Common/PrintLog.h"
+using namespace Poco;
+using namespace Poco::Net;
+int main(int argc, char** argv)
+{
+/*	Timestamp t1;
+	std::string s1;
+	s1 = DateTimeFormatter::format(t1, DateTimeFormat::RFC1123_FORMAT);
+	//std::cout << "\033[031m" << s1 << "\033[0m" << std::endl;
+	tracepoint();
+	debugf("time is %s\n", s1.c_str());
+	infof("time is %s\n", s1.c_str());
+	tracef("time is %s\n", s1.c_str());
+	warnf("time is %s\n", s1.c_str());
+	errorf("time is %s\n", s1.c_str());
+	fatalf("time is %s\n", s1.c_str());
+	Thread::sleep(1000);
+	Timestamp t;
+	t1 = t;
+	s1 = DateTimeFormatter::format(t1, DateTimeFormat::RFC1123_FORMAT);
+	std::cout << s1 << std::endl;
+	Poco::Net::initializeSSL();
+	SocketAddress saddr("api.jpush.cn", 443);
+	StreamSocket* sock = 0;
+	try
+	{
+		sock = new StreamSocket();
+		Socket* sss = sock;
+		int i = sss->sockfd();
+		tracef("sockfd:%d\n", i);
+	}
+	catch(Exception& e)
+	{
+		errorf("StreamSocket error: %s.\n", e.message().c_str());
+	}
+	sock->connect(saddr, Timespan(3, 0));
+	Context::Ptr pContext;
+	try
+	{
+		pContext = new Context(Context::TLSV1_CLIENT_USE, "" , Context::VERIFY_NONE);
+	}
+	catch(Exception& e)
+	{
+		std::cout << e.message() << std::endl;
+		return -1;
+	}
+	std::cout << "2" << std::endl;
+	SecureStreamSocket* sslSocket = 0;
+//	SecureStreamSocket sslSocket(pContext);
+	try
+	{
+		sslSocket = new SecureStreamSocket(saddr, pContext);
+	}
+	catch(Exception& e)
+	{
+		errorf("%s.\n", e.message().c_str());
+	}
+	Poco::Net::uninitializeSSL();
+*/
+
+	DynamicStruct ds;
+	DynamicStruct alert;
+	alert["alert"] = "Hi, JPush!";
+	ds["notification"] = alert;
+	ds["platform"] = "all";
+	ds["audience"] = "all";
+	UInt64 num = 38271837;
+	ds["session"] = num;
+	if(ds["session"].isInteger())
+	{
+		tracef("session in integer:%lu.\n", ds["session"].extract<UInt64>());
+	}
+	if(ds.contains("platform") && ds["platform"].toString() == "all")
+	{
+		infof("ds contain platform all.\n");
+	}
+	char buf[128] = {0, };
+	snprintf(buf, sizeof(buf) - 1, "%s", ds.toString().c_str());
+	tracef("buf:%s\n", buf);
+	JSON::Parser parser;
+	Dynamic::Var result = parser.parse(buf);
+	JSON::Object::Ptr obj = result.extract<JSON::Object::Ptr>();
+	DynamicStruct dss = *obj;
+	tracef("%s\n", dss["notification"]["alert"].toString().c_str());
+	
+	return 0;
+}

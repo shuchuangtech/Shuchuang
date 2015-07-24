@@ -1,0 +1,57 @@
+#include "Poco/Net/SecureStreamSocket.h"
+#include "Poco/Net/StreamSocket.h"
+#include "Poco/Net/SocketAddress.h"
+#include "Poco/JSON/Object.h"
+#include "Poco/DynamicStruct.h"
+#include "Poco/Net/Context.h"
+using namespace Poco;
+using namespace Poco::Net;
+int main(int argc, char** argv)
+{
+	Poco::Net::initializeSSL();
+/*	SocketAddress saddr("api.jpush.cn", 443);
+	StreamSocket* ss = 0;
+	try
+	{
+		ss = new StreamSocket(saddr);
+	}
+	catch(Exception& e)
+	{
+		std::cout << "Tcp connect error." << std::endl;
+		delete ss;
+		return -1;
+	}
+*/
+	Context::Ptr pContext= new Context(Context::TLSV1_1_CLIENT_USE, "", Context::VERIFY_NONE);
+	SecureStreamSocket sslSocket = SecureStreamSocket(pContext);
+	try
+	{
+		sslSocket = SecureStreamSocket::attach(*ss, pContext);
+	}
+	catch(Exception& e)
+	{
+		std::cout << "SSL connect error." << std::endl;
+		delete ss;
+		return -1;
+	}
+	std::cout << "SSL connect successfully." << std::endl;
+	sslSocket.shutdown();
+	char buf[16] = "hello";
+	ss->sendBytes(buf, sizeof(buf));
+
+	ss->close();
+	delete ss;  
+	DynamicStruct ds;
+	DynamicStruct temp;
+	ds["test1"] = "hello";
+	ds["test2"] = "hj";
+	temp["name"] = "hi";
+	ds["test3"] = temp;
+	ds["test3"]["name"] = "tom";
+	ds["test3"]["age"] = 19;
+	temp["name"] = "james";
+	std::cout << ds.toString() << std::endl;
+//	delete ss;
+	return 0;
+}
+
