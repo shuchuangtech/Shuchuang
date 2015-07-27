@@ -73,6 +73,7 @@ void CRegMsgHandler::runTask()
 		if(m_buf == NULL)
 		{
 			m_result->set(KEY_RESULT_STR, RESULT_FAIL_STR);
+			tracepoint();
 			return;
 		}
 		JSON::Parser parser;
@@ -82,6 +83,7 @@ void CRegMsgHandler::runTask()
 		delete[] m_buf;
 		m_buf = NULL;
 		if(ds.contains(KEY_TYPE_STR) && ds[KEY_TYPE_STR] == TYPE_RESPONSE_STR)
+			//response to http request
 		{
 			m_result = NULL;
 			m_result = m_param;
@@ -93,9 +95,15 @@ void CRegMsgHandler::runTask()
 			return;
 		}
 		std::string action = ds[KEY_ACTION_STR].toString();
-		std::string token = ds[KEY_TOKEN_STR].toString();
+		std::string token = "";
+		if(ds.contains(KEY_TOKEN_STR))
+		{
+			token = ds[KEY_TOKEN_STR].toString();
+		}
 		std::string dev_uuid = ds[KEY_UUID_STR].toString();
 		CDeviceManager* dm = CDeviceManager::instance();
+		m_result->set(KEY_ACTION_STR, action);
+		m_result->set(KEY_UUID_STR, dev_uuid);
 		if(action == ACTION_REGISTER_STR)
 		{
 			if(dm->deviceOnline(dev_uuid, token, m_id))
@@ -110,6 +118,7 @@ void CRegMsgHandler::runTask()
 		else if(action == ACTION_KEEPALIVE_STR)
 		{
 			dm->keepAliveDevice(dev_uuid);
+			m_result->set(KEY_RESULT_STR, RESULT_GOOD_STR);
 		}
 	}
 	else

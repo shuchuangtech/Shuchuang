@@ -117,6 +117,7 @@ bool CDeviceManager::keepAliveDevice(const std::string uuid)
 	}
 	Timestamp time;
 	it->second->t = time;
+	infof("%s, %d: Device[%s] keepalive successfully.\n", __FILE__, __LINE__, uuid.c_str());
 	m_mutex.unlock();
 	return true;
 }

@@ -10,8 +10,6 @@ using namespace Poco;
 using namespace Poco::Net;
 int main(int argc, char** argv)
 {
-	printf("in main.\n");
-	tracepoint();
 	if(argc < 4)
 	{
 		std::cout << "argc < 4" << std::endl;

@@ -291,7 +291,7 @@ void CRegServer::handleRegFinish(TaskFinishedNotification* pNf)
 			return;
 		}
 		DynamicStruct ds = *pObj;
-		if(ds.contains("type") && ds["type"].toString() == "response")
+		if(ds.contains(KEY_TYPE_STR) && ds[KEY_TYPE_STR].toString() == TYPE_RESPONSE_STR)
 		{
 			UInt64 request_id;
 			request_id = ds["requestid"];
@@ -468,7 +468,7 @@ void CRegServer::regAccept(Timer& timer)
 		{
 			break;
 		}
-		tracef("%s, %d: Reg accept connection from %s.\n", __FILE__, __LINE__, clientAddress.toString().c_str());
+		infof("%s, %d: Reg accept connection from %s.\n", __FILE__, __LINE__, clientAddress.toString().c_str());
 		Timestamp t;
 		SocketTime* pReg = new SocketTime(ss, t);
 		Mutex::ScopedLock lock(m_reg_queue_mutex);

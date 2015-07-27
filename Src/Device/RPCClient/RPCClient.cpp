@@ -31,7 +31,6 @@ bool CRPCClient::setRequest(RequestNotification::Ptr request)
 	m_param = m_request->getParam();
 	m_id = m_request->getID();
 	DynamicStruct ds = *m_param;
-	tracef("%s, %d: RPC Client receive request[%s].\n", __FILE__, __LINE__, ds.toString().c_str());
 	m_request = NULL;
 	return true;
 }
@@ -52,8 +51,13 @@ bool CRPCClient::parseAction(std::string& opt, std::string& component, std::stri
 
 void CRPCClient::runTask()
 {
-	tracef("%s, %d: RPC Client runTask().\n", __FILE__, __LINE__);
 	DynamicStruct request = *(m_param);
+	std::string type = "";
+	if(!request.contains(KEY_TYPE_STR))
+	{
+		tracef("%s, %d: Request does not contains \"type\", may be a response to keepalive.\n", __FILE__, __LINE__);
+		return;
+	}
 	std::string opt = request[KEY_ACTION_STR];
 	std::string component = "";
 	std::string method = "";

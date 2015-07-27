@@ -13,7 +13,7 @@ using namespace Poco::Net;
 CRegProxy::CRegProxy()
 {
 	m_started = false;
-	m_checkPeriod = 30 * 1000 * 1000;	//30s
+	m_checkPeriod = 10 * 1000 * 1000;	//30s
 	m_keepAliveTimeout = 2 * 60 * 1000 * 1000;	//2 minutes
 	m_lastCheckTime = 0;
 	m_sock = 0;
@@ -355,7 +355,6 @@ void CRegProxy::onTimer(Timer& timer)
 			}
 			else
 			{
-				/*
 				Timestamp t;
 				if(t - m_lastCheckTime < m_checkPeriod)
 				{
@@ -373,7 +372,6 @@ void CRegProxy::onTimer(Timer& timer)
 						dealError(SECURE_SOCKET|PLAIN_SOCKET);
 					}
 				}
-				*/
 			}		
 		}
 	}
@@ -383,10 +381,9 @@ bool CRegProxy::sendKeepAlive()
 {
 	char buf[128] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_KEEPALIVE);
-	infof("%s, %d: KeepAlive buf: %s.\n", __FILE__, __LINE__, buf);
 	if(m_sock->sendBytes(buf, sizeof(buf)) > 0 )
 	{
-		tracef("%s, %d: KeepAlive successfully.\n", __FILE__, __LINE__);
+		infof("%s, %d: KeepAlive successfully.\n", __FILE__, __LINE__);
 		return true;
 	}
 	else

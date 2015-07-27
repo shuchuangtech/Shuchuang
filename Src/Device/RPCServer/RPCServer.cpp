@@ -120,7 +120,6 @@ void CRPCServer::run()
 			CRPCClient* client;
 			JSON::Object::Ptr pParam = pR->getParam();
 			DynamicStruct ds = *pParam;
-			debugf("%s, %d: Get a request[%s].\n", __FILE__, __LINE__, ds.toString().c_str());
 			client = new CRPCClient();
 			client->reset();
 			client->setRequest(pR);
