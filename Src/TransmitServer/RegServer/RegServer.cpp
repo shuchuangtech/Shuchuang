@@ -482,9 +482,29 @@ bool CRegServer::sendRequest(RequestInfo* request)
 {
 	DynamicStruct req = *(request->request);
 	tracef("%s, %d: SendRequest: src %lu, dst %s\n", __FILE__, __LINE__,  request->src_id, request->uuid.c_str());
-	tracef("%s, %d: request content: %s\n", req.toString().c_str());
+	tracef("%s, %d: request content: %s\n", __FILE__, __LINE__, req.toString().c_str());
+	DynamicStruct ds = *(request->request);
 	CDeviceManager* dev_manager = CDeviceManager::instance();
 	DeviceInfo* dev = dev_manager->getDevice(request->uuid);
+	if(ds[KEY_ACTION_STR].toString().find(COMPONENT_SERVER_STR) != std::string::npos)
+	{
+		JSON::Object::Ptr obj = new JSON::Object(*(request->request));
+		obj->set(KEY_TYPE_STR, TYPE_RESPONSE_STR);
+		obj->set(KEY_RESULT_STR, RESULT_GOOD_STR);
+		DynamicStruct param;
+		if(dev == NULL)
+		{
+			param[PARAM_STATE_STR] = "offline";
+		}
+		else
+		{
+			param[PARAM_STATE_STR] = "online";
+			param[PARAM_DEV_TYPE_STR] = dev->devType;
+		}
+		obj->set(KEY_PARAM_STR, param);
+		request->response = obj;
+		return true;
+	}
 	if(dev == NULL)
 	{
 		JSON::Object::Ptr obj = new JSON::Object(*(request->request));
@@ -510,7 +530,6 @@ bool CRegServer::sendRequest(RequestInfo* request)
 	m_request_queue_mutex.lock();
 	m_request_map.insert(std::make_pair<UInt64, RequestInfo*>(request_id, request));
 	m_request_queue_mutex.unlock();
-	DynamicStruct ds = *(request->request);
 	ds[KEY_REQUEST_ID_STR] = request_id;
 	tracef("%s, %d: Request sent to device.\n", __FILE__, __LINE__);
 	it->second->socket.sendBytes(ds.toString().c_str(), ds.toString().length());

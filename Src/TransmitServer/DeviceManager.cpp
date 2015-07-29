@@ -12,6 +12,7 @@ CDeviceManager::CDeviceManager()
 
 CDeviceManager::~CDeviceManager()
 {
+	delete m_noti_center;
 }
 
 bool CDeviceManager::addObserver(const AbstractObserver& o)
