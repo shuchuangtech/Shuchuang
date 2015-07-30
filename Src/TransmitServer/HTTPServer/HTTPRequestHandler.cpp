@@ -25,21 +25,31 @@ bool CHTTPRequestHandler::checkRequestFormat(JSON::Object::Ptr request, JSON::Ob
 	if(!ds.contains(KEY_TYPE_STR) || !ds.contains(KEY_ACTION_STR) || !ds.contains(KEY_PARAM_STR))
 	{
 		response->set(KEY_RESULT_STR, RESULT_FAIL_STR);
-		response->set(KEY_DETAIL_STR, "100");
+		response->set(KEY_DETAIL_STR, "101");
 		return false;
 	}
 	if(ds[KEY_TYPE_STR].toString() != TYPE_REQUEST_STR)
 	{
 		response->set(KEY_RESULT_STR, RESULT_FAIL_STR);
-		response->set(KEY_DETAIL_STR, "101");
+		response->set(KEY_DETAIL_STR, "102");
 		return false;
 	}
 	Dynamic::Var var = ds[KEY_PARAM_STR];
-	DynamicStruct param = var.extract<DynamicStruct>();
+	DynamicStruct param;
+	try
+	{
+		param = var.extract<DynamicStruct>();
+	}
+	catch(Exception& e)
+	{
+		response->set(KEY_RESULT_STR, RESULT_FAIL_STR);
+		response->set(KEY_DETAIL_STR, "103");
+		return false;
+	}
 	if(!param.contains(PARAM_UUID_STR))
 	{
 		response->set(KEY_RESULT_STR, RESULT_FAIL_STR);
-		response->set(KEY_DETAIL_STR, "102");
+		response->set(KEY_DETAIL_STR, "104");
 		return false;
 	}
 	return true;
@@ -60,16 +70,30 @@ bool CHTTPRequestHandler::parseAction(std::string action, std::string& component
 
 void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerResponse& response)
 {
+	response.setContentType("application/json");
+	response.setChunkedTransferEncoding(true);
 	if(m_buf == NULL)
 		m_buf = new char[512];
 	memset(m_buf, 0, 512);
 	request.stream().getline(m_buf, 512, '\n');
 	JSON::Parser parser;
-	Dynamic::Var var = parser.parse(m_buf);
+	Dynamic::Var var;
+	try
+	{
+		var = parser.parse(m_buf);
+	}
+	catch(Exception& e)
+	{
+		JSON::Object::Ptr re = new JSON::Object;
+		re->set(KEY_RESULT_STR, RESULT_FAIL_STR);
+		re->set(KEY_DETAIL_STR, "100");
+		DynamicStruct ds_res = *re;
+		response.sendBuffer(ds_res.toString().c_str(), ds_res.toString().length());
+		re = NULL;
+		return;
+	}
 	JSON::Object::Ptr obj = var.extract<JSON::Object::Ptr>();
-	JSON::Object::Ptr res = new JSON::Object;
-	response.setContentType("application/json");
-	response.setChunkedTransferEncoding(true);
+	JSON::Object::Ptr res = new JSON::Object(*obj);
 	if(!checkRequestFormat(obj, res))
 	{
 		DynamicStruct ds_res = *res;
@@ -86,7 +110,7 @@ void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerRe
 	if(!ret)
 	{
 		res->set(KEY_RESULT_STR, RESULT_FAIL_STR);
-		res->set(KEY_DETAIL_STR, "103");
+		res->set(KEY_DETAIL_STR, "105");
 		DynamicStruct ds_res = *res;
 		response.sendBuffer(ds_res.toString().c_str(), ds_res.toString().length());
 		res = NULL;
@@ -115,7 +139,7 @@ void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerRe
 		else
 		{
 			res->set(KEY_RESULT_STR, RESULT_FAIL_STR);
-			res->set(KEY_DETAIL_STR, "104");
+			res->set(KEY_DETAIL_STR, "106");
 		}
 		DynamicStruct ds_res = *res;
 		response.sendBuffer(ds_res.toString().c_str(), ds_res.toString().length());

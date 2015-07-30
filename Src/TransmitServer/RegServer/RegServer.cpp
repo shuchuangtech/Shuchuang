@@ -485,26 +485,7 @@ bool CRegServer::sendRequest(RequestInfo* request)
 	tracef("%s, %d: request content: %s\n", __FILE__, __LINE__, req.toString().c_str());
 	DynamicStruct ds = *(request->request);
 	CDeviceManager* dev_manager = CDeviceManager::instance();
-	DeviceInfo* dev = dev_manager->getDevice(request->uuid);
-	if(ds[KEY_ACTION_STR].toString().find(COMPONENT_SERVER_STR) != std::string::npos)
-	{
-		JSON::Object::Ptr obj = new JSON::Object(*(request->request));
-		obj->set(KEY_TYPE_STR, TYPE_RESPONSE_STR);
-		obj->set(KEY_RESULT_STR, RESULT_GOOD_STR);
-		DynamicStruct param;
-		if(dev == NULL)
-		{
-			param[PARAM_STATE_STR] = "offline";
-		}
-		else
-		{
-			param[PARAM_STATE_STR] = "online";
-			param[PARAM_DEV_TYPE_STR] = dev->devType;
-		}
-		obj->set(KEY_PARAM_STR, param);
-		request->response = obj;
-		return true;
-	}
+	DeviceInfo* dev = dev_manager->getDevice(request->uuid);	
 	if(dev == NULL)
 	{
 		JSON::Object::Ptr obj = new JSON::Object(*(request->request));
