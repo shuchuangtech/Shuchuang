@@ -9,7 +9,9 @@ CHTTPSAcceptor::CHTTPSAcceptor()
 {
 	m_started = false;
 	m_port = 0;
-	m_ssl_acceptor = NULL;
+	m_ssl_acceptor = 0;
+	m_thread_pool = 0;
+	m_task_manager = 0;
 }
 
 CHTTPSAcceptor::~CHTTPSAcceptor()
@@ -54,6 +56,21 @@ bool CHTTPSAcceptor::stop()
 		return false;
 	}
 	m_started = false;
+	if(m_ssl_acceptor != 0)
+	{
+		delete m_ssl_acceptor;
+		m_ssl_acceptor = 0;
+	}
+	if(m_thread_pool != 0)
+	{
+		delete m_thread_pool;
+		m_thread_pool = 0;
+	}
+	if(m_task_manager != 0)
+	{
+		delete m_task_manager;
+		m_task_manager = 0;
+	}
 	m_acceptor.stop();
 	m_pollerOut.stop();
 	m_pollerIn.stop();
