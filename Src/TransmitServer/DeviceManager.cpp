@@ -31,12 +31,12 @@ bool CDeviceManager::start()
 {
 	if(m_started)
 	{
-		warnf("%s, %d: Device manager has already started.\n", __FILE__, __LINE__);
+		warnf("%s, %d: Device manager has already started.", __FILE__, __LINE__);
 		return false;
 	}
 	m_thread.start(*this);
 	m_started = true;
-	infof("%s, %d: Device manager start successfully.\n", __FILE__, __LINE__);
+	infof("%s, %d: Device manager start successfully.", __FILE__, __LINE__);
 	return true;
 }
 
@@ -49,7 +49,7 @@ bool CDeviceManager::stop()
 	{
 		m_thread.join();
 	}
-	infof("%s, %d: Device manager stop successfully.\n", __FILE__, __LINE__);
+	infof("%s, %d: Device manager stop successfully.", __FILE__, __LINE__);
 	return true;
 }
 
@@ -67,7 +67,7 @@ void CDeviceManager::run()
 			DeviceInfo* di = itemp->second;
 			if(now - di->t > 6 * checkPeriod)
 			{
-				infof("%s, %d: Device[%s：%lu] offline.\n", __FILE__, __LINE__, di->uuid.c_str(), di->id);
+				infof("%s, %d: Device[%s：%lu] offline.", __FILE__, __LINE__, di->uuid.c_str(), di->id);
 				m_device_map.erase(itemp);
 				m_device_id_map.erase(di->id);
 				m_noti_center->postNotification(new OfflineNotification(di->id, di->uuid));
@@ -97,7 +97,7 @@ bool CDeviceManager::addDevice(const std::string uuid, UInt64 id, const std::str
 	token = DigestEngine::digestToHex(digest);
 	DeviceInfo* di = new DeviceInfo(uuid, id, devType, token);
 	m_device_map.insert(std::make_pair<std::string, DeviceInfo*>(uuid, di));
-	infof("%s, %d: Device added[%s:%lu]\n", __FILE__, __LINE__, uuid.c_str(), id);
+	infof("%s, %d: Device added[%s:%lu]", __FILE__, __LINE__, uuid.c_str(), id);
 	m_mutex.unlock();
 	return true;
 }
@@ -118,7 +118,7 @@ bool CDeviceManager::keepAliveDevice(const std::string uuid)
 	}
 	Timestamp time;
 	it->second->t = time;
-	infof("%s, %d: Device[%s] keepalive successfully.\n", __FILE__, __LINE__, uuid.c_str());
+	infof("%s, %d: Device[%s] keepalive successfully.", __FILE__, __LINE__, uuid.c_str());
 	m_mutex.unlock();
 	return true;
 }
@@ -139,14 +139,14 @@ bool CDeviceManager::deviceOnline(const std::string uuid, const std::string toke
 	}
 	if(token != it->second->token)
 	{
-		warnf("%s, %d: Device[%s] register token not match.\n", __FILE__, __LINE__, uuid.c_str());
+		warnf("%s, %d: Device[%s] register token not match.", __FILE__, __LINE__, uuid.c_str());
 		m_mutex.unlock();
 		return false;
 	}
 	it->second->online = true;
 	it->second->id = sock_id;
 	m_device_id_map.insert(std::make_pair<UInt64, std::string>(sock_id, uuid));
-	infof("%s, %d: Device[%s:%lu] online.\n", __FILE__, __LINE__, uuid.c_str(), sock_id);
+	infof("%s, %d: Device[%s:%lu] online.", __FILE__, __LINE__, uuid.c_str(), sock_id);
 	m_mutex.unlock();
 	return true;
 }
@@ -170,7 +170,7 @@ bool CDeviceManager::deviceOffline(const std::string uuid)
 		return true;
 	}
 	m_device_id_map.erase(it_id);
-	tracef("%s, %d: Device offline[%s:%lu]\n", __FILE__, __LINE__, uuid.c_str(), id);
+	tracef("%s, %d: Device offline[%s:%lu]", __FILE__, __LINE__, uuid.c_str(), id);
 	m_mutex.unlock();
 	return true;
 }
@@ -196,7 +196,7 @@ bool CDeviceManager::deviceOffline(const UInt64 id)
 	}
 	delete it_dev->second;
 	m_device_map.erase(it_dev);
-	tracef("%s, %d: Device offline[%s:%d]\n", __FILE__, __LINE__, uuid.c_str(), id);
+	tracef("%s, %d: Device offline[%s:%d]", __FILE__, __LINE__, uuid.c_str(), id);
 	m_mutex.unlock();
 	return true;
 }

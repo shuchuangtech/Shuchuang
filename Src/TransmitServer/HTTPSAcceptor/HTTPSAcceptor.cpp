@@ -4,6 +4,7 @@
 #include "Poco/Net/SecureServerSocket.h"
 #include "Poco/Observer.h"
 #include "Common/PrintLog.h"
+#include "Common/ConfigManager.h"
 CHTTPSAcceptor::CHTTPSAcceptor()
 :m_sem(0, 1000)
 {
@@ -22,12 +23,49 @@ bool CHTTPSAcceptor::start()
 {
 	if(m_started)
 	{
-		warnf("%s, %d: HTTPS acceptor has already started.\n", __FILE__, __LINE__);
+		warnf("%s, %d: HTTPS acceptor has already started.", __FILE__, __LINE__);
 		return false;
 	}
+	CConfigManager* config = CConfigManager::instance();
+	JSON::Object::Ptr pConfig;
+	config->getConfig("HTTPSAcceptor", pConfig);
+	std::string cert = "";
+	std::string privkey = "";
+	if(pConfig.isNull())
+	{
+		pConfig = new JSON::Object;
+		m_port = 9999;
+		cert = "./cert.pem";
+		privkey = "./privkey.pem";
+		pConfig->set("port", 9999);
+		pConfig->set("cert", cert);
+		pConfig->set("privkey", privkey);
+		config->setConfig("HTTPSAcceptor", pConfig);
+	}
+	else
+	{
+		if(pConfig->has("port") && pConfig->has("cert") && pConfig->has("privkey"))
+		{
+			m_port = pConfig->getValue<UInt16>("port");
+			cert = pConfig->getValue<std::string>("cert");
+			privkey = pConfig->getValue<std::string>("privkey");
+		}
+		else
+		{
+			m_port = 9999;
+			cert = "./cert.pem";
+			privkey = "./privkey.pem";
+			pConfig = NULL;
+			pConfig = new JSON::Object;
+			pConfig->set("port", 9999);
+			pConfig->set("cert", cert);
+			pConfig->set("privkey", privkey);
+			config->setConfig("HTTPSAcceptor", pConfig);
+		}
+	}
 	Context::Ptr pContext = new Context(Context::TLSV1_SERVER_USE,
-									"./privkey.pem",
-									"./cert.pem",
+									privkey,
+									cert,
 									"",
 									Context::VERIFY_NONE);
 	if(m_ssl_acceptor != NULL)
@@ -44,7 +82,8 @@ bool CHTTPSAcceptor::start()
 	m_pollerOut.start(pollerOut);
 	TimerCallback<CHTTPSAcceptor> pollerIn(*this, &CHTTPSAcceptor::pollerIn);
 	m_pollerIn.start(pollerIn);
-	infof("%s, %d: HTTPS acceptor start successfully.\n", __FILE__, __LINE__);
+	infof("%s, %d: HTTPS acceptor start successfully.", __FILE__, __LINE__);
+	infof("%s, %d: HTTPS acceptor port:%d", __FILE__, __LINE__, m_port);
 	return true;
 }
 
@@ -52,7 +91,7 @@ bool CHTTPSAcceptor::stop()
 {
 	if(!m_started)
 	{
-		warnf("%s, %d: HTTPS acceptor not started.\n", __FILE__, __LINE__);
+		warnf("%s, %d: HTTPS acceptor not started.", __FILE__, __LINE__);
 		return false;
 	}
 	m_started = false;
@@ -74,7 +113,7 @@ bool CHTTPSAcceptor::stop()
 	m_acceptor.stop();
 	m_pollerOut.stop();
 	m_pollerIn.stop();
-	infof("%s, %d: HTTPS acceptor stop successfully.\n", __FILE__, __LINE__);
+	infof("%s, %d: HTTPS acceptor stop successfully.", __FILE__, __LINE__);
 	return true;
 }
 
@@ -115,7 +154,7 @@ void CHTTPSAcceptor::acceptor(Timer& timer)
 		}
 		if(!m_started)
 			break;
-		infof("%s, %d: https acceptor accept %s\n", __FILE__, __LINE__, clientAddress.toString().c_str());
+		infof("%s, %d: https acceptor accept %s", __FILE__, __LINE__, clientAddress.toString().c_str());
 		SocketNode* sn = new SocketNode();
 		sn->sockOut = sOut;
 		m_sock_out_map.insert(std::make_pair<UInt64, SocketNode*>((UInt64)sOut.impl(), sn));
@@ -146,7 +185,7 @@ void CHTTPSAcceptor::pollerIn(Timer& timer)
 				std::map<UInt64, SocketNode*>::iterator it_sock = m_sock_in_map.find((UInt64)((*it).impl()));
 				if(it_sock == m_sock_in_map.end())
 				{
-					errorf("%s, %d: Unsupposed to be here.\n", __FILE__, __LINE__);
+					errorf("%s, %d: Unsupposed to be here.", __FILE__, __LINE__);
 				}
 				CHTTPSHandler* handler = new CHTTPSHandler();
 				handler->setParam(1, it_sock->second, m_http_port);
@@ -186,7 +225,7 @@ void CHTTPSAcceptor::pollerOut(Timer& timer)
 				std::map<UInt64, SocketNode*>::iterator it_sock = m_sock_out_map.find((UInt64)((*it).impl()));
 				if(it_sock == m_sock_out_map.end())
 				{
-					errorf("%s, %d: Unsupposed to be here.\n", __FILE__, __LINE__);
+					errorf("%s, %d: Unsupposed to be here.", __FILE__, __LINE__);
 				}
 				CHTTPSHandler* handler = new CHTTPSHandler();
 				handler->setParam(0, it_sock->second, m_http_port);

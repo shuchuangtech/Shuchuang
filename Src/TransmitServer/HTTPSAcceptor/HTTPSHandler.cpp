@@ -69,7 +69,6 @@ void CHTTPSHandler::runTask()
 			memset(t_buf, 0, 1024);
 		}
 		sIn.close();
-		tracef("%s, %d: recv form in: %s\n", __FILE__, __LINE__, buf);
 		StreamSocket sOut(m_sn->sockOut);
 		sOut.sendBytes(buf, 1024);
 		sOut.close();

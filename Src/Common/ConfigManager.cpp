@@ -28,20 +28,20 @@ bool CConfigManager::init(const std::string path)
 			}
 			catch(Exception& e)
 			{
-				warnf("%s, %d: Load config file error.\n", __FILE__, __LINE__);
+				warnf("%s, %d: Load config file error.", __FILE__, __LINE__);
 			}
 		}
 		else
 		{
 			m_config = new Util::JSONConfiguration;
 		}
-		infof("%s, %d: ConfigManager init successfully, directory path %s\n", __FILE__, __LINE__, path.c_str());
+		infof("%s, %d: ConfigManager init successfully, directory path %s", __FILE__, __LINE__, path.c_str());
 		return true;
 	}
 	else
 	{
 		m_path = "";
-		warnf("%s, %d: ConfigManager init failed\n", __FILE__, __LINE__);
+		warnf("%s, %d: ConfigManager init failed", __FILE__, __LINE__);
 		return false;
 	}
 }
@@ -63,7 +63,7 @@ bool CConfigManager::getConfig(const std::string configName, JSON::Object::Ptr& 
 		}
 		catch(Exception& e)
 		{
-			errorf("%s, %d: Config %s is not JSON format.\n", __FILE__, __LINE__, configName.c_str());
+			errorf("%s, %d: Config %s is not JSON format.", __FILE__, __LINE__, configName.c_str());
 			config = NULL;
 			return false;
 		}
@@ -71,7 +71,7 @@ bool CConfigManager::getConfig(const std::string configName, JSON::Object::Ptr& 
 	else
 	{
 		config = NULL;
-		warnf("%s, %d: Config %s not exists.\n", __FILE__, __LINE__, configName.c_str());
+		warnf("%s, %d: Config %s not exists.", __FILE__, __LINE__, configName.c_str());
 	}
 	return true;
 }

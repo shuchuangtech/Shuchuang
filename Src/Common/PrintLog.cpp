@@ -1,9 +1,15 @@
-#include "PrintLog.h"
+#include "Common/PrintLog.h"
 #include <stdarg.h>
 #include "Poco/Timestamp.h"
 #include "Poco/DateTime.h"
 #include "Poco/Exception.h"
+#include "Poco/Logger.h"
+#include "Poco/FileChannel.h"
+#include "Poco/AutoPtr.h"
+
+static Poco::AutoPtr<Poco::FileChannel> pChannel;
 static int s_printLogLevel = LEVEL_DEBUG;
+
 inline void set_console_color(int c)
 {
 	fprintf(stdout, "\033[%d;40m", c);
@@ -12,6 +18,18 @@ inline void set_console_color(int c)
 inline void reset_console_color()
 {
 	fprintf(stdout, "\033[0m");
+}
+
+bool initPrintLogger()
+{
+	pChannel = new Poco::FileChannel;
+	pChannel->setProperty("path", "serverlog");
+	pChannel->setProperty("rotation", "50 M");
+	pChannel->setProperty("archive", "timestamp");
+	pChannel->setProperty("purgeAge", "7 days");
+	pChannel->setProperty("flush", "false");
+	Poco::Logger::root().setChannel(pChannel);
+	return true;
 }
 
 bool setPrintLogLevel(int logLevel)
@@ -44,6 +62,8 @@ bool setPrintLogLevel(int logLevel)
 	va_start(ap, fmt); \
 	n += vsnprintf(buffer + n, sizeof(buffer) - 1 - n, fmt, ap); \
 	va_end(ap);	\
+	Poco::Logger::get("Logger").information(buffer); \
+	n += snprintf(buffer + n, sizeof(buffer) - 1 - n, "\n"); \
 	fputs(buffer, stdout); \
 	reset_console_color();\
 	return int(n);	\

@@ -8,6 +8,7 @@
 #include "Poco/Timespan.h"
 #include "Poco/Observer.h"
 #include "TransmitServer/DeviceManager.h"
+#include "Common/ConfigManager.h"
 CRegServer::CRegServer()
 {
 	m_started = false;
@@ -42,8 +43,38 @@ void CRegServer::start()
 {
 	if(m_started)
 	{
-		warnf("%s, %d: Register server has already started.\n", __FILE__, __LINE__);
+		warnf("%s, %d: Register server has already started.", __FILE__, __LINE__);
 		return;
+	}
+	CConfigManager* config = CConfigManager::instance();
+	JSON::Object::Ptr pConfig;
+	config->getConfig("RegServer", pConfig);
+	if(pConfig.isNull())
+	{
+		pConfig = new JSON::Object;
+		pConfig->set("ssl_port", 12222);
+		pConfig->set("reg_port", 13333);
+		config->setConfig("RegServer", pConfig);
+		m_ssl_port = 12222;
+		m_reg_port = 13333;
+	}
+	else
+	{
+		if(pConfig->has("ssl_port") && pConfig->has("reg_port"))
+		{
+			m_ssl_port = pConfig->getValue<UInt16>("ssl_port");
+			m_reg_port = pConfig->getValue<UInt16>("reg_port");
+		}
+		else
+		{
+			m_ssl_port = 12222;
+			m_reg_port = 13333;
+			pConfig = NULL;
+			pConfig = new JSON::Object;
+			pConfig->set("ssl_port", 12222);
+			pConfig->set("reg_port", 13333);
+			config->setConfig("RegServer", pConfig);
+		}
 	}
 	std::string ssl_tp_name = "SslThreadPool";
 	std::string reg_tp_name = "RegThreadPool";
@@ -71,7 +102,8 @@ void CRegServer::start()
 	m_reg_accept.start(regCallback);
 	TimerCallback<CRegServer> regHanCall(*this, &CRegServer::regHandler);
 	m_reg_handler.start(regHanCall);
-	infof("%s, %d: Register server start successfully.\n", __FILE__, __LINE__);
+	infof("%s, %d: Register server start successfully.", __FILE__, __LINE__);
+	infof("%s, %d: Register server ssl port:%d, reg port:%d", __FILE__, __LINE__, m_ssl_port, m_reg_port);
 }
 
 void CRegServer::stop()
@@ -89,7 +121,7 @@ void CRegServer::stop()
 	delete m_reg_sock;
 	m_ssl_thread_pool->stopAll();
 	m_reg_thread_pool->stopAll();
-	infof("%s, %d: Register server stop successfully.\n", __FILE__, __LINE__);
+	infof("%s, %d: Register server stop successfully.", __FILE__, __LINE__);
 }
 
 bool CRegServer::listenSsl()
@@ -144,7 +176,7 @@ void CRegServer::handleOffline(OfflineNotification* pNf)
 		std::map<UInt64, SocketTime*>::iterator it = m_pReg_map.find(impl);
 		if(it != m_pReg_map.end())
 		{
-			debugf("%s, %d: Connection %s shutdown by server.\n", __FILE__, __LINE__, it->second->socket.peerAddress().toString().c_str());
+			debugf("%s, %d: Connection %s shutdown by server.", __FILE__, __LINE__, it->second->socket.peerAddress().toString().c_str());
 			removeSocket(1, it);
 		}
 	}
@@ -180,7 +212,7 @@ void CRegServer::sslAccept(Timer& timer)
 		{
 			break;
 		}
-		tracef("%s, %d: Ssl accept connection from %s.\n", __FILE__, __LINE__, clientAddress.toString().c_str());
+		tracef("%s, %d: Ssl accept connection from %s.", __FILE__, __LINE__, clientAddress.toString().c_str());
 		Timestamp t;
 		SocketTime* pSsl = new SocketTime(ss, t);
 		Mutex::ScopedLock lock(m_ssl_queue_mutex);
@@ -235,7 +267,7 @@ void CRegServer::sslHandler(Timer& timer)
 				}
 				else
 				{
-					tracef("%s, %d: Client %s disconnect.\n",__FILE__, __LINE__,  (it->peerAddress()).toString().c_str());
+					tracef("%s, %d: Client %s disconnect.",__FILE__, __LINE__,  (it->peerAddress()).toString().c_str());
 					if(it_ssl != m_pSsl_map.end())
 						removeSocket(0, it_ssl);
 				}	
@@ -272,7 +304,7 @@ void CRegServer::handleSslFinish(TaskFinishedNotification* pNf)
 			StreamSocket ss(pSsl->socket);
 			ss.sendBytes(ds.toString().c_str(), ds.toString().length());
 			removeSocket(0, it);
-			tracef("%s, %d: Ssl result sent[%s].\n", __FILE__, __LINE__, ds.toString().c_str());
+			tracef("%s, %d: Ssl result sent[%s].", __FILE__, __LINE__, ds.toString().c_str());
 		}
 	}
 }
@@ -287,7 +319,7 @@ void CRegServer::handleRegFinish(TaskFinishedNotification* pNf)
 		JSON::Object::Ptr pObj = regMsgHandler->getResult();
 		if(pObj.isNull())
 		{
-				errorf("%s, %d: Not supposed to be here.\n", __FILE__, __LINE__);
+				errorf("%s, %d: Not supposed to be here.", __FILE__, __LINE__);
 			return;
 		}
 		DynamicStruct ds = *pObj;
@@ -306,7 +338,7 @@ void CRegServer::handleRegFinish(TaskFinishedNotification* pNf)
 			}
 			else
 			{
-				errorf("%s, %d: Not supposed to be here.\n", __FILE__, __LINE__);
+				errorf("%s, %d: Not supposed to be here.", __FILE__, __LINE__);
 			}
 			m_request_queue_mutex.unlock();
 			return;
@@ -317,7 +349,7 @@ void CRegServer::handleRegFinish(TaskFinishedNotification* pNf)
 			SocketTime* pReg = it->second;
 			StreamSocket ss(pReg->socket);
 			ss.sendBytes(ds.toString().c_str(), ds.toString().length());
-			tracef("%s, %d: Reg result sent[%s].\n", __FILE__, __LINE__, ds.toString().c_str());
+			tracef("%s, %d: Reg result sent[%s].", __FILE__, __LINE__, ds.toString().c_str());
 		}
 	}
 }
@@ -399,7 +431,7 @@ void CRegServer::regHandler(Timer& timer)
 				}
 				else
 				{
-					infof("%s, %d: Client %s disconnect.\n", __FILE__, __LINE__, (it->peerAddress()).toString().c_str());
+					infof("%s, %d: Client %s disconnect.", __FILE__, __LINE__, (it->peerAddress()).toString().c_str());
 					CDeviceManager* dev_manager = CDeviceManager::instance();
 					dev_manager->deviceOffline(impl);
 					if(it_reg != m_pReg_map.end())
@@ -425,11 +457,11 @@ void CRegServer::regHandler(Timer& timer)
 		m_request_queue_mutex.lock();
 		for(std::map<UInt64, RequestInfo*>::iterator it = m_request_map.begin(); it != m_request_map.end(); )
 		{
-			infof("%s, %d: check http request timeout\n", __FILE__, __LINE__);
+			infof("%s, %d: check http request timeout", __FILE__, __LINE__);
 			std::map<UInt64, RequestInfo*>::iterator itemp = it++;
 			if(now - itemp->first > itemp->second->timeout)
 			{
-				infof("%s, %d: Request %lu timeout.\n", __FILE__, __LINE__, itemp->first);
+				infof("%s, %d: Request %lu timeout.", __FILE__, __LINE__, itemp->first);
 				itemp->second->sem.set();
 				m_request_map.erase(itemp);
 			}
@@ -468,11 +500,11 @@ void CRegServer::regAccept(Timer& timer)
 		{
 			break;
 		}
-		infof("%s, %d: Reg accept connection from %s.\n", __FILE__, __LINE__, clientAddress.toString().c_str());
+		infof("%s, %d: Reg accept connection from %s.", __FILE__, __LINE__, clientAddress.toString().c_str());
 		Timestamp t;
 		SocketTime* pReg = new SocketTime(ss, t);
 		Mutex::ScopedLock lock(m_reg_queue_mutex);
-		tracef("%s, %d: insert [%lu] to reg map\n", __FILE__, __LINE__, (UInt64)ss.impl());
+		tracef("%s, %d: insert [%lu] to reg map", __FILE__, __LINE__, (UInt64)ss.impl());
 		m_pReg_map.insert(std::make_pair<UInt64, SocketTime*>((UInt64)ss.impl() ,pReg));
 		m_reg_sock_list.push_back(ss);
 	}
@@ -481,8 +513,8 @@ void CRegServer::regAccept(Timer& timer)
 bool CRegServer::sendRequest(RequestInfo* request)
 {
 	DynamicStruct req = *(request->request);
-	tracef("%s, %d: SendRequest: src %lu, dst %s\n", __FILE__, __LINE__,  request->src_id, request->uuid.c_str());
-	tracef("%s, %d: request content: %s\n", __FILE__, __LINE__, req.toString().c_str());
+	tracef("%s, %d: SendRequest: src %lu, dst %s", __FILE__, __LINE__,  request->src_id, request->uuid.c_str());
+	tracef("%s, %d: request content: %s", __FILE__, __LINE__, req.toString().c_str());
 	DynamicStruct ds = *(request->request);
 	CDeviceManager* dev_manager = CDeviceManager::instance();
 	DeviceInfo* dev = dev_manager->getDevice(request->uuid);	
@@ -512,7 +544,7 @@ bool CRegServer::sendRequest(RequestInfo* request)
 	m_request_map.insert(std::make_pair<UInt64, RequestInfo*>(request_id, request));
 	m_request_queue_mutex.unlock();
 	ds[KEY_REQUEST_ID_STR] = request_id;
-	tracef("%s, %d: Request sent to device.\n", __FILE__, __LINE__);
+	tracef("%s, %d: Request sent to device.", __FILE__, __LINE__);
 	it->second->socket.sendBytes(ds.toString().c_str(), ds.toString().length());
 	request->sem.wait();
 	return true;

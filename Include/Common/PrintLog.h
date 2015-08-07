@@ -21,6 +21,7 @@ enum
 };
 #define tracepoint() debugf("tracepoint: %s, %d.\n", __FILE__, __LINE__)
 bool setPrintLogLevel(int logLevel);
+bool initPrintLogger();
 int debugf(const char* fmt, ... );
 int infof(const char* fmt, ...);
 int tracef(const char* fmt, ...);

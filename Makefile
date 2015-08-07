@@ -21,12 +21,11 @@ endif
 #LIBĿ¼
 DEPEND_LIB_DIR = Lib/$(PLAT)
 
-SRC_DIR = Src/Common
-
 ifneq ($(test), )
 ifeq ($(test), DEVICE)
 TEST = Device
-SRC_DIR += Src/Device \
+SRC_DIR += Src/Common \
+		  Src/Device \
 		  Src/Device/RegProxy \
 		  Src/Device/DevController \
 		  Src/Device/RPCServer \
@@ -35,7 +34,8 @@ SRC_DIR += Src/Device \
 else
 ifeq ($(test), SERVER)
 TEST = TransmitServer
-SRC_DIR += Src/TransmitServer \
+SRC_DIR += Src/Common \
+		   Src/TransmitServer \
 		   Src/TransmitServer/RegServer \
 		   Src/TransmitServer/HTTPServer \
 		   Src/TransmitServer/HTTPSAcceptor

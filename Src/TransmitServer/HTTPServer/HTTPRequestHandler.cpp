@@ -152,17 +152,17 @@ void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerRe
 	res = req->response;
 	if(res.isNull())
 	{
-		warnf("%s, %d: Request timeout.\n", __FILE__, __LINE__);
+		warnf("%s, %d: Request timeout.", __FILE__, __LINE__);
 		DynamicStruct result = *obj;
 		result[KEY_RESULT_STR] = RESULT_FAIL_STR;
 		result[KEY_DETAIL_STR] = "timeout";
-		infof("%s, %d: Send Http response[%s].\n", __FILE__, __LINE__, result.toString().c_str());
+		infof("%s, %d: Send Http response[%s].", __FILE__, __LINE__, result.toString().c_str());
 		response.sendBuffer(result.toString().c_str(), result.toString().length());
 	}
 	else
 	{
 		DynamicStruct result = *res;
-		infof("%s, %d: Send Http response[%s].\n", __FILE__, __LINE__, result.toString().c_str());
+		infof("%s, %d: Send Http response[%s].", __FILE__, __LINE__, result.toString().c_str());
 		response.sendBuffer(result.toString().c_str(), result.toString().length());
 	}
 	res = NULL;
