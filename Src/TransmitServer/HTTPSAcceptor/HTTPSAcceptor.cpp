@@ -84,6 +84,7 @@ bool CHTTPSAcceptor::start()
 	m_pollerIn.start(pollerIn);
 	infof("%s, %d: HTTPS acceptor start successfully.", __FILE__, __LINE__);
 	infof("%s, %d: HTTPS acceptor port:%d", __FILE__, __LINE__, m_port);
+	infof("%s, %d: HTTPS cert:%s, privkey:%s", __FILE__, __LINE__, cert.c_str(), privkey.c_str());
 	return true;
 }
 
