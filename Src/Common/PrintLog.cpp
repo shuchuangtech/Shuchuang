@@ -2,14 +2,15 @@
 #include <stdarg.h>
 #include "Poco/Timestamp.h"
 #include "Poco/DateTime.h"
+#include "Poco/Timezone.h"
 #include "Poco/Exception.h"
 #include "Poco/Logger.h"
 #include "Poco/FileChannel.h"
 #include "Poco/AutoPtr.h"
 
-static Poco::AutoPtr<Poco::FileChannel> pChannel;
+static Poco::AutoPtr<Poco::FileChannel> s_pChannel;
 static int s_printLogLevel = LEVEL_DEBUG;
-
+static int s_timeDiff = 0;
 inline void set_console_color(int c)
 {
 	fprintf(stdout, "\033[%d;40m", c);
@@ -22,13 +23,14 @@ inline void reset_console_color()
 
 bool initPrintLogger()
 {
-	pChannel = new Poco::FileChannel;
-	pChannel->setProperty("path", "serverlog");
-	pChannel->setProperty("rotation", "50 M");
-	pChannel->setProperty("archive", "timestamp");
-	pChannel->setProperty("purgeAge", "7 days");
-	pChannel->setProperty("flush", "false");
-	Poco::Logger::root().setChannel(pChannel);
+	s_pChannel = new Poco::FileChannel;
+	s_pChannel->setProperty("path", "serverlog");
+	s_pChannel->setProperty("rotation", "50 M");
+	s_pChannel->setProperty("archive", "timestamp");
+	s_pChannel->setProperty("purgeAge", "7 days");
+	s_pChannel->setProperty("flush", "false");
+	Poco::Logger::root().setChannel(s_pChannel);
+	s_timeDiff = Poco::Timezone::utcOffset();
 	return true;
 }
 
@@ -53,6 +55,7 @@ bool setPrintLogLevel(int logLevel)
 	try{	\
 	Poco::Timestamp t;	\
 	Poco::DateTime dt(t);	\
+	dt.makeLocal(s_timeDiff); \
 	n = snprintf(buffer, sizeof(buffer) - 1, "%02d-%02d %02d:%02d:%02d|", dt.month(), dt.day(), dt.hour(), dt.minute(), dt.second()); \
 	}	\
 	catch(Poco::Exception& e){	\
@@ -62,7 +65,7 @@ bool setPrintLogLevel(int logLevel)
 	va_start(ap, fmt); \
 	n += vsnprintf(buffer + n, sizeof(buffer) - 1 - n, fmt, ap); \
 	va_end(ap);	\
-	Poco::Logger::get("Logger").information(buffer); \
+	Poco::Logger::get("root").information(buffer); \
 	n += snprintf(buffer + n, sizeof(buffer) - 1 - n, "\n"); \
 	fputs(buffer, stdout); \
 	reset_console_color();\
