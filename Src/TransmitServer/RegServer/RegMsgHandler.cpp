@@ -127,7 +127,7 @@ void CRegMsgHandler::runTask()
 	}
 }
 
-int CRegMsgHandler::getId()
+UInt64 CRegMsgHandler::getId()
 {
 	return m_id;
 }

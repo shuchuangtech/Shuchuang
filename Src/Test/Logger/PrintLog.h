@@ -19,7 +19,7 @@ enum
 	COLOR_TRACE = 37,
 	COLOR_DEBUG = 36
 };
-#define tracepoint() debugf("tracepoint: %s, %d.", __FILE__, __LINE__)
+#define tracepoint() debugf("tracepoint: %s, %d.\n", __FILE__, __LINE__)
 bool setPrintLogLevel(int logLevel);
 bool initPrintLogger();
 int debugf(const char* fmt, ... );

@@ -11,6 +11,8 @@ int main(int argc, char** argv)
 {
 	//setPrintLogLevel(LEVEL_INFO);
 	initPrintLogger();
+	infof("\n\n=================================================================");
+	infof("TransmitServer started now.");
 	CConfigManager* config = CConfigManager::instance();
 	config->init("./Config");
 	CDeviceManager* device_manager = CDeviceManager::instance();

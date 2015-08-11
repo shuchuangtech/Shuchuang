@@ -293,7 +293,7 @@ void CRegServer::handleSslFinish(TaskFinishedNotification* pNf)
 	if(p)
 	{
 		CRegMsgHandler* regMsgHandler = (CRegMsgHandler*)p->task();
-		int id = regMsgHandler->getId();
+		UInt64 id = regMsgHandler->getId();
 		JSON::Object::Ptr pObj = regMsgHandler->getResult();
 		DynamicStruct ds = *pObj;
 		//delete regMsgHandler;
@@ -315,7 +315,7 @@ void CRegServer::handleRegFinish(TaskFinishedNotification* pNf)
 	if(p)
 	{
 		CRegMsgHandler* regMsgHandler = (CRegMsgHandler*)p->task();
-		int reg_id = regMsgHandler->getId();
+		UInt64 reg_id = regMsgHandler->getId();
 		JSON::Object::Ptr pObj = regMsgHandler->getResult();
 		if(pObj.isNull())
 		{

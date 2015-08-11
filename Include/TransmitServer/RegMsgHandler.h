@@ -16,11 +16,11 @@ public:
 	void runTask();
 	bool setParam(UInt64 id, const char* param, int paramLenth, StreamSocket sock);
 	bool setRequestInfo(RequestInfo* request);
-	int getId();
+	UInt64 getId();
 	JSON::Object::Ptr getResult();
 private:
 	int m_type;
-	int m_id;
+	UInt64 m_id;
 	JSON::Object::Ptr m_param;
 	JSON::Object::Ptr m_result;
 	char* m_buf;
