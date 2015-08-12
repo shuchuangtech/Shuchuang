@@ -348,7 +348,6 @@ void CRegServer::handleRegFinish(TaskFinishedNotification* pNf)
 			SocketTime* pReg = it->second;
 			StreamSocket ss(pReg->socket);
 			ss.sendBytes(ds.toString().c_str(), ds.toString().length());
-			tracef("%s, %d: Reg result sent[%s].", __FILE__, __LINE__, ds.toString().c_str());
 		}
 	}
 }
