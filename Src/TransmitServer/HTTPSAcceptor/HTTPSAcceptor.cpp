@@ -10,6 +10,7 @@ CHTTPSAcceptor::CHTTPSAcceptor()
 {
 	m_started = false;
 	m_port = 0;
+	m_http_port = 0;
 	m_ssl_acceptor = 0;
 	m_thread_pool = 0;
 	m_task_manager = 0;
@@ -62,6 +63,13 @@ bool CHTTPSAcceptor::start()
 			pConfig->set("privkey", privkey);
 			config->setConfig("HTTPSAcceptor", pConfig);
 		}
+	}
+
+	pConfig = NULL;
+	config->getConfig("HTTPServer", pConfig);
+	if(!pConfig.isNull())
+	{
+		m_http_port = pConfig->getValue<UInt16>("port");
 	}
 	Context::Ptr pContext = new Context(Context::TLSV1_SERVER_USE,
 									privkey,
@@ -155,7 +163,7 @@ void CHTTPSAcceptor::acceptor(Timer& timer)
 		}
 		if(!m_started)
 			break;
-		infof("%s, %d: https acceptor accept %s", __FILE__, __LINE__, clientAddress.toString().c_str());
+		infof("%s, %d: https acceptor accept %s, impl %lu", __FILE__, __LINE__, clientAddress.toString().c_str(), (UInt64)sOut.impl());
 		SocketNode* sn = new SocketNode();
 		sn->sockOut = sOut;
 		m_sock_out_map.insert(std::make_pair<UInt64, SocketNode*>((UInt64)sOut.impl(), sn));
@@ -222,7 +230,6 @@ void CHTTPSAcceptor::pollerOut(Timer& timer)
 		{
 			for(Socket::SocketList::iterator it = readList.begin(); it != readList.end(); it++)
 			{
-				tracepoint();
 				std::map<UInt64, SocketNode*>::iterator it_sock = m_sock_out_map.find((UInt64)((*it).impl()));
 				if(it_sock == m_sock_out_map.end())
 				{
@@ -253,6 +260,7 @@ void CHTTPSAcceptor::handleTask(TaskFinishedNotification* pNf)
 			SocketNode* sn = handler->getSocketNode();
 			if(!handler->getResult())
 			{
+				tracef("%s, %d: socket %lu closed.", __FILE__, __LINE__, (UInt64)sn->sockOut.impl());
 				sn->sockOut.close();
 				if(sn != NULL)
 					delete sn;

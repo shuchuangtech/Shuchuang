@@ -7,7 +7,7 @@
 #include "Poco/Semaphore.h"
 struct _RequestInfo
 {
-	_RequestInfo(Poco::UInt64 src, std::string uid, Poco::UInt64 t, Poco::JSON::Object::Ptr obj)
+	_RequestInfo(const Poco::UInt64 src, const std::string& uid, Poco::UInt64 t, Poco::JSON::Object::Ptr obj)
 		:src_id(src), uuid(uid), timeout(t), request(obj), response(NULL), sem(0, 1)
 	{
 	}

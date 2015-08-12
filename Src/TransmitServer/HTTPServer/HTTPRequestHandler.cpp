@@ -76,6 +76,7 @@ void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerRe
 		m_buf = new char[512];
 	memset(m_buf, 0, 512);
 	request.stream().getline(m_buf, 512, '\n');
+	infof("%s, %d: Receive HTTP request[%s]", __FILE__, __LINE__, m_buf);
 	JSON::Parser parser;
 	Dynamic::Var var;
 	try

@@ -513,8 +513,8 @@ void CRegServer::regAccept(Timer& timer)
 bool CRegServer::sendRequest(RequestInfo* request)
 {
 	DynamicStruct req = *(request->request);
-	tracef("%s, %d: SendRequest: src %lu, dst %s", __FILE__, __LINE__,  request->src_id, request->uuid.c_str());
-	tracef("%s, %d: request content: %s", __FILE__, __LINE__, req.toString().c_str());
+	UInt64 src = request->src_id;
+	std::string dst = request->uuid;
 	DynamicStruct ds = *(request->request);
 	CDeviceManager* dev_manager = CDeviceManager::instance();
 	DeviceInfo* dev = dev_manager->getDevice(request->uuid);	

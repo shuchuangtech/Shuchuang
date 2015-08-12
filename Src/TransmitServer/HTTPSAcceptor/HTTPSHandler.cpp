@@ -47,6 +47,7 @@ void CHTTPSHandler::runTask()
 		{
 			SocketAddress sa("127.0.0.1", m_http_port);
 			StreamSocket sIn(sa);
+			tracef("%s, %d: socket %lu connect to http server.", __FILE__, __LINE__, (UInt64)sIn.impl());
 			m_sn->sockIn = sIn;
 			sIn.sendBytes(buf, 1024);
 			m_result = true;
@@ -72,6 +73,8 @@ void CHTTPSHandler::runTask()
 		StreamSocket sOut(m_sn->sockOut);
 		sOut.sendBytes(buf, 1024);
 		sOut.close();
+		tracef("%s, %d: socket %lu closed.", __FILE__, __LINE__, (UInt64)sIn.impl());
+		tracef("%s, %d: socket %lu closed.", __FILE__, __LINE__, (UInt64)sOut.impl());
 	}
 	else
 	{
