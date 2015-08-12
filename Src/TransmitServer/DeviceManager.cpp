@@ -97,7 +97,7 @@ bool CDeviceManager::addDevice(const std::string uuid, UInt64 id, const std::str
 	token = DigestEngine::digestToHex(digest);
 	DeviceInfo* di = new DeviceInfo(uuid, id, devType, token);
 	m_device_map.insert(std::make_pair<std::string, DeviceInfo*>(uuid, di));
-	infof("%s, %d: Device added[%s:%lu]", __FILE__, __LINE__, uuid.c_str(), id);
+	infof("%s, %d: Device added[%s:%s]", __FILE__, __LINE__, uuid.c_str(), token.c_str());
 	m_mutex.unlock();
 	return true;
 }
@@ -146,7 +146,7 @@ bool CDeviceManager::deviceOnline(const std::string uuid, const std::string toke
 	it->second->online = true;
 	it->second->id = sock_id;
 	m_device_id_map.insert(std::make_pair<UInt64, std::string>(sock_id, uuid));
-	infof("%s, %d: Device[%s:%lu] online.", __FILE__, __LINE__, uuid.c_str(), sock_id);
+	infof("%s, %d: Device[%s] online.", __FILE__, __LINE__, uuid.c_str());
 	m_mutex.unlock();
 	return true;
 }

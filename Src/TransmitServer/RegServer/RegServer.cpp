@@ -304,7 +304,6 @@ void CRegServer::handleSslFinish(TaskFinishedNotification* pNf)
 			StreamSocket ss(pSsl->socket);
 			ss.sendBytes(ds.toString().c_str(), ds.toString().length());
 			removeSocket(0, it);
-			tracef("%s, %d: Ssl result sent[%s].", __FILE__, __LINE__, ds.toString().c_str());
 		}
 	}
 }
@@ -504,7 +503,6 @@ void CRegServer::regAccept(Timer& timer)
 		Timestamp t;
 		SocketTime* pReg = new SocketTime(ss, t);
 		Mutex::ScopedLock lock(m_reg_queue_mutex);
-		tracef("%s, %d: insert [%lu] to reg map", __FILE__, __LINE__, (UInt64)ss.impl());
 		m_pReg_map.insert(std::make_pair<UInt64, SocketTime*>((UInt64)ss.impl() ,pReg));
 		m_reg_sock_list.push_back(ss);
 	}
