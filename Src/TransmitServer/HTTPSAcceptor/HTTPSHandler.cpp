@@ -30,7 +30,16 @@ void CHTTPSHandler::runTask()
 		StreamSocket sOut(m_sn->sockOut);
 		while(sOut.poll(Timespan(0, 100), Socket::SELECT_READ) > 0)
 		{
-			int ret = sOut.receiveBytes(t_buf, 1024);
+			sOut.setReceiveTimeout(Timespan(10, 0));
+			int ret = 0;
+			try
+			{
+				ret = sOut.receiveBytes(t_buf, 1024);
+			}
+			catch(Exception& e)
+			{
+				warnf("%s, %d: HTTPS connection %s[%lu] receive timeout.", __FILE__, __LINE__, sOut.peerAddress().toString().c_str(), (UInt64)sOut.impl());
+			}
 			if(ret == 0)
 				break;
 			snprintf(buf + pos, 1023 - pos, "%s", t_buf);

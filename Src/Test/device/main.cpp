@@ -30,17 +30,28 @@ int main(int argc, char** argv)
 	ssl_buf["uuid"] = "hjhjhjhj";
 	ssl_buf["devType"] = "abc";
 	snprintf(buf, 511, "%s", ssl_buf.toString().c_str());
+	tracef("%s, %d: send buf: %s\n", __FILE__, __LINE__, buf);
 	ssl_sock->sendBytes(buf, 512);
 	memset(buf, 0, 512);
-	if(ssl_sock->poll(Timespan(3, 0), Socket::SELECT_READ) > 0)
+	if(ssl_sock->poll(Timespan(30, 0), Socket::SELECT_READ) > 0)
 	{
 		ssl_sock->receiveBytes(buf, 512);
+		tracef("%s, %d: receive buf: %s\n", __FILE__, __LINE__, buf);
 	}
 	ssl_sock->close();
 	delete ssl_sock;
 	pContext = NULL;
+	Dynamic::Var var;
 	JSON::Parser parser;
-	Dynamic::Var var = parser.parse(buf);
+	try
+	{
+		var = parser.parse(buf);
+	}
+	catch(Exception& e)
+	{
+		warnf("%s, %d: %s\n", __FILE__, __LINE__, e.message().c_str());
+		return 0;
+	}
 	JSON::Object::Ptr obj = var.extract<JSON::Object::Ptr>();
 	DynamicStruct ssl_recv = *obj;
 	std::string token = ssl_recv["token"];

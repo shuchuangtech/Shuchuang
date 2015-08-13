@@ -281,6 +281,7 @@ void CRegServer::sslHandler(Timer& timer)
 			std::map<UInt64, SocketTime*>::iterator it_temp = it_ssl++;
 			if(it_temp->second->time - now > 12 * checkPeriod)
 			{
+				warnf("%s, %d: Connection %s shut down by server.", __FILE__, __LINE__, it_temp->second->socket.peerAddress().toString().c_str());
 				removeSocket(0, it_temp);
 			}
 		}

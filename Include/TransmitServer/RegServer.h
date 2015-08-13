@@ -13,20 +13,10 @@
 #include "Poco/ThreadPool.h"
 #include "Poco/TaskNotification.h"
 #include "TransmitServer/RequestInfo.h"
+#include "TransmitServer/SocketTime.h"
 #include "TransmitServer/OfflineNotification.h"
 using namespace Poco;
 using namespace Poco::Net;
-struct _SocketTime
-{
-	_SocketTime(const StreamSocket& sock, const Timestamp& t)
-		:socket(sock), time(t)
-	{
-	}
-	StreamSocket socket;
-	Timestamp time;
-};
-typedef struct _SocketTime SocketTime;
-typedef struct _RequestInfo RequestInfo;
 class CRegServer
 {
 public:

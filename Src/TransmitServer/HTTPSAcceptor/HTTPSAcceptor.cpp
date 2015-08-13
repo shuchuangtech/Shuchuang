@@ -245,7 +245,7 @@ void CHTTPSAcceptor::pollerOut(Timer& timer)
 				}
 				m_task_manager->start(handler);
 			}
-		}
+		}//for select
 	}
 }
 
@@ -260,10 +260,16 @@ void CHTTPSAcceptor::handleTask(TaskFinishedNotification* pNf)
 			SocketNode* sn = handler->getSocketNode();
 			if(!handler->getResult())
 			{
-				tracef("%s, %d: socket %lu closed.", __FILE__, __LINE__, (UInt64)sn->sockOut.impl());
+				UInt64 impl = (UInt64)sn->sockOut.impl();
+				tracef("%s, %d: socket %s[%lu] closed.", __FILE__, __LINE__, sn->sockOut.peerAddress().toString().c_str(), impl);
+				std::map<UInt64, SocketNode*>::iterator it = m_sock_out_map.find(impl);
+				if(it != m_sock_out_map.end())
+					m_sock_out_map.erase(it);
 				sn->sockOut.close();
 				if(sn != NULL)
+				{
 					delete sn;
+				}
 			}
 			else
 			{
