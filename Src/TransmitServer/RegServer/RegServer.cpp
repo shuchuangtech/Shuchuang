@@ -16,10 +16,8 @@ CRegServer::CRegServer()
 	m_reg_port = 0;
 	m_ssl_sock = NULL;
 	m_reg_sock = NULL;
-	m_ssl_thread_pool = NULL;
-	m_reg_thread_pool = NULL;
-	m_ssl_task_manager = NULL;
-	m_reg_task_manager = NULL;
+	m_task_manager = NULL;
+	m_task_manager = NULL;
 	m_pSsl_map.clear();
 	m_pReg_map.clear();
 	m_request_map.clear();
@@ -29,14 +27,10 @@ CRegServer::CRegServer()
 
 CRegServer::~CRegServer()
 {
-	if(m_ssl_thread_pool != NULL)
-		delete m_ssl_thread_pool;
-	if(m_ssl_task_manager != NULL)
-		delete m_ssl_task_manager;
-	if(m_reg_thread_pool != NULL)
-		delete m_reg_thread_pool;
-	if(m_reg_task_manager != NULL)
-		delete m_reg_task_manager;
+	if(m_thread_pool != NULL)
+		delete m_thread_pool;
+	if(m_task_manager != NULL)
+		delete m_task_manager;
 }
 
 void CRegServer::start()
@@ -76,16 +70,11 @@ void CRegServer::start()
 			config->setConfig("RegServer", pConfig);
 		}
 	}
-	std::string ssl_tp_name = "SslThreadPool";
-	std::string reg_tp_name = "RegThreadPool";
-	m_ssl_thread_pool = new ThreadPool(ssl_tp_name);
-	m_ssl_task_manager = new TaskManager(*m_ssl_thread_pool);
-	m_reg_thread_pool = new ThreadPool(reg_tp_name);
-	m_reg_task_manager = new TaskManager(*m_reg_thread_pool);
-	Observer<CRegServer, TaskFinishedNotification> ssl_observer(*this, &CRegServer::handleSslFinish);
-	m_ssl_task_manager->addObserver(ssl_observer);
-	Observer<CRegServer, TaskFinishedNotification> reg_observer(*this, &CRegServer::handleRegFinish);
-	m_reg_task_manager->addObserver(reg_observer);
+	std::string tp_name = "RegThreadPool";
+	m_thread_pool = new ThreadPool(tp_name);
+	m_task_manager = new TaskManager(*m_thread_pool);
+	Observer<CRegServer, TaskFinishedNotification> task_observer(*this, &CRegServer::handleTaskFinish);
+	m_task_manager->addObserver(task_observer);
 	Observer<CRegServer, OfflineNotification> device_observer(*this, &CRegServer::handleOffline);
 	CDeviceManager* device_manager = CDeviceManager::instance();
 	device_manager->addObserver(device_observer);
@@ -94,12 +83,16 @@ void CRegServer::start()
 	m_started = true;
 	TimerCallback<CRegServer> sslCallback(*this, &CRegServer::sslAccept);
 	m_ssl_accept.start(sslCallback);
-	
+
+	TimerCallback<CRegServer> httpCallback(*this, &CRegServer::httpRequestTimer);
+	m_http_request_timer.start(httpCallback);
+
 	TimerCallback<CRegServer> sslHanCall(*this, &CRegServer::sslHandler);
 	m_ssl_handler.start(sslHanCall);
 
 	TimerCallback<CRegServer> regCallback(*this, &CRegServer::regAccept);
 	m_reg_accept.start(regCallback);
+
 	TimerCallback<CRegServer> regHanCall(*this, &CRegServer::regHandler);
 	m_reg_handler.start(regHanCall);
 	infof("%s, %d: Register server start successfully.", __FILE__, __LINE__);
@@ -115,12 +108,12 @@ void CRegServer::stop()
 	m_reg_accept.stop();
 	m_ssl_handler.stop();
 	m_reg_handler.stop();
+	m_http_request_timer.stop();
 	m_ssl_sock->close();
 	delete m_ssl_sock;
 	m_reg_sock->close();
 	delete m_reg_sock;
-	m_ssl_thread_pool->stopAll();
-	m_reg_thread_pool->stopAll();
+	m_thread_pool->stopAll();
 	infof("%s, %d: Register server stop successfully.", __FILE__, __LINE__);
 }
 
@@ -173,12 +166,14 @@ void CRegServer::handleOffline(OfflineNotification* pNf)
 	if(p)
 	{
 		UInt64 impl = p->getID();
+		m_reg_queue_mutex.lock();
 		std::map<UInt64, SocketTime*>::iterator it = m_pReg_map.find(impl);
 		if(it != m_pReg_map.end())
 		{
 			debugf("%s, %d: Connection %s shutdown by server.", __FILE__, __LINE__, it->second->socket.peerAddress().toString().c_str());
 			removeSocket(1, it);
 		}
+		m_reg_queue_mutex.unlock();
 	}
 }
 
@@ -209,9 +204,7 @@ void CRegServer::sslAccept(Timer& timer)
 			}
 		}
 		if(!m_started)
-		{
 			break;
-		}
 		tracef("%s, %d: Ssl accept connection from %s.", __FILE__, __LINE__, clientAddress.toString().c_str());
 		Timestamp t;
 		SocketTime* pSsl = new SocketTime(ss, t);
@@ -223,8 +216,6 @@ void CRegServer::sslAccept(Timer& timer)
 
 void CRegServer::sslHandler(Timer& timer)
 {
-	Timestamp lastCheckTime;
-	Timestamp::TimeDiff checkPeriod = 5 * 1000 * 1000;
 	Socket::SocketList readList;
 	Socket::SocketList writeList;
 	Socket::SocketList errorList;
@@ -233,7 +224,6 @@ void CRegServer::sslHandler(Timer& timer)
 		m_ssl_queue_mutex.lock();
 		if(m_ssl_sock_list.empty())
 		{
-			//tracef("list size:%d\n", m_ssl_sock_list.size());
 			m_ssl_queue_mutex.unlock();
 			Thread::sleep(500);
 			continue;
@@ -249,107 +239,93 @@ void CRegServer::sslHandler(Timer& timer)
 		{
 			for(Socket::SocketList::iterator it = readList.begin(); it != readList.end(); it++)
 			{
-				//handle
-				char buf[512] = {0, };
-				StreamSocket ss((*it));
-				UInt64 impl = (UInt64)it->impl();
-				std::map<UInt64, SocketTime*>::iterator it_ssl = m_pSsl_map.find(impl);
-				if(ss.receiveBytes(buf, sizeof(buf)) > 0)
+				m_ssl_queue_mutex.lock();
+				Socket::SocketList::iterator it_ssl = find(m_ssl_sock_list.begin(), m_ssl_sock_list.end(), *it);
+				if(it_ssl != m_ssl_sock_list.end())
+				{
+					m_ssl_sock_list.erase(it_ssl);
+				}
+				std::map<UInt64, SocketTime*>::iterator it_pSsl = m_pSsl_map.find((UInt64)(*it).impl());
+				if(it_pSsl != m_pSsl_map.end())
 				{
 					CRegMsgHandler* msgHandler = new CRegMsgHandler(0);
-					msgHandler->setParam(impl, buf, sizeof(buf), ss);
-					m_ssl_task_manager->start(msgHandler);
-					Timestamp t;
-					if(it_ssl != m_pSsl_map.end())
-					{
-						it_ssl->second->time = t;
-					}
+					msgHandler->setSocket(it_pSsl->second);
+					m_pSsl_map.erase(it_pSsl);
+					m_task_manager->start(msgHandler);
+				}
+				m_ssl_queue_mutex.unlock();
+			}// for readList
+		}//select ret
+	}
+}
+
+void CRegServer::handleTaskFinish(TaskFinishedNotification* pNf)
+{
+	AutoPtr<TaskNotification> p(pNf);
+	if(p)
+	{
+		CRegMsgHandler* regMsgHandler = (CRegMsgHandler*)p->task();
+		int type = regMsgHandler->getType();
+		if(type == 0)
+			//ssl
+		{
+			SocketTime* st = regMsgHandler->getSocket();
+			StreamSocket ss = st->socket;
+			ss.close();
+			delete st;
+		}
+		else if(type == 1)
+			//reg
+		{
+			UInt64 req_id = regMsgHandler->getRequestID();
+			SocketTime* st = regMsgHandler->getSocket();
+			if(req_id == 0)
+				//reg request
+			{
+				if(!regMsgHandler->socketReceive())
+				{
+					//disconnect
+					st->socket.close();
+					delete st;
+					st = NULL;
 				}
 				else
 				{
-					tracef("%s, %d: Client %s disconnect.",__FILE__, __LINE__,  (it->peerAddress()).toString().c_str());
-					if(it_ssl != m_pSsl_map.end())
-						removeSocket(0, it_ssl);
-				}	
-			}// for readList
-		}//select ret
-		Timestamp now;
-		if(now - lastCheckTime < checkPeriod)
-			continue;
-		for(std::map<UInt64, SocketTime*>::iterator it_ssl = m_pSsl_map.begin(); it_ssl != m_pSsl_map.end(); )
-		{
-			std::map<UInt64, SocketTime*>::iterator it_temp = it_ssl++;
-			if(it_temp->second->time - now > 12 * checkPeriod)
-			{
-				warnf("%s, %d: Connection %s shut down by server.", __FILE__, __LINE__, it_temp->second->socket.peerAddress().toString().c_str());
-				removeSocket(0, it_temp);
-			}
-		}
-	}
-}
-
-void CRegServer::handleSslFinish(TaskFinishedNotification* pNf)
-{
-	AutoPtr<TaskNotification> p(pNf);
-	if(p)
-	{
-		CRegMsgHandler* regMsgHandler = (CRegMsgHandler*)p->task();
-		UInt64 id = regMsgHandler->getId();
-		JSON::Object::Ptr pObj = regMsgHandler->getResult();
-		DynamicStruct ds = *pObj;
-		//delete regMsgHandler;
-		std::map<UInt64, SocketTime*>::iterator it = m_pSsl_map.find(id);
-		if(it != m_pSsl_map.end())
-		{
-			SocketTime* pSsl = it->second;
-			StreamSocket ss(pSsl->socket);
-			ss.sendBytes(ds.toString().c_str(), ds.toString().length());
-			removeSocket(0, it);
-		}
-	}
-}
-
-void CRegServer::handleRegFinish(TaskFinishedNotification* pNf)
-{
-	AutoPtr<TaskNotification> p(pNf);
-	if(p)
-	{
-		CRegMsgHandler* regMsgHandler = (CRegMsgHandler*)p->task();
-		UInt64 reg_id = regMsgHandler->getId();
-		JSON::Object::Ptr pObj = regMsgHandler->getResult();
-		if(pObj.isNull())
-		{
-				errorf("%s, %d: Not supposed to be here.", __FILE__, __LINE__);
-			return;
-		}
-		DynamicStruct ds = *pObj;
-		if(ds.contains(KEY_TYPE_STR) && ds[KEY_TYPE_STR].toString() == TYPE_RESPONSE_STR)
-		{
-			UInt64 request_id;
-			request_id = ds["requestid"];
-			m_request_queue_mutex.lock();
-			std::map<UInt64, RequestInfo*>::iterator it_req = m_request_map.find(request_id);
-			if(it_req != m_request_map.end())
-			{
-				RequestInfo* request = it_req->second;
-				m_request_map.erase(it_req);
-				request->response = pObj;
-				request->sem.set();
+					m_reg_queue_mutex.lock();
+					m_reg_sock_list.push_back(st->socket);
+					UInt64 impl = (UInt64)st->socket.impl();
+					m_pReg_map.insert(std::make_pair<UInt64, SocketTime*>(impl, st));
+					m_reg_queue_mutex.unlock();
+				}
 			}
 			else
+				//http response
 			{
-				errorf("%s, %d: Not supposed to be here.", __FILE__, __LINE__);
+				m_reg_queue_mutex.lock();
+				m_reg_sock_list.push_back(st->socket);
+				UInt64 impl = (UInt64)st->socket.impl();
+				m_pReg_map.insert(std::make_pair<UInt64, SocketTime*>(impl, st));
+				m_reg_queue_mutex.unlock();
+				tracepoint();
+				if(req_id < 0)
+				{
+					warnf("%s, %d: Request id error.", __FILE__, __LINE__);
+				}
+				else
+				{
+					m_request_queue_mutex.lock();
+					std::map<UInt64, RequestInfo*>::iterator it_req = m_request_map.find(req_id);
+					if(it_req != m_request_map.end())
+					{
+						RequestInfo* request = it_req->second;
+						m_request_map.erase(it_req);
+						request->response = regMsgHandler->getHTTPResponse(); 
+						request->sem.set();
+					}
+					m_request_queue_mutex.unlock();
+				}
 			}
-			m_request_queue_mutex.unlock();
-			return;
-		}
-		std::map<UInt64, SocketTime*>::iterator it = m_pReg_map.find(reg_id);
-		if(it != m_pReg_map.end())
-		{
-			SocketTime* pReg = it->second;
-			StreamSocket ss(pReg->socket);
-			ss.sendBytes(ds.toString().c_str(), ds.toString().length());
-		}
+		}//type == 1
 	}
 }
 
@@ -388,8 +364,6 @@ bool CRegServer::removeSocket(int choice, std::map<UInt64, SocketTime*>::iterato
 
 void CRegServer::regHandler(Timer& timer)
 {
-	Timestamp lastCheckTime;
-	Timestamp::TimeDiff checkPeriod = 5 * 1000 * 1000;
 	Socket::SocketList readList;
 	Socket::SocketList writeList;
 	Socket::SocketList errorList;
@@ -413,46 +387,41 @@ void CRegServer::regHandler(Timer& timer)
 		{
 			for(Socket::SocketList::iterator it = readList.begin(); it != readList.end(); it++)
 			{
-				char buf[512] = {0, };
 				StreamSocket ss((*it));
+				m_reg_queue_mutex.lock();
+				Socket::SocketList::iterator it_reg = find(m_reg_sock_list.begin(), m_reg_sock_list.end(), ss);
+				if(it_reg != m_reg_sock_list.end())
+				{
+					m_reg_sock_list.erase(it_reg);
+				}
 				UInt64 impl = (UInt64)it->impl();
-				std::map<UInt64, SocketTime*>::iterator it_reg = m_pReg_map.find(impl);
-				if(ss.receiveBytes(buf, sizeof(buf)) > 0)
+				std::map<UInt64, SocketTime*>::iterator it_pReg = m_pReg_map.find(impl);
+				if(it_pReg != m_pReg_map.end())
 				{
 					CRegMsgHandler* msgHandler = new CRegMsgHandler(1);
-					msgHandler->setParam(impl, buf, sizeof(buf), ss);
-					m_reg_task_manager->start(msgHandler);
-					Timestamp t;
-					if(it_reg != m_pReg_map.end())
-					{
-						it_reg->second->time = t;
-					}
+					msgHandler->setSocket(it_pReg->second);
+					m_pReg_map.erase(it_pReg);
+					m_task_manager->start(msgHandler);
 				}
-				else
-				{
-					infof("%s, %d: Client %s disconnect.", __FILE__, __LINE__, (it->peerAddress()).toString().c_str());
-					CDeviceManager* dev_manager = CDeviceManager::instance();
-					dev_manager->deviceOffline(impl);
-					if(it_reg != m_pReg_map.end())
-					{
-						removeSocket(1, it_reg);
-					}
-				}
+				m_reg_queue_mutex.unlock();
 			}// for readList
 		}//select ret
+	}
+}
+
+void CRegServer::httpRequestTimer(Timer& timer)
+{
+	Timestamp lastCheckTime;
+	Timestamp::TimeDiff checkPeriod = 5 * 1000 * 1000;
+	while(m_started)
+	{
 		Timestamp now;
 		if(now - lastCheckTime < checkPeriod)
-			continue;
-		Timestamp t;
-		lastCheckTime = t;
-		for(std::map<UInt64, SocketTime*>::iterator it_reg = m_pReg_map.begin(); it_reg != m_pReg_map.end(); )
 		{
-			std::map<UInt64, SocketTime*>::iterator it_temp = it_reg++;
-			if(it_temp->second->time - now > 12 * checkPeriod)
-			{
-				removeSocket(1, it_temp);
-			}
+			Thread::sleep(5000);
+			continue;
 		}
+		lastCheckTime = now;
 		m_request_queue_mutex.lock();
 		for(std::map<UInt64, RequestInfo*>::iterator it = m_request_map.begin(); it != m_request_map.end(); )
 		{
@@ -460,7 +429,7 @@ void CRegServer::regHandler(Timer& timer)
 			std::map<UInt64, RequestInfo*>::iterator itemp = it++;
 			if(now - itemp->first > itemp->second->timeout)
 			{
-				infof("%s, %d: Request %lu timeout.", __FILE__, __LINE__, itemp->first);
+				infof("%s, %d: Request %lu timeout.", __FILE__, __LINE__, itemp->second->src_id);
 				itemp->second->sem.set();
 				m_request_map.erase(itemp);
 			}

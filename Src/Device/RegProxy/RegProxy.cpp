@@ -8,6 +8,7 @@
 #include "Poco/JSON/Parser.h"
 #include "Poco/Dynamic/Var.h"
 #include "Poco/Observer.h"
+#include "Poco/MD5Engine.h"
 using namespace Poco;
 using namespace Poco::Net;
 CRegProxy::CRegProxy()
@@ -124,7 +125,7 @@ bool CRegProxy::getRegisterToken()
 		return false;
 	}
 	tracef("%s, %d: Connect to the server successfully.\n", __FILE__, __LINE__);
-	char buf[128] = {0, };
+	char buf[512] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_GETTOKEN);
 	infof("%s, %d: Get token buf: %s.\n", __FILE__, __LINE__, buf);
 	if(m_ssl_sock->sendBytes(buf, sizeof(buf)) > 0)
@@ -148,10 +149,25 @@ bool CRegProxy::getRegisterToken()
 			Dynamic::Var var = parser.parse(buf);
 			JSON::Object::Ptr obj = var.extract<JSON::Object::Ptr>();
 			DynamicStruct ds = *obj;
-			if(ds.contains("result") && ds.contains("token") && ds["result"].toString() == "good")
-				m_token = ds["token"].toString();
-			else
+			if(!ds.contains(KEY_TYPE_STR) || ds[KEY_TYPE_STR].toString() != TYPE_RESPONSE_STR)
 				return false;
+			if(!ds.contains(KEY_RESULT_STR) || ds[KEY_RESULT_STR] != RESULT_GOOD_STR)
+				return false;
+			if(!ds.contains(KEY_PARAM_STR))
+				return false;
+			var = ds[KEY_PARAM_STR];
+			DynamicStruct param;
+			try
+			{
+				param = var.extract<DynamicStruct>();
+			}
+			catch(Exception& e)
+			{
+				return false;
+			}
+			if(!param.contains(PARAM_TOKEN_STR))
+				return false;
+			m_token = param[PARAM_TOKEN_STR].toString();
 			return true;
 		}
 	}
@@ -190,7 +206,7 @@ bool CRegProxy::registerToServer()
 		return false;
 	}
 	tracef("%s, %d: Connect to the server successfully.\n", __FILE__, __LINE__);
-	char buf[128] = {0, };
+	char buf[512] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_REGISTER);
 	infof("%s, %d: Register buf: %s.\n", __FILE__, __LINE__, buf);
 	if(m_sock->sendBytes(buf, sizeof(buf)) > 0)
@@ -247,19 +263,48 @@ bool CRegProxy::registerToServer()
 void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 {
 	DynamicStruct ds;
+	ds[KEY_TYPE_STR] = TYPE_REQUEST_STR;
 	switch(ra)
 	{
 		case ACTION_GETTOKEN :
-			ds["action"] = "gettoken";
-			ds["key"] = "alpha2015";
+		{
+			DynamicStruct param;
+			ds[KEY_ACTION_STR] = "server.token";
+			Timestamp t;
+			UInt64 tms = t.epochMicroseconds();
+			char tms_str[32];
+			snprintf(tms_str, 31, "%llu", tms);
+			std::string key = "alpha2015";
+			key += tms_str;
+			MD5Engine md5;
+			md5.update(key);
+			const DigestEngine::Digest& digest = md5.digest();
+			std::string md5key = DigestEngine::digestToHex(digest);
+			param[PARAM_KEY_STR] = md5key;
+			param[PARAM_TIMESTAMP_STR] = tms_str;
+			param[PARAM_DEV_NAME_STR] = "lock1";
+			param[PARAM_DEV_TYPE_STR] = "sc-01";
+			param[PARAM_UUID_STR] = "SC00000001";
+			ds[KEY_PARAM_STR] = param;
 			break;
-		case ACTION_REGISTER : 
-			ds["action"] = "register";
-			ds["token"] = m_token;
+		}
+		case ACTION_REGISTER :
+		{
+			ds[KEY_ACTION_STR] = "server.register";
+			DynamicStruct param;
+			param[PARAM_TOKEN_STR] = m_token;
+			param[PARAM_UUID_STR] = "SC00000001";
+			ds[KEY_PARAM_STR] = param;
 			break;
+		}
 		case ACTION_KEEPALIVE :
-			ds["action"] = "keepalive";
+		{
+			ds[KEY_ACTION_STR] = "server.keepalive";
+			DynamicStruct param;
+			param[PARAM_UUID_STR] = "SC00000001";
+			ds[KEY_PARAM_STR] = param;
 			break;
+		}
 		default :
 			break;
 	}
@@ -379,7 +424,7 @@ void CRegProxy::onTimer(Timer& timer)
 
 bool CRegProxy::sendKeepAlive()
 {
-	char buf[128] = {0, };
+	char buf[512] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_KEEPALIVE);
 	if(m_sock->sendBytes(buf, sizeof(buf)) > 0 )
 	{

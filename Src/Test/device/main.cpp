@@ -8,6 +8,8 @@
 #include "Poco/Dynamic/Struct.h"
 #include "Poco/Thread.h"
 #include "Common/PrintLog.h"
+#include "Poco/Timestamp.h"
+#include "Poco/MD5Engine.h"
 using namespace Poco;
 using namespace Poco::Net;
 int main(int argc, char** argv)
@@ -21,14 +23,37 @@ int main(int argc, char** argv)
 	SocketAddress reg_addr(host, reg_port);
 	Context::Ptr pContext = new Context(Context::TLSV1_CLIENT_USE, "", Context::VERIFY_NONE);
 	SecureStreamSocket* ssl_sock = new SecureStreamSocket(pContext);
-	ssl_sock->connect(ssl_addr, Timespan(3, 0));
+	try
+	{
+		ssl_sock->connect(ssl_addr, Timespan(3, 0));
+	}
+	catch(Exception& e)
+	{
+		warnf("%s, %d: message: %s.", __FILE__, __LINE__, e.message().c_str());
+	}
+	tracef("%s, %d: now sleep.", __FILE__, __LINE__);
+	Thread::sleep(3 * 1000);
 	char buf[512] = {0, };
 	DynamicStruct ssl_buf;
 	ssl_buf["type"] = "request";
-	ssl_buf["action"] = "gettoken";
-	ssl_buf["key"] = "alpha2015";
-	ssl_buf["uuid"] = "hjhjhjhj";
-	ssl_buf["devType"] = "abc";
+	ssl_buf["action"] = "server.token";
+	DynamicStruct ssl_param;
+	Timestamp t;
+	UInt64 tms = t.epochMicroseconds();
+	char tms_str[32] = {0, };
+	snprintf(tms_str, 31, "%llu", tms);
+	ssl_param["timestamp"] = tms_str;
+	std::string key = "alpha2015";
+	key += tms_str;
+	MD5Engine md5;
+	md5.update(key);
+	const DigestEngine::Digest& digest = md5.digest();
+	std::string md5key = DigestEngine::digestToHex(digest);
+	ssl_param["key"] = md5key;
+	ssl_param["uuid"] = "hjhjhjhj";
+	ssl_param["dev_type"] = "abc";
+	ssl_param["dev_name"] = "cba";
+	ssl_buf["param"] = ssl_param;
 	snprintf(buf, 511, "%s", ssl_buf.toString().c_str());
 	tracef("%s, %d: send buf: %s\n", __FILE__, __LINE__, buf);
 	ssl_sock->sendBytes(buf, 512);

@@ -3,28 +3,39 @@
 #include "Poco/Task.h"
 #include "Poco/JSON/Object.h"
 #include "Poco/Net/StreamSocket.h"
-#include "TransmitServer/RequestInfo.h"
+#include "Poco/Timespan.h"
+#include "TransmitServer/SocketTime.h"
 using namespace Poco;
 using namespace Poco::Net;
-#define SERVER_KEY_STR alpha2015
+#define SERVER_KEY_STR "alpha2015"
 class CRegMsgHandler : public Task
 {
 public:
 	CRegMsgHandler(int type);
 	//0 ssl, 1 reg
 	~CRegMsgHandler();
-	void runTask();
-	bool setParam(UInt64 id, const char* param, int paramLenth, StreamSocket sock);
-	bool setRequestInfo(RequestInfo* request);
-	UInt64 getId();
-	JSON::Object::Ptr getResult();
+	void				runTask();
+	bool				setSocket(SocketTime* st);
+	int					getType();
+	SocketTime*			getSocket();
+	UInt64				getRequestID();
+	JSON::Object::Ptr	getHTTPResponse();
+	bool				socketReceive();
 private:
-	int m_type;
-	UInt64 m_id;
-	JSON::Object::Ptr m_param;
-	JSON::Object::Ptr m_result;
-	char* m_buf;
-	StreamSocket* m_socket;
+	bool				receiveBytes(char* buf, int length, Timespan timeout);
+	bool				parseRequest(char* buf, JSON::Object::Ptr& request);
+	bool				handleRegMsg(JSON::Object::Ptr request, JSON::Object::Ptr result);
+	bool				handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr result);
+	bool				verifyKey(std::string timestamp, std::string skey, std::string key);
+	bool				formatCheck(JSON::Object::Ptr request, JSON::Object::Ptr result, DynamicStruct& param);
+	bool				parseAction(std::string action, std::string& component, std::string& method);
+	//variables
+	bool				m_receive;
+	UInt64				m_req_id;
+	int					m_type;
+	char*				m_buf;
+	SocketTime*			m_socket;
+	JSON::Object::Ptr	m_http_response;
 };
 #endif
 

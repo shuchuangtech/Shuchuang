@@ -34,8 +34,8 @@ public:
 	void sslHandler(Timer& timer);
 	void regAccept(Timer& timer);
 	void regHandler(Timer& timer);
-	void handleSslFinish(TaskFinishedNotification* pNf);
-	void handleRegFinish(TaskFinishedNotification* pNf);
+	void httpRequestTimer(Timer& timer);
+	void handleTaskFinish(TaskFinishedNotification* pNf);
 	bool sendRequest(RequestInfo* request);
 	void handleOffline(OfflineNotification* pNf);
 private:
@@ -50,6 +50,7 @@ private:
 	Timer					m_reg_accept;
 	Timer					m_ssl_handler;
 	Timer					m_reg_handler;
+	Timer					m_http_request_timer;
 	SecureServerSocket*		m_ssl_sock;
 	ServerSocket*			m_reg_sock;
 	std::map<UInt64, SocketTime*>	m_pSsl_map;
@@ -60,10 +61,8 @@ private:
 	Mutex					m_ssl_queue_mutex;
 	Mutex					m_reg_queue_mutex;
 	Mutex					m_request_queue_mutex;
-	TaskManager*			m_ssl_task_manager;
-	ThreadPool*				m_ssl_thread_pool;
-	TaskManager*			m_reg_task_manager;
-	ThreadPool*				m_reg_thread_pool;
+	TaskManager*			m_task_manager;
+	ThreadPool*				m_thread_pool;
 };
 #endif
 

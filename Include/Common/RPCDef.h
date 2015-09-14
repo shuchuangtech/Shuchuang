@@ -31,6 +31,9 @@ request
 #define PARAM_DEV_NAME_STR "dev_name"
 #define PARAM_DEV_TYPE_STR "dev_type"
 #define PARAM_STATE_STR "state"
+
+#define PARAM_TIMESTAMP_STR "timestamp"
+#define PARAM_KEY_STR "key"
 //Component
 #define COMPONENT_CONN_STR "conn"
 #define COMPONENT_USER_STR "user"
@@ -46,6 +49,9 @@ request
 #define DEVICE_METHOD_CLOSE "close"
 //server
 #define SERVER_METHOD_CHECK "check"
+#define SERVER_METHOD_TOKEN "token"
+#define SERVER_METHOD_REGISTER "register"
+#define SERVER_METHOD_KEEPALIVE "keepalive"
 //result>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #define RESULT_GOOD_STR "good"
 #define RESULT_FAIL_STR "failed"

@@ -196,7 +196,7 @@ bool CDeviceManager::deviceOffline(const UInt64 id)
 	}
 	delete it_dev->second;
 	m_device_map.erase(it_dev);
-	tracef("%s, %d: Device offline[%s:%d]", __FILE__, __LINE__, uuid.c_str(), id);
+	tracef("%s, %d: Device offline[%s]", __FILE__, __LINE__, uuid.c_str());
 	m_mutex.unlock();
 	return true;
 }

@@ -64,7 +64,7 @@ bool CHTTPRequestHandler::parseAction(std::string action, std::string& component
 		return false;
 	}
 	component = action.substr(0, pos);
-	method = action.substr(pos + 1, action.length() - pos -1);
+	method = action.substr(pos + 1, action.length() - pos - 1);
 	return true;
 }
 
