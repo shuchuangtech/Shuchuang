@@ -21,7 +21,7 @@ struct _DeviceInfo
 	UInt64			id;
 	std::string		devType;
 	std::string		token;
-	Timestamp		t;
+	Timestamp		time;
 	bool			online;
 };
 typedef struct _DeviceInfo DeviceInfo;

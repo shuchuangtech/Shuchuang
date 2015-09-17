@@ -49,6 +49,13 @@ bool CDeviceManager::stop()
 	{
 		m_thread.join();
 	}
+	tracef("%s, %d: Device manager clearing device info...", __FILE__, __LINE__);
+	for(DeviceMapIt it = m_device_map.begin(); it != m_device_map.end(); )
+	{
+		delete it->second;
+		it->second = NULL;
+		m_device_map.erase(it++);
+	}
 	infof("%s, %d: Device manager stop successfully.", __FILE__, __LINE__);
 	return true;
 }
@@ -65,13 +72,13 @@ void CDeviceManager::run()
 		{
 			DeviceMapIt itemp = it++;
 			DeviceInfo* di = itemp->second;
-			if(now - di->t > 6 * checkPeriod)
+			if(now - di->time > 6 * checkPeriod)
 			{
-				infof("%s, %d: Device[%s：%lu] offline.", __FILE__, __LINE__, di->uuid.c_str(), di->id);
 				m_device_map.erase(itemp);
 				m_device_id_map.erase(di->id);
 				m_noti_center->postNotification(new OfflineNotification(di->id, di->uuid));
 				delete di;
+				infof("%s, %d: Device[%s：%lu] offline.", __FILE__, __LINE__, di->uuid.c_str(), di->id);
 			}
 		}
 		m_mutex.unlock();
@@ -86,8 +93,10 @@ bool CDeviceManager::addDevice(const std::string uuid, UInt64 id, const std::str
 	if(it != m_device_map.end())
 	{
 		token = it->second->token;
+		Timestamp now;
+		it->second->time = now;
 		m_mutex.unlock();
-		return false;
+		return true;
 	}
 	UUIDGenerator gen;
 	UUID uid = gen.create();
@@ -117,7 +126,7 @@ bool CDeviceManager::keepAliveDevice(const std::string uuid)
 		return false;
 	}
 	Timestamp time;
-	it->second->t = time;
+	it->second->time = time;
 	infof("%s, %d: Device[%s] keepalive successfully.", __FILE__, __LINE__, uuid.c_str());
 	m_mutex.unlock();
 	return true;
@@ -134,6 +143,8 @@ bool CDeviceManager::deviceOnline(const std::string uuid, const std::string toke
 	}
 	if(it->second->online)
 	{
+		Timestamp now;
+		it->second->time = now;
 		m_mutex.unlock();
 		return true;
 	}
@@ -181,7 +192,6 @@ bool CDeviceManager::deviceOffline(const UInt64 id)
 	DeviceIdMapIt it = m_device_id_map.find(id);
 	if(it == m_device_id_map.end())
 	{
-		tracepoint();
 		m_mutex.unlock();
 		return true;
 	}
@@ -190,7 +200,6 @@ bool CDeviceManager::deviceOffline(const UInt64 id)
 	DeviceMapIt it_dev = m_device_map.find(uuid);
 	if(it_dev == m_device_map.end())
 	{
-		tracepoint();
 		m_mutex.unlock();
 		return true;
 	}

@@ -36,7 +36,6 @@ bool CRegMsgHandler::receiveBytes(char* buf, int length, Timespan timeout)
 		{
 			if(ss.receiveBytes(buf, length) <= 0)
 			{
-				infof("%s, %d: Client [%s] disconnected.", __FILE__, __LINE__, ss.peerAddress().toString().c_str());
 				if(m_type == 1 && m_socket->state == SocketTime::Connected)
 				{
 					CDeviceManager* dm = CDeviceManager::instance();
@@ -44,6 +43,7 @@ bool CRegMsgHandler::receiveBytes(char* buf, int length, Timespan timeout)
 					dm->deviceOffline(id);
 				}
 				m_socket->state = SocketTime::Disconnected;
+				infof("%s, %d: Client [%s] disconnected.", __FILE__, __LINE__, m_socket->saddr.toString().c_str());
 				return false;
 			}
 		}
@@ -246,7 +246,7 @@ void CRegMsgHandler::runTask()
 	if(!receiveBytes(m_buf, 512, Timespan(20, 0)))
 	{
 		m_receive = false;
-		delete m_buf;
+		delete[] m_buf;
 		m_buf = NULL;
 		return;
 	}
@@ -274,13 +274,13 @@ void CRegMsgHandler::runTask()
 			handleRegMsg(request, result);
 		}
 	}
-	delete m_buf;
+	delete[] m_buf;
 	m_buf = NULL;
 	if(m_req_id == 0)
 	{
 		DynamicStruct ds = *result;
-		tracef("%s, %d: result %s", __FILE__, __LINE__, ds.toString().c_str());
-		m_socket->socket.sendBytes(ds.toString().c_str(), ds.toString().length());
+		int ret = m_socket->socket.sendBytes(ds.toString().c_str(), ds.toString().length());
+		tracef("%s, %d: result %s, send bytes: %d.", __FILE__, __LINE__, ds.toString().c_str(), ret);
 	}
 	return;
 }

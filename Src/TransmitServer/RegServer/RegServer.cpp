@@ -170,7 +170,7 @@ void CRegServer::handleOffline(OfflineNotification* pNf)
 		std::map<UInt64, SocketTime*>::iterator it = m_pReg_map.find(impl);
 		if(it != m_pReg_map.end())
 		{
-			debugf("%s, %d: Connection %s shutdown by server.", __FILE__, __LINE__, it->second->socket.peerAddress().toString().c_str());
+			debugf("%s, %d: Connection %s shutdown by server.", __FILE__, __LINE__, it->second->saddr.toString().c_str());
 			removeSocket(1, it);
 		}
 		m_reg_queue_mutex.unlock();
@@ -205,7 +205,7 @@ void CRegServer::sslAccept(Timer& timer)
 		}
 		if(!m_started)
 			break;
-		tracef("%s, %d: Ssl accept connection from %s.", __FILE__, __LINE__, clientAddress.toString().c_str());
+		tracef("%s, %d: Ssl accept connection from %s to port %u.", __FILE__, __LINE__, clientAddress.toString().c_str(), ss.address().port());
 		Timestamp t;
 		SocketTime* pSsl = new SocketTime(ss, t);
 		Mutex::ScopedLock lock(m_ssl_queue_mutex);
@@ -270,8 +270,15 @@ void CRegServer::handleTaskFinish(TaskFinishedNotification* pNf)
 			//ssl
 		{
 			SocketTime* st = regMsgHandler->getSocket();
-			StreamSocket ss = st->socket;
-			ss.close();
+			try
+			{
+				infof("%s, %d: socket[%s] closed.", __FILE__, __LINE__, st->saddr.toString().c_str());
+				st->socket.close();
+			}
+			catch(Exception& e)
+			{
+				warnf("%s, %d: socket error[%s].", __FILE__, __LINE__, e.message().c_str());
+			}
 			delete st;
 		}
 		else if(type == 1)
@@ -285,6 +292,7 @@ void CRegServer::handleTaskFinish(TaskFinishedNotification* pNf)
 				if(!regMsgHandler->socketReceive())
 				{
 					//disconnect
+					infof("%s, %d: socket[%s] closed.", __FILE__, __LINE__, st->saddr.toString().c_str());
 					st->socket.close();
 					delete st;
 					st = NULL;
@@ -306,7 +314,6 @@ void CRegServer::handleTaskFinish(TaskFinishedNotification* pNf)
 				UInt64 impl = (UInt64)st->socket.impl();
 				m_pReg_map.insert(std::make_pair<UInt64, SocketTime*>(impl, st));
 				m_reg_queue_mutex.unlock();
-				tracepoint();
 				if(req_id < 0)
 				{
 					warnf("%s, %d: Request id error.", __FILE__, __LINE__);
