@@ -41,7 +41,8 @@ SRC_DIR += Src/Common \
 		   Src/TransmitServer/HTTPSAcceptor
 else
 TEST = $(test)
-SRC_DIR +=Src/Test/$(test)
+SRC_DIR +=Src/Test/$(test) \
+		  Src/Common
 endif
 endif
 else
@@ -57,9 +58,10 @@ INC_DIR += -IInclude/stlport/
 endif
 
 #依赖库文件
-DEPEND_LIBS = 	$(DEPEND_LIB_DIR)/Poco/libPocoData.a \
-				$(DEPEND_LIB_DIR)/Poco/libPocoDataSQLite.a \
+DEPEND_LIBS =	$(DEPEND_LIB_DIR)/Poco/libPocoDataSQLite.a \
+				$(DEPEND_LIB_DIR)/Poco/libPocoDataMySQL.a \
 				$(DEPEND_LIB_DIR)/Poco/libPocoMongoDB.a \
+				$(DEPEND_LIB_DIR)/Poco/libPocoData.a \
 				$(DEPEND_LIB_DIR)/Poco/libPocoNetSSL.a \
 				$(DEPEND_LIB_DIR)/Poco/libPocoNet.a \
 				$(DEPEND_LIB_DIR)/Poco/libPocoCrypto.a \
@@ -72,9 +74,10 @@ DEPEND_LIBS = 	$(DEPEND_LIB_DIR)/Poco/libPocoData.a \
 				$(DEPEND_LIB_DIR)/openssl/libcrypto.a \
 				$(STL_LIBS)
 
-DEPEND_LIBS_DEBUG = $(DEPEND_LIB_DIR)/Poco/libPocoDatad.a \
-				$(DEPEND_LIB_DIR)/Poco/libPocoDataSQLited.a \
+DEPEND_LIBS_DEBUG = $(DEPEND_LIB_DIR)/Poco/libPocoDataSQLited.a \
+				$(DEPEND_LIB_DIR)/Poco/libPocoDataMySQLd.a \
 				$(DEPEND_LIB_DIR)/Poco/libPocoMongoDBd.a \
+				$(DEPEND_LIB_DIR)/Poco/libPocoData.a \
 				$(DEPEND_LIB_DIR)/Poco/libPocoNetSSLd.a \
 				$(DEPEND_LIB_DIR)/Poco/libPocoNetd.a \
 				$(DEPEND_LIB_DIR)/Poco/libPocoCryptod.a \
@@ -89,10 +92,13 @@ DEPEND_LIBS_DEBUG = $(DEPEND_LIB_DIR)/Poco/libPocoDatad.a \
 
 		
 CFLAGS += $(INC_DIR)
-CFLAGS += -Wall -O2 -g
+CFLAGS += -Wall -O2 -g -static
+ifeq ( $(PLAT), arm)
+CFLAGS += -D__SC_ARM__
+endif
 
 #依赖库链接路径
-LDFLAGS += -lrt -ldl -lpthread
+LDFLAGS += -lmysqlclient -lrt -ldl -lpthread
 
 #临时文件
 COMPILE_DIR = Compile/$(PLAT)
