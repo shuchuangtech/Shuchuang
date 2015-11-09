@@ -1,7 +1,7 @@
 #include "Device/RPCClient.h"
 #include "Common/PrintLog.h"
 #include "Common/RPCDef.h"
-#include "Device/Component/UserManager.h"
+#include "Device/Component/User/UserManager.h"
 #include "Poco/Dynamic/Var.h"
 #include "Poco/TaskNotification.h"
 #include "Poco/JSON/Object.h"

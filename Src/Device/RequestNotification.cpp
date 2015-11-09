@@ -1,5 +1,6 @@
 #include "Device/RequestNotification.h"
 #include "Common/PrintLog.h"
+using namespace Poco;
 RequestNotification::RequestNotification(int id, JSON::Object::Ptr param)
 {
 	m_id = id;
