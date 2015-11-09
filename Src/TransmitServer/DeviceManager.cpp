@@ -34,8 +34,8 @@ bool CDeviceManager::start()
 		warnf("%s, %d: Device manager has already started.", __FILE__, __LINE__);
 		return false;
 	}
-	m_thread.start(*this);
 	m_started = true;
+	m_thread.start(*this);
 	infof("%s, %d: Device manager start successfully.", __FILE__, __LINE__);
 	return true;
 }
@@ -43,7 +43,10 @@ bool CDeviceManager::start()
 bool CDeviceManager::stop()
 {
 	if(!m_started)
+	{
+		warnf("%s, %d: Device manager not started.", __FILE__, __LINE__);
 		return false;
+	}
 	m_started = false;
 	if(m_thread.isRunning())
 	{
