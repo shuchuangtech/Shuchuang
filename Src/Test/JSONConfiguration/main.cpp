@@ -1,8 +1,11 @@
 #include "Poco/Util/JSONConfiguration.h"
 #include "Poco/JSON/Object.h"
+#include "Poco/JSON/Array.h"
+#include "Poco/Dynamic/VarHolder.h"
 #include "Poco/AutoPtr.h"
 #include "Poco/FileStream.h"
 #include <stdio.h>
+#include <vector>
 using namespace Poco;
 int main()
 {
@@ -15,6 +18,10 @@ int main()
 	param["name"] = "huangjian";
 	param["age"] = 18;
 	ds["attr3"] = param;
+	JSON::Array array;
+	array.set(0u, "123");
+	array.set(1u,"321");
+	ds["attr4"] = array;
 	obj->set("Server", ds);
 	AutoPtr<Util::JSONConfiguration> conf = new Util::JSONConfiguration(obj);
 	FileOutputStream confFile("./test.conf");
