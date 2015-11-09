@@ -1,4 +1,5 @@
 #include "Device/RegProxy.h"
+#include "Common/ConfigManager.h"
 #include "Common/PrintLog.h"
 #include "Common/RPCDef.h"
 #include "Poco/Net/SocketAddress.h"
@@ -36,18 +37,6 @@ CRegProxy::~CRegProxy()
 	}
 }
 
-void CRegProxy::setSecureServerInfo(std::string ssl_host, UInt16 ssl_port)
-{
-	m_ssl_host = ssl_host;
-	m_ssl_port = ssl_port;
-}
-
-void CRegProxy::setServerInfo(std::string reg_host, UInt16 reg_port)
-{
-	m_reg_host = reg_host;
-	m_reg_port = reg_port;
-}
-
 void CRegProxy::handleNf(RequestNotification* pNf)
 {
 	RequestNotification::Ptr p(pNf);
@@ -79,6 +68,20 @@ void CRegProxy::start()
 	{
 		errorf("%s, %d: Get RPCServer instance failed.\n", __FILE__, __LINE__);
 		return;
+	}
+	CConfigManager* config = CConfigManager::instance();
+	JSON::Object::Ptr pConfig = NULL;
+	config->getConfig("RegProxy", pConfig);
+	if(pConfig.isNull())
+	{
+		errorf("%s, %d: Please set default RegProxy config first.", __FILE__, __LINE__);
+		return;
+	}
+	else
+	{
+		m_ssl_host = pConfig->get("host").extract<std::string>();
+		m_ssl_port = pConfig->get("ssl_port").extract<UInt16>();
+		m_reg_port = pConfig->get("reg_port").extract<UInt16>();
 	}
 	Observer<CRegProxy, RequestNotification> observer(*this, &CRegProxy::handleNf);
 	m_rpc->addObserver(observer);	
