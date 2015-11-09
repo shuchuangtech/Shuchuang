@@ -1,0 +1,28 @@
+#include "Common/PrintLog.h"
+#include "Device/Component/Task/TaskHandler.h"
+#include "Device/Component/Task/TaskInfo.h"
+#include "Poco/Util/Timer.h"
+#include "Poco/DateTime.h"
+#include "Poco/Timespan.h"
+#include "Poco/Thread.h"
+#include <stdio.h>
+int main(int argc, char** argv)
+{
+	initPrintLogger();
+	TaskInfo task;
+	task.option = 0;
+	task.hour = 15;
+	task.minute = 20;
+	task.weekday = 0x02;
+	CTaskHandler::Ptr pTask = new CTaskHandler;
+	pTask->setTaskInfo(task);
+	Poco::Util::Timer timer;
+	Poco::DateTime dt;
+	dt += Poco::Timespan(5, 0);
+	timer.schedule(pTask, dt.timestamp(), 10 * 1000);
+	int option;
+	if(scanf("%d", &option) > 0)
+		printf("option:%d\n", option);
+	return 0;
+}
+

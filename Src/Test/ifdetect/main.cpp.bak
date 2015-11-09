@@ -1,0 +1,84 @@
+#include <stdio.h>
+#include <errno.h>
+#include <string.h>
+#include <linux/sockios.h>
+#include <linux/mii.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <unistd.h>
+#include <netdb.h> 
+int get_netlink_status(const char *if_name)
+{
+	int skfd;
+	skfd = socket(AF_INET, SOCK_DGRAM, 0);
+	if(skfd < 0)
+	{
+		printf("get_netlink_status() socketerr skfd = %d strerror(errno) = %s\n",skfd,strerror(errno));
+		return -1;
+	}
+	printf("skfd %d.\n", skfd);
+	struct ifreq ifr;
+	struct mii_ioctl_data* mii = NULL;
+	memset(&ifr,0,sizeof(ifr));
+	strncpy(ifr.ifr_name,if_name,sizeof(ifr.ifr_name));
+	printf("ifr.ifr_name : %s\n", ifr.ifr_name);
+	mii = (struct mii_ioctl_data*)&ifr.ifr_data;
+
+	mii->reg_num = MII_BMSR;
+
+	if(ioctl(skfd, SIOCGMIIREG, &ifr)==-1)
+	{
+	    printf("Error = %s\n",strerror(errno));
+	    printf("get_netlink_status() ioctl err skfd = %d\n",skfd);
+		if(skfd >= 3 )
+			close(skfd);
+		return -1;
+	}
+	close(skfd);
+
+	printf("mii_ioctl_data.phy_id:%u\n", mii->phy_id);
+	printf("mii_ioctl_data.reg_num:%u\n", mii->reg_num);
+	printf("mii_ioctl_data.val_in:%u\n", mii->val_in);
+	printf("mii_ioctl_data.val_out:%u\n", mii->val_out);
+	printf("BMSR_RFAULT: %d\n", mii->val_out&BMSR_RFAULT);
+	printf("BMSR_LSTATUS: %d\n", mii->val_out&BMSR_LSTATUS);
+	printf("BMSR_JCD: %d\n", mii->val_out&BMSR_JCD);
+
+	skfd = socket(AF_INET, SOCK_DGRAM, 0);
+	memset(&ifr, 0, sizeof(ifr));
+	if(ioctl(skfd, SIOCGMIIPHY, &ifr) == -1)
+	{
+	    printf("get_netlink_status() ioctl err skfd = %d\n",skfd);
+		if(skfd >= 3)
+			close(skfd);
+	}
+
+	printf("mii_ioctl_data.phy_id:%u\n", mii->phy_id);
+	printf("mii_ioctl_data.reg_num:%u\n", mii->reg_num);
+	printf("mii_ioctl_data.val_in:%u\n", mii->val_in);
+	printf("mii_ioctl_data.val_out:%u\n", mii->val_out);
+	if(skfd >= 3)
+		close(skfd);
+	return 0;
+}
+
+int main()
+{
+/*	
+	int fd;
+	fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if(fd < 0)
+	{
+		return -1;
+	}
+	printf("fd %d\n", fd);
+	if(fd >= 3)
+	{
+		close(fd);
+	}
+	*/
+	get_netlink_status("eth0");
+	return 0;
+}
+
