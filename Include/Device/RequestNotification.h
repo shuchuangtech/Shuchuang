@@ -2,19 +2,18 @@
 #define __DEVICE_REQUEST_NOTIFICATION_H__
 #include "Poco/Notification.h"
 #include "Poco/JSON/Object.h"
-using namespace Poco;
-class RequestNotification : public Notification
+class RequestNotification : public Poco::Notification
 {
 public:
-	typedef AutoPtr<RequestNotification> Ptr;
-	RequestNotification(int, JSON::Object::Ptr);
+	typedef Poco::AutoPtr<RequestNotification> Ptr;
+	RequestNotification(int, Poco::JSON::Object::Ptr);
 	~RequestNotification();	
-	JSON::Object::Ptr getParam();
+	Poco::JSON::Object::Ptr getParam();
 	int getID();
-	int setParam(JSON::Object::Ptr param);
+	int setParam(Poco::JSON::Object::Ptr param);
 private:
-	int					m_id;
-	JSON::Object::Ptr	m_param;
+	int						m_id;
+	Poco::JSON::Object::Ptr	m_param;
 };
 #endif
 

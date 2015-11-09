@@ -3,13 +3,11 @@
 #include "Poco/SingletonHolder.h"
 #include "Poco/Dynamic/Struct.h"
 #include "Poco/JSON/Object.h"
-#include "Poco/TaskManager.h"
 #include "Poco/ThreadPool.h"
 #include "Poco/Mutex.h"
 #include "Poco/UUIDGenerator.h"
 #include "Poco/Timestamp.h"
-#include "Device/Component/UserClient.h"
-using namespace Poco;
+#include "Device/Component/User/UserClient.h"
 class CUserManager
 {
 public:
@@ -17,24 +15,24 @@ public:
 	~CUserManager();
 	static CUserManager* instance()
 	{
-		static SingletonHolder<CUserManager> sh;
+		static Poco::SingletonHolder<CUserManager> sh;
 		return sh.get();
 	}
 	bool init();
-	bool login(JSON::Object::Ptr param, std::string& detail);
-	bool passwd(JSON::Object::Ptr param, std::string& detail);
-	bool logout(JSON::Object::Ptr param);
+	bool login(Poco::JSON::Object::Ptr param, std::string& detail);
+	bool passwd(Poco::JSON::Object::Ptr param, std::string& detail);
+	bool logout(Poco::JSON::Object::Ptr param);
 private:
 	bool generateNewToken(std::string& token);
 	CUserClient* checkClient(std::string username, std::string& token, bool create);
 	void updatePasswd();
 	//token, userclient
-	std::map<std::string, CUserClient*>	m_client_map;
+	std::map<std::string, CUserClient*>			m_client_map;
 	//username, password
-	std::map<std::string, std::string>	m_user_map;
-	Mutex								m_map_mutex;
-	Timestamp::TimeDiff					m_token_valid_period;
-	UUIDGenerator						m_uuid_gen;
+	std::map<std::string, std::string>			m_user_map;
+	Poco::Mutex									m_map_mutex;
+	Poco::Timestamp::TimeDiff					m_token_valid_period;
+	Poco::UUIDGenerator							m_uuid_gen;
 };
 #endif
 

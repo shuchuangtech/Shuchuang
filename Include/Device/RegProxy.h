@@ -9,7 +9,6 @@
 #include "Poco/NotificationCenter.h"
 #include "Poco/SingletonHolder.h"
 #include "Device/RPCServer.h"
-using namespace Poco;
 class CRegProxy
 {
 public:
@@ -27,13 +26,11 @@ public:
 	};
 	static CRegProxy* instance()
 	{
-		static SingletonHolder<CRegProxy> sh;
+		static Poco::SingletonHolder<CRegProxy> sh;
 		return sh.get();
 	}
 	CRegProxy(); 
 	~CRegProxy();
-	void setSecureServerInfo(std::string ssl_host, UInt16 ssl_port);
-	void setServerInfo(std::string reg_host, UInt16 reg_port);
 	void start();
 	void stop();
 	void handleNf(RequestNotification* pNf);
@@ -41,27 +38,27 @@ private:
 	bool registerToServer();
 	bool getRegisterToken();
 	void dealError(ERROR_CHOICE);
-	void createPacket(char* buf, UInt16 size, REQUEST_ACTION);
+	void createPacket(char* buf, Poco::UInt16 size, REQUEST_ACTION);
 	bool sendKeepAlive();
 	bool parseAction(std::string& action, std::string& component, std::string& method);
 	//bool handleRequest(DynamicStruct* param);
 
-	void onTimer(Timer& timer);
-	bool						m_started;
-	Timer						m_timer;
-	std::string					m_ssl_host;
-	UInt16						m_ssl_port;
-	std::string					m_reg_host;
-	UInt16						m_reg_port;
-	Timestamp::TimeDiff			m_checkPeriod;
-	Timestamp::TimeDiff			m_keepAliveTimeout;
-	Timestamp					m_lastCheckTime;
-	bool						m_lastRegState;
-	bool						m_serverKeepAlive;
-	Net::StreamSocket*			m_sock;
-	Net::SecureStreamSocket*	m_ssl_sock;
-	std::string					m_token;
-	CRPCServer*					m_rpc;
+	void onTimer(Poco::Timer& timer);
+	bool							m_started;
+	Poco::Timer						m_timer;
+	std::string						m_ssl_host;
+	Poco::UInt16					m_ssl_port;
+	std::string						m_reg_host;
+	Poco::UInt16					m_reg_port;
+	Poco::Timestamp::TimeDiff		m_checkPeriod;
+	Poco::Timestamp::TimeDiff		m_keepAliveTimeout;
+	Poco::Timestamp					m_lastCheckTime;
+	bool							m_lastRegState;
+	bool							m_serverKeepAlive;
+	Poco::Net::StreamSocket*		m_sock;
+	Poco::Net::SecureStreamSocket*	m_ssl_sock;
+	std::string						m_token;
+	CRPCServer*						m_rpc;
 };
 #endif
 

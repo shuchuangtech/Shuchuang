@@ -13,8 +13,7 @@
 #include "Poco/ThreadPool.h"
 #include "Poco/Timestamp.h"
 #include "Poco/Mutex.h"
-using namespace Poco;
-class CRPCServer : public Runnable
+class CRPCServer : public Poco::Runnable
 {
 public:
 	CRPCServer();
@@ -27,18 +26,18 @@ public:
 	void start();
 	void stop();
 	void run();
-	void handleFinish(TaskFinishedNotification* pNf);
+	void handleFinish(Poco::TaskFinishedNotification* pNf);
 	bool addRequest(RequestNotification::Ptr rf);
-	bool addObserver(const AbstractObserver& o);
-	bool removeObserver(const AbstractObserver& o);
+	bool addObserver(const Poco::AbstractObserver& o);
+	bool removeObserver(const Poco::AbstractObserver& o);
 private:
-	NotificationQueue	m_queue;
-	NotificationCenter	m_center;
-	Thread				m_thread;
-	TaskManager*		m_task_manager;
-	ThreadPool*			m_thread_pool;
-	bool				m_started;
-	Mutex				m_mutex;
+	Poco::NotificationQueue		m_queue;
+	Poco::NotificationCenter	m_center;
+	Poco::Thread				m_thread;
+	Poco::TaskManager*			m_task_manager;
+	Poco::ThreadPool*			m_thread_pool;
+	bool						m_started;
+	Poco::Mutex					m_mutex;
 };
 #endif
 
