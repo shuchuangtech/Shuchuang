@@ -28,8 +28,9 @@ request
 #define PARAM_CHALLENGE_STR "challenge"
 //register
 #define PARAM_UUID_STR "uuid"
-#define PARAM_DEV_NAME_STR "dev_name"
-#define PARAM_DEV_TYPE_STR "dev_type"
+#define PARAM_DEV_NAME_STR "name"
+#define PARAM_DEV_TYPE_STR "type"
+#define PARAM_DEV_MANU_STR "manufacture"
 #define PARAM_STATE_STR "state"
 #define PARAM_TIMESTAMP_STR "timestamp"
 #define PARAM_KEY_STR "key"
