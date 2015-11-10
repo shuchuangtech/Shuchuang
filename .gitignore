@@ -3,7 +3,7 @@ Include/Poco_x86
 Include/stlport
 Include/openssl
 Bin
-Build
+Build/obj
 Lib
 Compile
 Config
