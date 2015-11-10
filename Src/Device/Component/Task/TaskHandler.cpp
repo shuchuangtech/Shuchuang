@@ -1,7 +1,7 @@
 #include "Device/Component/Task/TaskHandler.h"
 #include "Common/PrintLog.h"
 #include "Poco/DateTime.h"
-#include "Device/DeviceController.h"
+#include "Device/Component/DeviceController.h"
 using namespace Poco;
 CTaskHandler::CTaskHandler()
 {
@@ -21,10 +21,16 @@ void CTaskHandler::run()
 	if(dayMask & m_weekday)
 	{
 		infof("%s, %d: TaskHandler[%llu] option %d run at %02d:%02d weekday %d.", __FILE__, __LINE__, m_id, m_option, m_hour, m_minute, m_weekday);
+		JSON::Object::Ptr nil = NULL;
+		std::string detail;
 		if(m_option == 0)
-			CDeviceController::instance()->closeDoor();
+		{
+			CDeviceController::instance()->closeDoor(nil, detail);
+		}
 		else
-			CDeviceController::instance()->openDoor();
+		{
+			CDeviceController::instance()->openDoor(nil, detail);
+		}
 	}
 	else
 	{

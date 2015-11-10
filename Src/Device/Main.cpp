@@ -2,6 +2,7 @@
 #include "Device/RegProxy.h"
 #include "Device/RPCServer.h"
 #include "Device/Component/User/UserManager.h"
+#include "Device/Component/DeviceController.h"
 #include "Poco/Types.h"
 #include "Poco/Thread.h"
 #include "Common/ConfigManager.h"
@@ -18,6 +19,10 @@ int main(int argc, char** argv)
 		return -1;
 	}
 	initPrintLogger();
+	//init gpio
+	CDeviceController* device = CDeviceController::instance();
+	device->openDevice();
+	//init config manager
 	CConfigManager* config = CConfigManager::instance();
 	config->init("./global.conf");
 	//初始化用户中心
