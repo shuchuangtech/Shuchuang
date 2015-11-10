@@ -33,6 +33,17 @@ bool CUserManager::init()
 	return true;
 }
 
+bool CUserManager::verifyUser(std::string token)
+{
+	Mutex::ScopedLock lock(m_map_mutex);
+	std::map<std::string, CUserClient*>::iterator it_client = m_client_map.find(token);
+	if(it_client != m_client_map.end() && it_client->second->authorized())
+	{
+		return true;
+	}
+	return false;
+}
+
 bool CUserManager::generateNewToken(std::string& token)
 {
 	UUID t = m_uuid_gen.create();
@@ -71,7 +82,7 @@ CUserClient* CUserManager::checkClient(std::string username, std::string& token,
 	}
 }
 
-bool CUserManager::login(JSON::Object::Ptr pParam, std::string& detail)
+bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 {
 	DynamicStruct param = *pParam;
 	std::string token = "";
@@ -107,7 +118,7 @@ bool CUserManager::login(JSON::Object::Ptr pParam, std::string& detail)
 	return false;
 }
 
-bool CUserManager::passwd(JSON::Object::Ptr pParam, std::string& detail)
+bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 {
 	DynamicStruct param = *pParam;
 	std::string token = "";
@@ -153,7 +164,7 @@ bool CUserManager::passwd(JSON::Object::Ptr pParam, std::string& detail)
 	return false;
 }
 
-bool CUserManager::logout(JSON::Object::Ptr pParam)
+bool CUserManager::logout(JSON::Object::Ptr& pParam, std::string& detail)
 {
 	DynamicStruct param = *pParam;
 	std::string token = "";

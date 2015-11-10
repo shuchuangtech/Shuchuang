@@ -19,9 +19,10 @@ public:
 		return sh.get();
 	}
 	bool init();
-	bool login(Poco::JSON::Object::Ptr param, std::string& detail);
-	bool passwd(Poco::JSON::Object::Ptr param, std::string& detail);
-	bool logout(Poco::JSON::Object::Ptr param);
+	bool verifyUser(std::string token);
+	bool login(Poco::JSON::Object::Ptr& param, std::string& detail);
+	bool passwd(Poco::JSON::Object::Ptr& param, std::string& detail);
+	bool logout(Poco::JSON::Object::Ptr& param, std::string& detail);
 private:
 	bool generateNewToken(std::string& token);
 	CUserClient* checkClient(std::string username, std::string& token, bool create);

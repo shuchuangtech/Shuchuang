@@ -1,10 +1,12 @@
 #include "Device/Component/DeviceController.h"
+#include "Common/PrintLog.h"
 #include "scgpio/gpioapi.h"
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #define __SC_IN_NORMAL_CLOSE__
 #define __SC_ON_NORMAL_CLOSE__
+using namespace Poco;
 CDeviceController::CDeviceController()
 {
 	m_fd = 0;
@@ -38,34 +40,44 @@ bool CDeviceController::openDevice()
 #endif
 }
 
-bool CDeviceController::isOpen()
+bool CDeviceController::checkDoor(JSON::Object::Ptr& param, std::string& detail)
 {
 	if(m_fd == 0)
+	{
+		warnf("%s, %d: Maybe should call openDevice first.", __FILE__, __LINE__);
+		detail = "420";
 		return false;
+	}
 	int value;
 	value = ioctl(m_fd, SC_READ_KEY, 0);
 	if(value == 1)
 	{
 	#ifdef __SC_IN_NORMAL_CLOSE__
-		return false;
+		param->set("state", "close");	
 	#else
-		return true;
+		param->set("state", "open");
 	#endif
+		return true;
 	}
 	else
 	{
 	#ifdef __SC_IN_NORMAL_CLOSE__
-		return true;
+		param->set("state", "open");
 	#else
-		return false;
+		param->set("state", "close");
 	#endif
+		return true;
 	}
 }
 
-bool CDeviceController::openDoor()
+bool CDeviceController::openDoor(JSON::Object::Ptr& param, std::string& detail)
 {
 	if(m_fd == 0)
+	{
+		warnf("%s, %d: Maybe should call openDevice first.", __FILE__, __LINE__);
+		detail = "420";
 		return false;
+	}
 #ifdef __SC_ON_NORMAL_CLOSE__
 	ioctl(m_fd, SC_RELAY_ON, 0);
 #else
@@ -74,24 +86,19 @@ bool CDeviceController::openDoor()
 	return true;
 }
 
-bool CDeviceController::closeDoor()
+bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 {
 	if(m_fd == 0)
+	{
+		warnf("%s, %d: Maybe should call openDevice first.", __FILE__, __LINE__);
+		detail = "420";
 		return false;
+	}
 #ifdef __SC_ON_NORMAL_CLOSE__
 	ioctl(m_fd, SC_RELAY_OFF, 0);
 #else
 	ioctl(m_fd, SC_RELAY_ON, 0);
 #endif
 	return true;
-}
-
-bool CDeviceController::setConfig()
-{
-#ifdef __SC_ARM__
-	return true;
-#else
-	return true;
-#endif
 }
 

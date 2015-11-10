@@ -20,21 +20,10 @@ public:
 	}
 	bool stopAllTasks(bool wait = false);
 	int getTasksNumber();
-	int getTasks(Poco::JSON::Object::Ptr param);
-	//return value
-	//-1 task number reaches max
-	//-2 task param error
-	//-3 task exists
-	Poco::Int64 addTask(Poco::JSON::Object::Ptr param);
-	//return value
-	//-1 failed
-	//0 success
-	int removeTask(Poco::JSON::Object::Ptr param);
-	//return value
-	//-1 task to be modified not exists
-	//-2 task param error
-	//-3 task can't be the same with exists one
-	int modifyTask(Poco::JSON::Object::Ptr param);
+	bool getTasks(Poco::JSON::Object::Ptr& param, std::string& detail);
+	bool addTask(Poco::JSON::Object::Ptr& param, std::string& detail);
+	bool removeTask(Poco::JSON::Object::Ptr& param, std::string& detail);
+	bool modifyTask(Poco::JSON::Object::Ptr& param, std::string& detail);
 private:
 	void addToScheduleQueue(CTaskHandler::Ptr pTask);
 	bool taskExists(const TaskInfo& task);

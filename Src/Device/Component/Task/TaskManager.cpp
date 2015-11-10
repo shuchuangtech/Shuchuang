@@ -7,7 +7,7 @@
 #define min(x,y) ((x) < (y) ? (x) : (y))
 using namespace Poco;
 CTaskManager::CTaskManager()
-:m_max_task_num(10)
+:m_max_task_num(32)
 {
 	m_timer = NULL;
 	m_config = NULL;
@@ -105,7 +105,7 @@ int CTaskManager::getTasksNumber()
 	return ret;
 }
 
-int CTaskManager::getTasks(JSON::Object::Ptr param)
+bool CTaskManager::getTasks(JSON::Object::Ptr& param, std::string& detail)
 {
 	m_mutex.lock();
 	//can't use da.size, weired
@@ -118,7 +118,7 @@ int CTaskManager::getTasks(JSON::Object::Ptr param)
 	}
 	param->set("tasks", array);
 	m_mutex.unlock();
-	return 0;
+	return true;
 }
 
 void CTaskManager::taskInfoToStruct(const TaskInfo& task, DynamicStruct& ds)
@@ -156,16 +156,18 @@ bool CTaskManager::taskExists(const TaskInfo& task)
 	return false;
 }
 
-Int64 CTaskManager::addTask(JSON::Object::Ptr param)
+bool CTaskManager::addTask(JSON::Object::Ptr& param, std::string& detail)
 {
 	if(m_task_map.size() == m_max_task_num)
 	{
-		return -1;
+		detail = "430";
+		return false;
 	}
 	if(param.isNull() || !param->has("option") || !param->has("hour")
 		|| !param->has("minute") || !param->has("weekday"))
 	{
-		return -2;
+		detail = "431";
+		return false;
 	}
 	DynamicStruct dsParam = *param;
 	//use timestamp as id
@@ -178,11 +180,13 @@ Int64 CTaskManager::addTask(JSON::Object::Ptr param)
 		(task.minute < 0 || task.minute > 59) ||
 		(task.weekday < 0 || task.weekday > 0x7F))
 	{
-		return -2;
+		detail = "432";
+		return false;
 	}
 	if(taskExists(task))
 	{
-		return -3;
+		detail = "433";
+		return false;
 	}
 	m_mutex.lock();
 	//update configs
@@ -196,23 +200,24 @@ Int64 CTaskManager::addTask(JSON::Object::Ptr param)
 	addToScheduleQueue(pTask);
 	m_mutex.unlock();
 	param->set("id", task.id);
-	return task.id;
+	return true;
 }
 
-int CTaskManager::removeTask(JSON::Object::Ptr param)
+bool CTaskManager::removeTask(JSON::Object::Ptr& param, std::string& detail)
 {
 	if(param.isNull() || !param->has("id"))
-		return -2;
-	DynamicStruct dsParam = *param;
-	TaskInfo task;
-	structToTaskInfo(dsParam, task);
-	Int64 id = task.id;
+	{
+		detail = "431";
+		return false;
+	}
+	Int64 id = param->getValue<Int64>("id");
 	m_mutex.lock();
 	std::map<Int64, CTaskHandler::Ptr>::iterator it = m_task_map.find(id);
 	if(it == m_task_map.end())
 	{
 		m_mutex.unlock();
-		return -1;
+		detail = "434";
+		return false;
 	}
 	CTaskHandler::Ptr pTask = it->second;
 	pTask->cancel();
@@ -234,14 +239,17 @@ int CTaskManager::removeTask(JSON::Object::Ptr param)
 		}
 	}
 	m_mutex.unlock();
-	return 0;
+	return true;
 }
 
-int CTaskManager::modifyTask(JSON::Object::Ptr param)
+bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 {
 	if(param.isNull() || !param->has("id") || !param->has("option") || !param->has("hour")
 			|| !param->has("minute") || !param->has("weekday"))
-		return -2;
+	{
+		detail = "431";
+		return false;
+	}
 	DynamicStruct dsParam = *param;
 	TaskInfo task;
 	structToTaskInfo(dsParam, task);
@@ -251,7 +259,8 @@ int CTaskManager::modifyTask(JSON::Object::Ptr param)
 	if(it == m_task_map.end())
 	{
 		m_mutex.unlock();
-		return -1;
+		detail = "434";
+		return false;
 	}
 	if((task.option != 0 && task.option != 1)
 		|| (task.hour < 0 || task.hour > 23)
@@ -259,12 +268,14 @@ int CTaskManager::modifyTask(JSON::Object::Ptr param)
 		|| (task.weekday < 0 || task.weekday > 0x7F))
 	{
 		m_mutex.unlock();
-		return -2;
+		detail = "432";
+		return false;
 	}
 	if(taskExists(task))
 	{
 		m_mutex.unlock();
-		return -3;
+		detail = "433";
+		return false;
 	}
 	//adjust TaskTimer and TaskHandler map
 	tracef("%s, %d: old task[%lld](%d, %d, %d, %d) stopped.", __FILE__, __LINE__, it->second->getId(), it->second->getOption(), it->second->getHour(), it->second->getMinute(), it->second->getWeekday());
@@ -291,6 +302,6 @@ int CTaskManager::modifyTask(JSON::Object::Ptr param)
 		}
 	}
 	m_mutex.unlock();
-	return 0;
+	return true;
 }
 

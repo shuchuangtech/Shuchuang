@@ -65,36 +65,6 @@ bool CRPCServer::addRequest(RequestNotification::Ptr rf)
 	return true;
 }
 
-/*
-UInt64 CRPCServer::checkSessionID(UInt64& session_id, const UInt64& timestamp)
-{	
-	FastMutex::ScopedLock lock(m_mutex);
-	std::map<UInt64, Timestamp>::iterator it_map;
-	it_map = m_active_session.find(session_id);
-	if(it_map == m_active_session.end())
-	{
-		std::list<UInt64>::iterator it;
-		if(m_idle_session.empty())
-		{
-			session_id = m_session_id++;
-		}
-		else
-		{
-			session_id = m_idle_session.front();
-			m_idle_session.pop_front();
-		}
-		Timestamp t(timestamp);
-		m_active_session[session_id] = t;
-	}
-	else
-	{
-		Timestamp t(timestamp);
-		it_map->second = t;
-	}
-	return session_id;
-
-}
-*/
 bool CRPCServer::addObserver(const AbstractObserver& o)
 {
 	m_center.addObserver(o);
@@ -118,11 +88,12 @@ void CRPCServer::run()
 			Mutex::ScopedLock lock(m_mutex);
 			RequestNotification* pR = pNf.cast<RequestNotification>();
 			CRPCClient* client;
-			JSON::Object::Ptr pParam = pR->getParam();
-			DynamicStruct ds = *pParam;
+			std::string request = pR->getRequest();
+			UInt64 id = pR->getID();
 			client = new CRPCClient();
 			client->reset();
-			client->setRequest(pR);
+			client->setRequest(request);
+			client->setID(id);
 			m_task_manager->start(client);
 		}
 		else
@@ -139,16 +110,14 @@ void CRPCServer::handleFinish(TaskFinishedNotification* pNf)
 	{
 		Mutex::ScopedLock lock(m_mutex);
 		CRPCClient* client = (CRPCClient*)p->task();
-		RequestNotification::Ptr pResult = client->getResult();
-		JSON::Object::Ptr result = pResult->getParam();
-		int id = pResult->getID();
-		DynamicStruct ds = *result;
+		JSON::Object::Ptr response = client->getResponse();
+		UInt64 id = client->getID();
+		DynamicStruct ds = *response;
 		std::string param = ds.toString();
 		tracef("%s, %d: Handle finish, result:%s.\n", __FILE__, __LINE__, param.c_str());
 		try
 		{
-			m_center.postNotification(new RequestNotification(id, result));
-			tracepoint();
+			m_center.postNotification(new RequestNotification(id, "", response));
 		}
 		catch(Exception& e)
 		{
