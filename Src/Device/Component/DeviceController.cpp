@@ -24,8 +24,8 @@ bool CDeviceController::openDevice()
 		m_fd = 0;
 	}
 #ifdef __SC_ARM__
-	char* file = "/dev/hzgpiodriver";
-	m_fd = open(file, O_RDWR);
+	std::string file = "/dev/hzgpiodriver";
+	m_fd = open(file.c_str(), O_RDWR);
 	if(m_fd == -1)
 		return false;
 	else
