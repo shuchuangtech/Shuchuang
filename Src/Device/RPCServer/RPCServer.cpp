@@ -31,7 +31,7 @@ void CRPCServer::start()
 {
 	if(m_started)
 	{
-		warnf("%s, %d: RPCServer is already started.\n", __FILE__, __LINE__);
+		warnf("%s, %d: RPCServer is already started.", __FILE__, __LINE__);
 	}
 	else
 	{
@@ -46,7 +46,7 @@ void CRPCServer::stop()
 {
 	if(!m_started)
 	{
-		warnf("%s, %d: RPCServer is not started.\n", __FILE__, __LINE__);
+		warnf("%s, %d: RPCServer is not started.", __FILE__, __LINE__);
 	}
 	else
 	{		
@@ -74,7 +74,7 @@ bool CRPCServer::addObserver(const AbstractObserver& o)
 bool CRPCServer::removeObserver(const AbstractObserver& o)
 {
 	m_center.removeObserver(o);
-	tracef("%s, %d: remove observer\n", __FILE__, __LINE__);
+	tracef("%s, %d: remove observer.", __FILE__, __LINE__);
 	return true;
 }
 
@@ -98,7 +98,7 @@ void CRPCServer::run()
 		}
 		else
 		{
-			errorf("%s, %d: Not supposed to be here.\n", __FILE__, __LINE__);
+			errorf("%s, %d: Not supposed to be here.", __FILE__, __LINE__);
 		}
 	}
 }
@@ -114,20 +114,20 @@ void CRPCServer::handleFinish(TaskFinishedNotification* pNf)
 		UInt64 id = client->getID();
 		DynamicStruct ds = *response;
 		std::string param = ds.toString();
-		tracef("%s, %d: Handle finish, result:%s.\n", __FILE__, __LINE__, param.c_str());
+		tracef("%s, %d: Handle finish, result:%s.", __FILE__, __LINE__, param.c_str());
 		try
 		{
 			m_center.postNotification(new RequestNotification(id, "", response));
 		}
 		catch(Exception& e)
 		{
-			tracef("%s, %d: %s\n", __FILE__, __LINE__, e.message().c_str());
+			tracef("%s, %d: %s.", __FILE__, __LINE__, e.message().c_str());
 		}
 		client->release();
 	}
 	else
 	{
-		errorf("%s, %d: Not supposed to be here.\n", __FILE__, __LINE__);
+		errorf("%s, %d: Not supposed to be here.", __FILE__, __LINE__);
 	}
 }
 

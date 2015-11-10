@@ -29,7 +29,7 @@ bool CUserClient::login(JSON::Object::Ptr pParam, std::string& detail)
 			const DigestEngine::Digest& digest = md5.digest();
 			m_challenge = DigestEngine::digestToHex(digest);
 			pParam->set(PARAM_CHALLENGE_STR, m_challenge);
-			tracef("%s, %d: User[%s] first login, challenge is %s.\n", __FILE__, __LINE__, m_username.c_str(), m_challenge.c_str());
+			tracef("%s, %d: User[%s] first login, challenge is %s.", __FILE__, __LINE__, m_username.c_str(), m_challenge.c_str());
 			Timestamp t;
 			m_keepalive = t;
 			return true;
@@ -37,15 +37,15 @@ bool CUserClient::login(JSON::Object::Ptr pParam, std::string& detail)
 		if(!m_challenge.empty() && param.contains(PARAM_PASSWORD_STR))
 		//second login
 		{
-			tracef("%s, %d: m_challenge %s\n", __FILE__, __LINE__, m_challenge.c_str());
+			tracef("%s, %d: m_challenge %s", __FILE__, __LINE__, m_challenge.c_str());
 			std::string password = param[PARAM_PASSWORD_STR].toString();
 			MD5Engine md5;
 			std::string loginPassword = USER_METHOD_LOGIN + m_password;
-			tracef("%s, %d: m_password %s\n", __FILE__, __LINE__, m_password.c_str());
+			tracef("%s, %d: m_password %s", __FILE__, __LINE__, m_password.c_str());
 			md5.update(loginPassword);
 			const DigestEngine::Digest& digestLogin = md5.digest();
 			std::string md5login(DigestEngine::digestToHex(digestLogin));
-			tracef("%s, %d: loginpass %s\n", __FILE__, __LINE__, md5login.c_str());
+			tracef("%s, %d: loginpass %s", __FILE__, __LINE__, md5login.c_str());
 			std::string challengePassword = md5login + m_challenge;
 			md5.reset();
 			md5.update(challengePassword);
@@ -58,18 +58,18 @@ bool CUserClient::login(JSON::Object::Ptr pParam, std::string& detail)
 				m_state = AUTHORIZED;
 				Timestamp t;
 				m_keepalive = t;
-				tracef("%s, %d: User[%s] login successfully.\n", __FILE__, __LINE__, m_username.c_str());
+				tracef("%s, %d: User[%s] login successfully.", __FILE__, __LINE__, m_username.c_str());
 				return true;
 			}
 			else
 			{
-				warnf("%s, %d: User[%s] login verify failed.\n", __FILE__, __LINE__, m_username.c_str());
+				warnf("%s, %d: User[%s] login verify failed.", __FILE__, __LINE__, m_username.c_str());
 				m_challenge = "";
 				detail = "Verify failed";
 				return false;
 			}
 		}
-		warnf("%s, %d: Unkown login request.\n", __FILE__, __LINE__);
+		warnf("%s, %d: Unkown login request.", __FILE__, __LINE__);
 		detail = "Unkown login request";
 		return false;
 	}

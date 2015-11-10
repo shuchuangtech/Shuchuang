@@ -47,7 +47,7 @@ bool CRPCClient::parseAction(std::string& opt, std::string& component, std::stri
 	pos = opt.find(".");
 	if(pos == std::string::npos)
 	{
-		warnf("%s, %d: Action parse failed.\n", __FILE__, __LINE__);
+		warnf("%s, %d: Action parse failed.", __FILE__, __LINE__);
 		return false;
 	}
 	component = opt.substr(0, pos);
@@ -111,7 +111,7 @@ void CRPCClient::runTask()
 		result = false;
 		goto done;
 	}
-	tracef("%s, %d: opt:%s, component:%s, method:%s.\n", __FILE__, __LINE__, opt.c_str(), component.c_str(), method.c_str());
+	tracef("%s, %d: opt:%s, component:%s, method:%s.", __FILE__, __LINE__, opt.c_str(), component.c_str(), method.c_str());
 	parser.reset();
 	try{
 		temp = parser.parse(param_str.c_str());
@@ -222,7 +222,7 @@ void CRPCClient::runTask()
 	}
 	else
 	{
-		warnf("%s, %d: Invalid component.\n", __FILE__, __LINE__);
+		warnf("%s, %d: Invalid component.", __FILE__, __LINE__);
 		result = false;
 		detail = "200";
 		goto done;
@@ -239,7 +239,7 @@ done:
 		pResult->set(KEY_DETAIL_STR, detail);
 	}
 	DynamicStruct ds_request = *request;
-	tracef("%s, %d: Finish request:[%s].\n", __FILE__, __LINE__, ds_request.toString().c_str());
+	tracef("%s, %d: Finish request:[%s].", __FILE__, __LINE__, ds_request.toString().c_str());
 	if(!m_response.isNull())
 		m_response = NULL;
 	m_response = pResult;

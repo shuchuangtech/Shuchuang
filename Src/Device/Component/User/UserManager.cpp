@@ -27,7 +27,7 @@ bool CUserManager::init()
 	{
 		file.getline(line, sizeof(line));
 		sscanf(line, "%s %s", username, password);
-		tracef("%s, %d: User loaded:%s, %s.\n", __FILE__, __LINE__, username, password);
+		tracef("%s, %d: User loaded:%s, %s.", __FILE__, __LINE__, username, password);
 		m_user_map.insert(std::make_pair<std::string, std::string>(username, password));
 	}
 	return true;
@@ -69,7 +69,7 @@ CUserClient* CUserManager::checkClient(std::string username, std::string& token,
 		std::map<std::string, std::string>::iterator it_user = m_user_map.find(username);
 		if(it_user == m_user_map.end())
 		{
-			warnf("%s, %d: User[%s] not existed.\n", __FILE__, __LINE__, username.c_str());
+			warnf("%s, %d: User[%s] not existed.", __FILE__, __LINE__, username.c_str());
 			return NULL;
 		}
 		generateNewToken(token);
@@ -126,7 +126,7 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 	{
 		token = param[PARAM_TOKEN_STR].toString();
 	}
-	tracef("%s, %d: token %s\n", __FILE__, __LINE__, token.c_str());
+	tracef("%s, %d: token %s", __FILE__, __LINE__, token.c_str());
 	std::string username = "";
 	if(param.contains(PARAM_USERNAME_STR))
 	{
@@ -147,7 +147,7 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 		}
 		std::string passwd = "";
 		user->getPasswd(passwd);
-		tracef("%s, %d: User[%s] password has changed\n", __FILE__, __LINE__, username.c_str());
+		tracef("%s, %d: User[%s] password has changed.", __FILE__, __LINE__, username.c_str());
 		std::map<std::string, std::string>::iterator it = m_user_map.find(username);
 		if(it != m_user_map.end())
 		{
@@ -203,7 +203,7 @@ void CUserManager::updatePasswd()
 		std::string password = it->second;
 		FileStream file(USER_INFO_PATH, std::ios::out|std::ios::trunc);
 		file<< it->first << " " << it->second << std::endl;
-		tracef("%s, %d: write user[%s:%s]\n", __FILE__, __LINE__, it->first.c_str(), it->second.c_str());
+		tracef("%s, %d: write user[%s:%s].", __FILE__, __LINE__, it->first.c_str(), it->second.c_str());
 	}
 	m_map_mutex.unlock();
 }
