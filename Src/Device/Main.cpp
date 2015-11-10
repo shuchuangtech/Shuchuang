@@ -2,6 +2,7 @@
 #include "Device/RegProxy.h"
 #include "Device/RPCServer.h"
 #include "Device/Component/User/UserManager.h"
+#include "Device/Component/Task/TaskManager.h"
 #include "Device/Component/DeviceController.h"
 #include "Poco/Types.h"
 #include "Poco/Thread.h"
@@ -13,10 +14,14 @@ using namespace Poco;
 using namespace Poco::Net;
 int main(int argc, char** argv)
 {
-	if(argc < 4)
+	std::string configPath = "";
+	if(argc == 2)
 	{
-		std::cout << "argc < 4" << std::endl;
-		return -1;
+		configPath = argv[1];
+	}
+	else
+	{
+		configPath = "./config";
 	}
 	initPrintLogger();
 	//init gpio
@@ -24,7 +29,7 @@ int main(int argc, char** argv)
 	device->openDevice();
 	//init config manager
 	CConfigManager* config = CConfigManager::instance();
-	config->init("./global.conf");
+	config->init(configPath.c_str());
 	//初始化用户中心
 	CUserManager* user = CUserManager::instance();
 	user->init();
@@ -34,9 +39,14 @@ int main(int argc, char** argv)
 	//开启rpc server
 	CRPCServer* rpc = CRPCServer::instance();
 	rpc->start();
+	//hold here
 	Poco::Semaphore sem(0, 1);
 	sem.wait();
+	//stop
 	proxy->stop();
 	rpc->stop();
+	CTaskManager* task = CTaskManager::instance();
+	task->stopAllTasks();
 	return 0;
 }
+
