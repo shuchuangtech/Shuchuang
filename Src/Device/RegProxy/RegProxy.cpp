@@ -21,6 +21,10 @@ CRegProxy::CRegProxy()
 	m_sock = 0;
 	m_ssl_sock = 0;
 	m_token = "";
+	m_uuid = "SC0000000000";
+	m_dev_name = m_uuid;
+	m_dev_type = "default";
+	m_manufacture = "Shuchuangtech";
 }
 
 CRegProxy::~CRegProxy()
@@ -40,16 +44,16 @@ CRegProxy::~CRegProxy()
 void CRegProxy::handleNf(RequestNotification* pNf)
 {
 	RequestNotification::Ptr p(pNf);
-	debugf("%s, %d: p->id:%llu, this:%llu\n", __FILE__, __LINE__, p->getID(), (UInt64)this);
+	debugf("%s, %d: p->id:%llu, this:%llu", __FILE__, __LINE__, p->getID(), (UInt64)this);
 	if(p->getID() == (UInt64)m_sock)
 	{
 		JSON::Object::Ptr response = p->getResponse();
 		DynamicStruct ds = *response;
 		std::string param = ds.toString();
-		debugf("%s, %d: Receive notification:%s.\n", __FILE__, __LINE__, param.c_str());
+		debugf("%s, %d: Receive notification:%s.", __FILE__, __LINE__, param.c_str());
 		if(m_sock == 0)
 		{
-			errorf("%s, %d: Tcp connection unestablished.\n", __FILE__, __LINE__);
+			errorf("%s, %d: Tcp connection unestablished.", __FILE__, __LINE__);
 			return;
 		}
 		m_sock->sendBytes(param.c_str(), param.length());
@@ -60,13 +64,13 @@ void CRegProxy::start()
 {
 	if(m_started)
 	{
-		warnf("%s, %d: RegProxy already started.\n", __FILE__, __LINE__);
+		warnf("%s, %d: RegProxy already started.", __FILE__, __LINE__);
 		return;
 	}
 	m_rpc = CRPCServer::instance();
 	if(m_rpc == NULL)
 	{
-		errorf("%s, %d: Get RPCServer instance failed.\n", __FILE__, __LINE__);
+		errorf("%s, %d: Get RPCServer instance failed.", __FILE__, __LINE__);
 		return;
 	}
 	CConfigManager* config = CConfigManager::instance();
@@ -80,8 +84,22 @@ void CRegProxy::start()
 	else
 	{
 		m_ssl_host = pConfig->get("host").extract<std::string>();
-		m_ssl_port = pConfig->get("ssl_port").extract<UInt16>();
-		m_reg_port = pConfig->get("reg_port").extract<UInt16>();
+		m_ssl_port = (UInt16)pConfig->get("ssl_port").extract<int>();
+		m_reg_port = (UInt16)pConfig->get("reg_port").extract<int>();
+	}
+	pConfig = NULL;
+	config->getConfig("DeviceInfo", pConfig);
+	if(pConfig.isNull())
+	{
+		errorf("%s, %d: Please set default RegProxy config first.", __FILE__, __LINE__);
+		return;
+	}
+	else
+	{
+		m_uuid = pConfig->getValue<std::string>("uuid");
+		m_dev_name = pConfig->getValue<std::string>("name");
+		m_dev_type = pConfig->getValue<std::string>("type");
+		m_manufacture = pConfig->getValue<std::string>("manufacture");
 	}
 	Observer<CRegProxy, RequestNotification> observer(*this, &CRegProxy::handleNf);
 	m_rpc->addObserver(observer);	
@@ -90,7 +108,7 @@ void CRegProxy::start()
 	m_started = true;
 	TimerCallback<CRegProxy> callback(*this, &CRegProxy::onTimer);
 	m_timer.start(callback);
-	infof("%s, %d: RegProxy start succefully.\n", __FILE__, __LINE__);
+	infof("%s, %d: RegProxy start succefully.", __FILE__, __LINE__);
 }
 
 void CRegProxy::stop()
@@ -103,7 +121,7 @@ void CRegProxy::stop()
 	m_rpc->removeObserver(observer);
 	m_started = false;
 	m_timer.stop();
-	infof("%s, %d: RegProxy stopped.\n", __FILE__, __LINE__);
+	infof("%s, %d: RegProxy stopped.", __FILE__, __LINE__);
 }
 
 bool CRegProxy::getRegisterToken()
@@ -116,29 +134,29 @@ bool CRegProxy::getRegisterToken()
 	SocketAddress saddr(m_ssl_host, m_ssl_port);
 	try
 	{
-		tracef("%s, %d: Connecting to %s.\n", __FILE__, __LINE__, saddr.toString().c_str());
+		tracef("%s, %d: Connecting to %s.", __FILE__, __LINE__, saddr.toString().c_str());
 		Context::Ptr pContext = new Context(Context::TLSV1_CLIENT_USE, "", Context::VERIFY_NONE);
 		m_ssl_sock = new SecureStreamSocket(pContext);
 		m_ssl_sock->connect(saddr, Timespan(3, 0));
 	}
 	catch(Exception& e)
 	{
-		errorf("%s, %d: Connect failed %s.\n", __FILE__, __LINE__, e.message().c_str());
+		errorf("%s, %d: Connect failed %s.", __FILE__, __LINE__, e.message().c_str());
 		dealError(SECURE_SOCKET);
 		return false;
 	}
-	tracef("%s, %d: Connect to the server successfully.\n", __FILE__, __LINE__);
+	tracef("%s, %d: Connect to the server successfully.", __FILE__, __LINE__);
 	char buf[512] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_GETTOKEN);
-	infof("%s, %d: Get token buf: %s.\n", __FILE__, __LINE__, buf);
+	infof("%s, %d: Get token buf: %s.", __FILE__, __LINE__, buf);
 	if(m_ssl_sock->sendBytes(buf, sizeof(buf)) > 0)
 	{
-		tracef("%s, %d: Send get token message successfully.\n", __FILE__, __LINE__);
+		tracef("%s, %d: Send get token message successfully.", __FILE__, __LINE__);
 	}
 	else
 	{
 		dealError(SECURE_SOCKET);
-		errorf("%s, %d: Send get token message failed.\n", __FILE__, __LINE__);
+		errorf("%s, %d: Send get token message failed.", __FILE__, __LINE__);
 		return false;
 	}
 	memset(buf, 0 ,sizeof(buf));
@@ -176,7 +194,7 @@ bool CRegProxy::getRegisterToken()
 	}
 	catch(Exception& e)
 	{
-		errorf("%s, %d: Receive token timeout[%s].\n", __FILE__, __LINE__, e.message().c_str());
+		errorf("%s, %d: Receive token timeout[%s].", __FILE__, __LINE__, e.message().c_str());
 		dealError(SECURE_SOCKET);
 		return false;
 	}
@@ -187,13 +205,13 @@ bool CRegProxy::registerToServer()
 {
 	if(!getRegisterToken())
 	{
-		warnf("%s, %d: Get register token failed.\n", __FILE__, __LINE__);
+		warnf("%s, %d: Get register token failed.", __FILE__, __LINE__);
 		return false;
 	}
 	SocketAddress saddr(m_reg_host, m_reg_port);
 	try
 	{
-		tracef("%s, %d: Connecting to %s.\n", __FILE__, __LINE__, saddr.toString().c_str());
+		tracef("%s, %d: Connecting to %s.", __FILE__, __LINE__, saddr.toString().c_str());
 		if(m_sock != 0)
 		{
 			m_sock->close();
@@ -204,22 +222,22 @@ bool CRegProxy::registerToServer()
 	}
 	catch(Exception& e)
 	{
-		errorf("%s, %d: Connect failed[%s].\n", __FILE__, __LINE__, e.message().c_str());
+		errorf("%s, %d: Connect failed[%s].", __FILE__, __LINE__, e.message().c_str());
 		dealError(PLAIN_SOCKET);
 		return false;
 	}
-	tracef("%s, %d: Connect to the server successfully.\n", __FILE__, __LINE__);
+	tracef("%s, %d: Connect to the server successfully.", __FILE__, __LINE__);
 	char buf[512] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_REGISTER);
-	infof("%s, %d: Register buf: %s.\n", __FILE__, __LINE__, buf);
+	infof("%s, %d: Register buf: %s.", __FILE__, __LINE__, buf);
 	if(m_sock->sendBytes(buf, sizeof(buf)) > 0)
 	{
-		tracef("%s, %d: Register information sent.\n", __FILE__, __LINE__);
+		tracef("%s, %d: Register information sent.", __FILE__, __LINE__);
 	}
 	else
 	{
 		dealError(PLAIN_SOCKET);
-		errorf("%s, %d: Send register message failed.\n", __FILE__, __LINE__);
+		errorf("%s, %d: Send register message failed.", __FILE__, __LINE__);
 		return false;
 	}
 	memset(buf, 0, sizeof(buf));
@@ -230,34 +248,34 @@ bool CRegProxy::registerToServer()
 		{
 			if(m_sock->receiveBytes(buf, sizeof(buf)) > 0)
 			{
-				//tracef("%s, %d: Receive response: %s.\n", __FILE__, __LINE__, buf);
+				//tracef("%s, %d: Receive response: %s.", __FILE__, __LINE__, buf);
 				//SocketAddress peer;
 				//peer = m_sock->address();
-				//tracef("%s, %d: peer address %s:%u.\n", __FILE__, __LINE__, peer.host().toString().c_str(), peer.port());
+				//tracef("%s, %d: peer address %s:%u.", __FILE__, __LINE__, peer.host().toString().c_str(), peer.port());
 				JSON::Parser parser;
 				Dynamic::Var var = parser.parse(buf);
 				JSON::Object::Ptr object = var.extract<JSON::Object::Ptr>();
 				DynamicStruct ds = *object;
 				if(ds.contains("result") && ds["result"].toString() == "good")
 				{
-					tracef("%s, %d: Register successfully.\n", __FILE__, __LINE__);
+					tracef("%s, %d: Register successfully.", __FILE__, __LINE__);
 					return true;
 				}
 				else
 				{
-					tracef("%s, %d: Register failed.\n", __FILE__, __LINE__);
+					tracef("%s, %d: Register failed.", __FILE__, __LINE__);
 					return false;
 				}
 			}
 		}
 		catch(Exception& e)
 		{
-			errorf("%s, %d: Receive exception[%s].\n", __FILE__, __LINE__, e.message().c_str());
+			errorf("%s, %d: Receive exception[%s].", __FILE__, __LINE__, e.message().c_str());
 		}
 	}
 	else
 	{
-		errorf("%s, %d: Receive register response timeout.\n", __FILE__, __LINE__);
+		errorf("%s, %d: Receive register response timeout.", __FILE__, __LINE__);
 	}
 	dealError(PLAIN_SOCKET);
 	return false;
@@ -285,9 +303,10 @@ void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 			std::string md5key = DigestEngine::digestToHex(digest);
 			param[PARAM_KEY_STR] = md5key;
 			param[PARAM_TIMESTAMP_STR] = tms_str;
-			param[PARAM_DEV_NAME_STR] = "lock1";
-			param[PARAM_DEV_TYPE_STR] = "sc-01";
-			param[PARAM_UUID_STR] = "SC00000001";
+			param[PARAM_DEV_NAME_STR] = m_dev_name;
+			param[PARAM_DEV_TYPE_STR] = m_dev_type;
+			param[PARAM_DEV_MANU_STR] = m_manufacture;
+			param[PARAM_UUID_STR] = m_uuid;
 			ds[KEY_PARAM_STR] = param;
 			break;
 		}
@@ -296,7 +315,7 @@ void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 			ds[KEY_ACTION_STR] = "server.register";
 			DynamicStruct param;
 			param[PARAM_TOKEN_STR] = m_token;
-			param[PARAM_UUID_STR] = "SC00000001";
+			param[PARAM_UUID_STR] = m_uuid;
 			ds[KEY_PARAM_STR] = param;
 			break;
 		}
@@ -304,7 +323,7 @@ void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 		{
 			ds[KEY_ACTION_STR] = "server.keepalive";
 			DynamicStruct param;
-			param[PARAM_UUID_STR] = "SC00000001";
+			param[PARAM_UUID_STR] = m_uuid;
 			ds[KEY_PARAM_STR] = param;
 			break;
 		}
@@ -323,7 +342,7 @@ bool CRegProxy::parseAction(std::string& opt, std::string& component, std::strin
 	pos = opt.find(".");
 	if(pos == std::string::npos)
 	{
-		warnf("%s, %d: Action parse failed.\n", __FILE__, __LINE__);
+		warnf("%s, %d: Action parse failed.", __FILE__, __LINE__);
 		return false;
 	}
 	component = opt.substr(0, pos);
@@ -354,7 +373,7 @@ void CRegProxy::onTimer(Timer& timer)
 	{
 		if(m_sock == 0)
 		{
-			warnf("%s, %d: Tcp disconnected.\n", __FILE__, __LINE__);
+			warnf("%s, %d: Tcp disconnected.", __FILE__, __LINE__);
 			if(registerToServer())
 			{
 				Timestamp t;
@@ -372,7 +391,7 @@ void CRegProxy::onTimer(Timer& timer)
 			{
 				if(!m_sock->available())
 				{
-					warnf("%s, %d: Socket not available.\n", __FILE__, __LINE__);
+					warnf("%s, %d: Socket not available.", __FILE__, __LINE__);
 					dealError(PLAIN_SOCKET);
 					continue;
 				}
@@ -380,7 +399,7 @@ void CRegProxy::onTimer(Timer& timer)
 				int ret = m_sock->receiveBytes(buf, sizeof(buf));
 				if(ret <= 0 )
 				{
-					warnf("%s, %d: Receive error.\n", __FILE__, __LINE__);
+					warnf("%s, %d: Receive error.", __FILE__, __LINE__);
 					continue;
 				}
 				std::string request(buf);
@@ -404,7 +423,7 @@ void CRegProxy::onTimer(Timer& timer)
 				{
 					if( t - m_lastCheckTime > m_keepAliveTimeout )
 					{
-						warnf("%s, %d: Send keepalive timeout.\n", __FILE__, __LINE__);
+						warnf("%s, %d: Send keepalive timeout.", __FILE__, __LINE__);
 						dealError(SECURE_SOCKET|PLAIN_SOCKET);
 					}
 				}
@@ -419,12 +438,12 @@ bool CRegProxy::sendKeepAlive()
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_KEEPALIVE);
 	if(m_sock->sendBytes(buf, sizeof(buf)) > 0 )
 	{
-		infof("%s, %d: KeepAlive successfully.\n", __FILE__, __LINE__);
+		infof("%s, %d: KeepAlive successfully.", __FILE__, __LINE__);
 		return true;
 	}
 	else
 	{
-		warnf("%s, %d: KeepAlive sent failed.\n", __FILE__, __LINE__);
+		warnf("%s, %d: KeepAlive sent failed., __FILE__, __LINE__);
 		return false;
 	}
 
