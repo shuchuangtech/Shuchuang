@@ -2,20 +2,21 @@
 #define __DEVICE_RPC_CLIENT_H__
 #include "Poco/Task.h"
 #include "Poco/JSON/Object.h"
-#include "Device/RequestNotification.h"
+#include "Poco/Types.h"
 class CRPCClient : public Poco::Task
 {
 public:
 	CRPCClient();
 	~CRPCClient();
-	RequestNotification::Ptr getResult();
-	bool setRequest(RequestNotification::Ptr);
-	void runTask();
+	Poco::JSON::Object::Ptr&	getResponse();
+	bool						setRequest(std::string&);
+	bool						setID(Poco::UInt64	id);
+	Poco::UInt64				getID();
+	void						runTask();
 private:
 	bool parseAction(std::string& opt, std::string& component, std::string& method);
-	RequestNotification::Ptr			m_request;
-	RequestNotification::Ptr			m_result;
-	int									m_id;
-	Poco::JSON::Object::Ptr				m_param;
+	Poco::UInt64						m_id;
+	std::string							m_request_str;
+	Poco::JSON::Object::Ptr				m_response;
 };
 #endif

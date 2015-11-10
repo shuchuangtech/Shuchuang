@@ -40,10 +40,11 @@ CRegProxy::~CRegProxy()
 void CRegProxy::handleNf(RequestNotification* pNf)
 {
 	RequestNotification::Ptr p(pNf);
-	debugf("%s, %d: p->id:%d, this:%d\n", __FILE__, __LINE__, p->getID(), (int)this);
-	if(p->getID() == (int)m_sock)
+	debugf("%s, %d: p->id:%llu, this:%llu\n", __FILE__, __LINE__, p->getID(), (UInt64)this);
+	if(p->getID() == (UInt64)m_sock)
 	{
-		DynamicStruct ds = *(p->getParam());
+		JSON::Object::Ptr response = p->getResponse();
+		DynamicStruct ds = *response;
 		std::string param = ds.toString();
 		debugf("%s, %d: Receive notification:%s.\n", __FILE__, __LINE__, param.c_str());
 		if(m_sock == 0)
@@ -51,7 +52,6 @@ void CRegProxy::handleNf(RequestNotification* pNf)
 			errorf("%s, %d: Tcp connection unestablished.\n", __FILE__, __LINE__);
 			return;
 		}
-		tracef("%s, %d: Send request response\n", __FILE__, __LINE__);
 		m_sock->sendBytes(param.c_str(), param.length());
 	}
 }
@@ -383,21 +383,9 @@ void CRegProxy::onTimer(Timer& timer)
 					warnf("%s, %d: Receive error.\n", __FILE__, __LINE__);
 					continue;
 				}
-				JSON::Parser parser;
-				Dynamic::Var request;
-				JSON::Object::Ptr object;
-				DynamicStruct param;
-				try
-				{
-					request = parser.parse(buf);
-					object = request.extract<JSON::Object::Ptr>();
-					m_rpc->addRequest(new RequestNotification((int)m_sock, object));
-					//handleRequest(&param);
-				}
-				catch(Exception& e)
-				{
-					errorf("%s, %d: Request format error[%s].\n", __FILE__, __LINE__, e.message().c_str());
-				}
+				std::string request(buf);
+				JSON::Object::Ptr nil = NULL;
+				m_rpc->addRequest(new RequestNotification((UInt64)m_sock, request, nil));
 				Timestamp t;
 				m_lastCheckTime = t;
 			}
