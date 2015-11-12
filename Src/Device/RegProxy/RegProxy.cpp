@@ -375,8 +375,6 @@ void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 		default :
 			break;
 	}
-	ds["uuid"] = "hjhjhjhjhj";
-	ds["devType"] = "abc";
 	std::string bufStr = ds.toString();
 	snprintf(buf, size - 1, "%s", bufStr.c_str());
 }

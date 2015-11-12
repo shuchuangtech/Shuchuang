@@ -69,11 +69,12 @@ void CRPCClient::runTask()
 	JSON::Object::Ptr request;
 	//parse request
 	std::string type = "";
-	std::string opt = "";
+	std::string action = "";
 	std::string param_str = "";
+	Int64		request_id = 0;
 	std::string component = "";
 	std::string method = "";
-
+	
 	//convert param string to JSON format
 	Dynamic::Var temp;
 	JSON::Object::Ptr param;
@@ -82,7 +83,7 @@ void CRPCClient::runTask()
 	CTaskManager* task = NULL;
 	CDeviceController* device = NULL;
 
-	DynamicStruct ds_request = *request;
+	DynamicStruct ds_request;
 	std::string token = "";
 	try
 	{
@@ -95,6 +96,7 @@ void CRPCClient::runTask()
 		goto done;
 	}
 	request = var.extract<JSON::Object::Ptr>();
+	ds_request = *request;
 	//may be a keepalive response
 	if(request->has(KEY_TYPE_STR) && (request->getValue<std::string>(KEY_TYPE_STR) == TYPE_RESPONSE_STR))
 	{
@@ -103,26 +105,28 @@ void CRPCClient::runTask()
 	}
 	//http request
 	tracef("%s, %d: Handle request:[%s].", __FILE__, __LINE__, ds_request.toString().c_str());
-	if(!request->has(KEY_TYPE_STR) || !request->has(KEY_ACTION_STR) || !request->has(KEY_PARAM_STR))
+	if(!request->has(KEY_TYPE_STR) || !request->has(KEY_ACTION_STR) || !request->has(KEY_PARAM_STR) || !request->has(KEY_REQUEST_ID_STR))
 	{
 		detail = "101";
 		result = false;
 		goto done;
 	}
 	type = request->getValue<std::string>(KEY_TYPE_STR);;
-	opt = request->getValue<std::string>(KEY_ACTION_STR);
+	action = request->getValue<std::string>(KEY_ACTION_STR);
 	param_str = request->getValue<std::string>(KEY_PARAM_STR);
+	request_id = request->getValue<Int64>(KEY_REQUEST_ID_STR);
 	component = "";
 	method = "";
-	if(!parseAction(opt, component, method))
+	if(!parseAction(action, component, method))
 	{
 		detail = "105";
 		result = false;
 		goto done;
 	}
-	tracef("%s, %d: opt:%s, component:%s, method:%s.", __FILE__, __LINE__, opt.c_str(), component.c_str(), method.c_str());
+	tracef("%s, %d: action:%s, component:%s, method:%s.", __FILE__, __LINE__, action.c_str(), component.c_str(), method.c_str());
 	parser.reset();
-	try{
+	try
+	{
 		temp = parser.parse(param_str.c_str());
 	}
 	catch(Exception& e)
@@ -237,6 +241,8 @@ void CRPCClient::runTask()
 		goto done;
 	}
 done:
+	pResult->set(KEY_ACTION_STR, action);
+	pResult->set(KEY_REQUEST_ID_STR, request_id);
 	if(result)
 	{
 		pResult->set(KEY_RESULT_STR, RESULT_GOOD_STR);
