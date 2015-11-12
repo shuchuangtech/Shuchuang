@@ -30,6 +30,7 @@ private:
 	bool				parseAction(std::string action, std::string& component, std::string& method);
 	//variables
 	bool				m_receive;
+	//http request id, id=0 for device register request
 	UInt64				m_req_id;
 	int					m_type;
 	char*				m_buf;

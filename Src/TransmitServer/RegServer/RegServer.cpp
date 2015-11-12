@@ -314,7 +314,7 @@ void CRegServer::handleTaskFinish(TaskFinishedNotification* pNf)
 				UInt64 impl = (UInt64)st->socket.impl();
 				m_pReg_map.insert(std::make_pair<UInt64, SocketTime*>(impl, st));
 				m_reg_queue_mutex.unlock();
-				if(req_id < 0)
+				if(req_id == 1)
 				{
 					warnf("%s, %d: Request id error.", __FILE__, __LINE__);
 				}
@@ -515,7 +515,7 @@ bool CRegServer::sendRequest(RequestInfo* request)
 	m_request_map.insert(std::make_pair<UInt64, RequestInfo*>(request_id, request));
 	m_request_queue_mutex.unlock();
 	ds[KEY_REQUEST_ID_STR] = request_id;
-	tracef("%s, %d: Request sent to device.", __FILE__, __LINE__);
+	tracef("%s, %d: Request %s sent to device.", __FILE__, __LINE__, ds.toString().c_str());
 	it->second->socket.sendBytes(ds.toString().c_str(), ds.toString().length());
 	request->sem.wait();
 	return true;

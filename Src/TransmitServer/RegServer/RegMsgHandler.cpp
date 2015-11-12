@@ -62,6 +62,7 @@ bool CRegMsgHandler::receiveBytes(char* buf, int length, Timespan timeout)
 			return false;
 		}
 	}
+	tracef("%s, %d: Receive buf: %s", __FILE__, __LINE__, buf);
 	m_socket->state = SocketTime::Connected;
 	return true;
 }
@@ -98,8 +99,8 @@ bool CRegMsgHandler::handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 		result->set(KEY_RESULT_STR, RESULT_FAIL_STR);
 		result->set(KEY_DETAIL_STR, "201");
 		return false;
-	}
-	if(!param.contains(PARAM_UUID_STR) || !param.contains(PARAM_DEV_TYPE_STR) || !param.contains(PARAM_DEV_NAME_STR) || !param.contains(PARAM_TIMESTAMP_STR) || !param.contains(PARAM_KEY_STR))
+	}	
+	if(!param.contains(PARAM_UUID_STR) || !param.contains(PARAM_DEV_TYPE_STR) || !param.contains(PARAM_DEV_NAME_STR) || !param.contains(PARAM_DEV_MANU_STR))
 	{
 		warnf("%s, %d: Param missing.", __FILE__, __LINE__);
 		result->set(KEY_DETAIL_STR, "104");
@@ -110,15 +111,16 @@ bool CRegMsgHandler::handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 	std::string dev_uuid = param[PARAM_UUID_STR].toString();
 	std::string dev_type = param[PARAM_DEV_TYPE_STR].toString();
 	std::string dev_name = param[PARAM_DEV_NAME_STR].toString();
-	std::string timestamp = param[PARAM_TIMESTAMP_STR].toString();
-	std::string key = param[PARAM_KEY_STR].toString();
-	if(!verifyKey(timestamp, SERVER_KEY_STR, key))
-	{
-		warnf("%s, %d: Device %s verify failed.", __FILE__, __LINE__, dev_uuid.c_str());
-		result->set(KEY_RESULT_STR, RESULT_FAIL_STR);
-		result->set(KEY_DETAIL_STR, "300");
-		return false;
-	}
+	Timestamp now;
+	Int64 tms = now.epochMicroseconds();
+	char tms_str[32];
+	snprintf(tms_str, 31, "%lld", tms);
+	std::string key = "alpha2015";
+	key += tms_str;
+	MD5Engine md5;
+	md5.update(key);
+	const DigestEngine::Digest& digest = md5.digest();
+	std::string md5key = DigestEngine::digestToHex(digest);
 	CDeviceManager* dm = CDeviceManager::instance();
 	if(dm->addDevice(dev_uuid, (UInt64)m_socket->socket.impl(), dev_type, token))
 	{
@@ -127,6 +129,8 @@ bool CRegMsgHandler::handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 		DynamicStruct returnParam;
 		returnParam[PARAM_UUID_STR] = dev_uuid;
 		returnParam[PARAM_TOKEN_STR] = token;
+		returnParam[PARAM_TIMESTAMP_STR] = tms_str;
+		returnParam[PARAM_KEY_STR] = md5key;
 		result->set(KEY_PARAM_STR, returnParam);
 		return true;
 	}
@@ -140,16 +144,18 @@ bool CRegMsgHandler::handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 bool CRegMsgHandler::handleRegMsg(JSON::Object::Ptr request, JSON::Object::Ptr result)
 {
 	DynamicStruct ds = *request;
+	tracef("%s, %d: handle reg msg %s", __FILE__, __LINE__, ds.toString().c_str());
 	if(ds.contains(KEY_TYPE_STR) && ds[KEY_TYPE_STR] == TYPE_RESPONSE_STR)
-			//response to http request
+	//response to http request
 	{
 		if(ds.contains(KEY_REQUEST_ID_STR))
 			m_req_id = ds[KEY_REQUEST_ID_STR];
 		else
-			m_req_id = -1;
+			m_req_id = 1;
 		m_http_response = request;
 		return true;
 	}
+	//
 	DynamicStruct param;
 	if(!formatCheck(request, result, param))
 	{
@@ -159,6 +165,7 @@ bool CRegMsgHandler::handleRegMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 	std::string action = ds[KEY_ACTION_STR].toString();
 	std::string component = "";
 	std::string method = "";
+	result->set(KEY_ACTION_STR, action);
 	if(!parseAction(action, component, method))
 	{
 		warnf("%s, %d: Request action format error.", __FILE__, __LINE__);
@@ -283,23 +290,6 @@ void CRegMsgHandler::runTask()
 		tracef("%s, %d: result %s, send bytes: %d.", __FILE__, __LINE__, ds.toString().c_str(), ret);
 	}
 	return;
-}
-
-bool CRegMsgHandler::verifyKey(std::string timestamp, std::string skey, std::string key)
-{
-	MD5Engine md5;
-	std::string s1 = skey + timestamp;
-	md5.update(s1);
-	const DigestEngine::Digest& digest = md5.digest();
-	std::string md5key(DigestEngine::digestToHex(digest));
-	if(md5key == key)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
 }
 
 bool CRegMsgHandler::formatCheck(JSON::Object::Ptr request, JSON::Object::Ptr result, DynamicStruct& param)
