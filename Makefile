@@ -15,6 +15,7 @@ SRC_DIR += Src/Common \
 		  Src/Device/RegProxy \
 		  Src/Device/RPCServer \
 		  Src/Device/RPCClient \
+		  Src/Device/Network \
 		  Src/Device/Component \
 		  Src/Device/Component/User \
 		  Src/Device/Component/Task
