@@ -7,23 +7,20 @@
 #include <sys/wait.h>
 CDhcpClient::CDhcpClient()
 {
-	m_started = false;
 	m_pid = 0;
 }
 
 CDhcpClient::~CDhcpClient()
 {
-
+	stopDhcp();
 }
 
 bool CDhcpClient::startDhcp(const char* ethname)
 {
-	if(!m_started)
+	if(readPidFile())
 	{
 		stopDhcp();
-		m_started = false;
 	}
-	m_started = true;
 	pid_t pid = -1;
 	pid = fork();
 	if(pid < 0)
@@ -63,6 +60,7 @@ bool CDhcpClient::startDhcp(const char* ethname)
 		char* envp[] = {NULL};
 		execve("/sbin/udhcpc", argv, envp);
 	}
+	return true;
 }
 
 bool CDhcpClient::readPidFile()
@@ -83,9 +81,8 @@ bool CDhcpClient::readPidFile()
 
 bool CDhcpClient::stopDhcp()
 {
-	if(!m_started || m_pid == 0)
+	if(m_pid == 0)
 		return false;
-	m_started = false;
 	int retval = kill(m_pid, SIGKILL);
 	if(retval == 0)
 	{
@@ -97,6 +94,7 @@ bool CDhcpClient::stopDhcp()
 		warnf("%s, %d: Dhcp client[%d] stop failed.", __FILE__, __LINE__, m_pid);
 		return false;
 	}
+	m_pid = 0;
 	return true;
 }
 

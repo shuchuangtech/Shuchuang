@@ -82,6 +82,7 @@ void CRPCClient::runTask()
 	CTaskManager* task = NULL;
 	CDeviceController* device = NULL;
 
+	DynamicStruct ds_request = *request;
 	std::string token = "";
 	try
 	{
@@ -94,6 +95,14 @@ void CRPCClient::runTask()
 		goto done;
 	}
 	request = var.extract<JSON::Object::Ptr>();
+	//may be a keepalive response
+	if(request->has(KEY_TYPE_STR) && (request->getValue<std::string>(KEY_TYPE_STR) == TYPE_RESPONSE_STR))
+	{
+		m_response = NULL;
+		return;
+	}
+	//http request
+	tracef("%s, %d: Handle request:[%s].", __FILE__, __LINE__, ds_request.toString().c_str());
 	if(!request->has(KEY_TYPE_STR) || !request->has(KEY_ACTION_STR) || !request->has(KEY_PARAM_STR))
 	{
 		detail = "101";
@@ -238,8 +247,6 @@ done:
 		pResult->set(KEY_RESULT_STR, RESULT_FAIL_STR);
 		pResult->set(KEY_DETAIL_STR, detail);
 	}
-	DynamicStruct ds_request = *request;
-	tracef("%s, %d: Finish request:[%s].", __FILE__, __LINE__, ds_request.toString().c_str());
 	if(!m_response.isNull())
 		m_response = NULL;
 	m_response = pResult;

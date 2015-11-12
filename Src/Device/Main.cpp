@@ -7,7 +7,7 @@
 #include "Poco/Types.h"
 #include "Poco/Thread.h"
 #include "Common/ConfigManager.h"
-#include "Device/SystemManager.h"
+#include "Device/Network/NetworkManager.h"
 #include "Common/PrintLog.h"
 #include "Poco/Semaphore.h"
 using namespace Poco;
@@ -27,6 +27,8 @@ int main(int argc, char** argv)
 	//init gpio
 	CDeviceController* device = CDeviceController::instance();
 	device->openDevice();
+	CNetworkManager* network = CNetworkManager::instance();
+	network->startDhcp("eth0");
 	//init config manager
 	CConfigManager* config = CConfigManager::instance();
 	config->init(configPath.c_str());
@@ -47,6 +49,7 @@ int main(int argc, char** argv)
 	rpc->stop();
 	CTaskManager* task = CTaskManager::instance();
 	task->stopAllTasks();
+	network->stopDhcp("eth0");
 	return 0;
 }
 

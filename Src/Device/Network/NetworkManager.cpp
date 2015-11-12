@@ -1,4 +1,4 @@
-#include "Device/NetworkManager.h"
+#include "Device/Network/NetworkManager.h"
 #include <string.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
@@ -6,6 +6,7 @@
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <unistd.h>
+#include "Common/PrintLog.h"
 #include "Poco/Types.h"
 bool CNetworkManager::getMiiLinkState(const char* ifname, bool& isUp)
 {
@@ -38,9 +39,31 @@ bool CNetworkManager::getMiiLinkState(const char* ifname, bool& isUp)
 
 bool CNetworkManager::startDhcp(const char* ethname)
 {
+	std::map<std::string, CDhcpClient*>::iterator it = m_dhcp_map.find(std::string(ethname));
+	if(it != m_dhcp_map.end())
+	{
+		warnf("%s, %d: %s dhcp already started.", __FILE__, __LINE__, ethname);
+		return false;
+	}
+	CDhcpClient* client = new CDhcpClient;
+	client->startDhcp(ethname);
+	m_dhcp_map.insert(std::make_pair<std::string, CDhcpClient*>(std::string(ethname), client));
+	return true;
 }
 
 bool CNetworkManager::stopDhcp(const char* ethname)
 {
+	std::map<std::string, CDhcpClient*>::iterator it = m_dhcp_map.find(std::string(ethname));
+	if(it == m_dhcp_map.end())
+	{
+		warnf("%s, %d: %s dhcp not started.", __FILE__, __LINE__, ethname);
+		return false;
+	}
+	CDhcpClient* client = it->second;
+	client->stopDhcp();
+	delete client;
+	m_dhcp_map.erase(it);
+	return true;
+
 }
 

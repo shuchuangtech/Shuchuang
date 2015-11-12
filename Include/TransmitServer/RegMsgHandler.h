@@ -26,7 +26,6 @@ private:
 	bool				parseRequest(char* buf, JSON::Object::Ptr& request);
 	bool				handleRegMsg(JSON::Object::Ptr request, JSON::Object::Ptr result);
 	bool				handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr result);
-	bool				verifyKey(std::string timestamp, std::string skey, std::string key);
 	bool				formatCheck(JSON::Object::Ptr request, JSON::Object::Ptr result, DynamicStruct& param);
 	bool				parseAction(std::string action, std::string& component, std::string& method);
 	//variables

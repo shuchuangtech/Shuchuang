@@ -3,6 +3,8 @@
 #include "Poco/Runnable.h"
 #include "Poco/Thread.h"
 #include "Poco/SingletonHolder.h"
+#include "Device/Network/NetworkManager.h"
+#include <map>
 class CSystemManager : public Poco::Runnable
 {
 public:
@@ -19,6 +21,8 @@ public:
 private:
 	Poco::Thread		m_thread;
 	bool				m_started;
+	CNetworkManager*	m_network;
+	std::map<std::string, bool>		m_dhcp_state;	
 };
 #endif
 

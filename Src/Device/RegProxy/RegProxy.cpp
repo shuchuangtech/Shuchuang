@@ -15,7 +15,7 @@ using namespace Poco::Net;
 CRegProxy::CRegProxy()
 {
 	m_started = false;
-	m_checkPeriod = 10 * 1000 * 1000;	//30s
+	m_checkPeriod = 30 * 1000 * 1000;	//30s
 	m_keepAliveTimeout = 2 * 60 * 1000 * 1000;	//2 minutes
 	m_lastCheckTime = 0;
 	m_sock = 0;
@@ -44,19 +44,28 @@ CRegProxy::~CRegProxy()
 void CRegProxy::handleNf(RequestNotification* pNf)
 {
 	RequestNotification::Ptr p(pNf);
-	debugf("%s, %d: p->id:%llu, this:%llu", __FILE__, __LINE__, p->getID(), (UInt64)this);
+	debugf("%s, %d: p->id:%llu, m_sock:%llu", __FILE__, __LINE__, p->getID(), (UInt64)m_sock);
 	if(p->getID() == (UInt64)m_sock)
 	{
-		JSON::Object::Ptr response = p->getResponse();
-		DynamicStruct ds = *response;
-		std::string param = ds.toString();
-		debugf("%s, %d: Receive notification:%s.", __FILE__, __LINE__, param.c_str());
 		if(m_sock == 0)
 		{
 			errorf("%s, %d: Tcp connection unestablished.", __FILE__, __LINE__);
 			return;
 		}
-		m_sock->sendBytes(param.c_str(), param.length());
+		JSON::Object::Ptr response = p->getResponse();
+		if(!response.isNull())
+		{
+			DynamicStruct ds = *response;
+			std::string ds_str = ds.toString();
+			if(m_sock->sendBytes(ds_str.c_str(), ds_str.length()) > 0)
+			{
+				debugf("%s, %d: Receive notification and send:%s.", __FILE__, __LINE__, ds_str.c_str());
+			}
+		}
+		else
+		{
+			tracepoint();
+		}
 	}
 }
 
@@ -84,6 +93,7 @@ void CRegProxy::start()
 	else
 	{
 		m_ssl_host = pConfig->get("host").extract<std::string>();
+		m_reg_host = m_ssl_host;
 		m_ssl_port = (UInt16)pConfig->get("ssl_port").extract<int>();
 		m_reg_port = (UInt16)pConfig->get("reg_port").extract<int>();
 	}
@@ -170,12 +180,21 @@ bool CRegProxy::getRegisterToken()
 			Dynamic::Var var = parser.parse(buf);
 			JSON::Object::Ptr obj = var.extract<JSON::Object::Ptr>();
 			DynamicStruct ds = *obj;
-			if(!ds.contains(KEY_TYPE_STR) || ds[KEY_TYPE_STR].toString() != TYPE_RESPONSE_STR)
+			if(!ds.contains(KEY_TYPE_STR) || !ds.contains(KEY_RESULT_STR) || !ds.contains(KEY_PARAM_STR))
+			{
+				warnf("%s, %d: Receive message miss type, result, or param.", __FILE__, __LINE__);
 				return false;
-			if(!ds.contains(KEY_RESULT_STR) || ds[KEY_RESULT_STR] != RESULT_GOOD_STR)
+			}
+			if(ds[KEY_TYPE_STR].toString() != TYPE_RESPONSE_STR)
+			{
+				warnf("%s, %d: Receive message type is not response.", __FILE__, __LINE__);
 				return false;
-			if(!ds.contains(KEY_PARAM_STR))
+			}
+			if(ds[KEY_RESULT_STR] != RESULT_GOOD_STR)
+			{
+				warnf("%s, %d: Server request failed.", __FILE__, __LINE__);
 				return false;
+			}
 			var = ds[KEY_PARAM_STR];
 			DynamicStruct param;
 			try
@@ -184,11 +203,35 @@ bool CRegProxy::getRegisterToken()
 			}
 			catch(Exception& e)
 			{
+				warnf("%s, %d: Extract param error[%s].", __FILE__, __LINE__, e.message().c_str());
 				return false;
 			}
-			if(!param.contains(PARAM_TOKEN_STR))
+			if(!param.contains(PARAM_UUID_STR) || !param.contains(PARAM_KEY_STR) || !param.contains(PARAM_TIMESTAMP_STR) || !param.contains(PARAM_TOKEN_STR))
+			{
+				warnf("%s, %d: Param miss uuid, key, timestamp, or token.", __FILE__, __LINE__);
 				return false;
+			}
+			std::string uuid = param[PARAM_UUID_STR].toString();
+			if(uuid != m_uuid)
+			{
+				warnf("%s, %d: Server response uuid error.", __FILE__, __LINE__);
+				return false;
+			}
+			std::string recvkey = param[PARAM_KEY_STR].toString();
+			std::string timestamp = param[PARAM_TIMESTAMP_STR].toString();
+			std::string key = "alpha2015";
+			key += timestamp;
+			MD5Engine md5;
+			md5.update(key);
+			const DigestEngine::Digest& digest = md5.digest();
+			std::string md5key = DigestEngine::digestToHex(digest);
+			if(recvkey != md5key)
+			{
+				warnf("%s, %d: Verify server key failed.", __FILE__, __LINE__);
+				return false;
+			}
 			m_token = param[PARAM_TOKEN_STR].toString();
+			infof("%s, %d: Get register token successfully.", __FILE__, __LINE__);
 			return true;
 		}
 	}
@@ -291,6 +334,7 @@ void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 		{
 			DynamicStruct param;
 			ds[KEY_ACTION_STR] = "server.token";
+			/*
 			Timestamp t;
 			UInt64 tms = t.epochMicroseconds();
 			char tms_str[32];
@@ -303,6 +347,7 @@ void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 			std::string md5key = DigestEngine::digestToHex(digest);
 			param[PARAM_KEY_STR] = md5key;
 			param[PARAM_TIMESTAMP_STR] = tms_str;
+			*/
 			param[PARAM_DEV_NAME_STR] = m_dev_name;
 			param[PARAM_DEV_TYPE_STR] = m_dev_type;
 			param[PARAM_DEV_MANU_STR] = m_manufacture;
@@ -443,7 +488,7 @@ bool CRegProxy::sendKeepAlive()
 	}
 	else
 	{
-		warnf("%s, %d: KeepAlive sent failed., __FILE__, __LINE__);
+		warnf("%s, %d: KeepAlive sent failed.", __FILE__, __LINE__);
 		return false;
 	}
 
