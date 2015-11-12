@@ -112,17 +112,17 @@ void CRPCServer::handleFinish(TaskFinishedNotification* pNf)
 		CRPCClient* client = (CRPCClient*)p->task();
 		JSON::Object::Ptr response = client->getResponse();
 		UInt64 id = client->getID();
-		DynamicStruct ds = *response;
-		std::string param = ds.toString();
-		tracef("%s, %d: Handle finish, result:%s.", __FILE__, __LINE__, param.c_str());
-		try
+		if(!response.isNull())
 		{
-			m_center.postNotification(new RequestNotification(id, "", response));
+			DynamicStruct ds = *response;
+			std::string param = ds.toString();
+			tracef("%s, %d: Handle finish, result:%s.", __FILE__, __LINE__, param.c_str());
 		}
-		catch(Exception& e)
+		else
 		{
-			tracef("%s, %d: %s.", __FILE__, __LINE__, e.message().c_str());
+			tracepoint();
 		}
+		m_center.postNotification(new RequestNotification(id, "", response));
 		client->release();
 	}
 	else
