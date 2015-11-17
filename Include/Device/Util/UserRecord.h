@@ -4,6 +4,7 @@
 #include "Poco/Types.h"
 #include "Poco/Data/Session.h"
 #include "Poco/SharedPtr.h"
+#include <vector>
 //data structure
 struct _UserRecordNode
 {
@@ -39,8 +40,13 @@ public:
 	int addUser(UserRecordNode&);
 	int deleteUser(UserRecordNode&);
 	int updateUser(UserRecordNode&);
-	int getUser(UserRecordNode&);
+	int getUserByName(UserRecordNode&);
+	int getUserByToken(UserRecordNode&);
+	int getUsersByAuth(int auth, std::vector<UserRecordNode>&);
+	int getUsersByOpen(int open, std::vector<UserRecordNode>&);
 private:
+	int getSingleUser(const std::string&, UserRecordNode&);
+	int getMultiUsers(const std::string&, int, std::vector<UserRecordNode>&);
 	Poco::Data::Session*		m_session_ptr;
 };
 #endif

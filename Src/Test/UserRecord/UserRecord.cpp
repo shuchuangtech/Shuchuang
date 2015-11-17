@@ -1,6 +1,7 @@
 #include "Device/Util/UserRecord.h"
 #include "Common/PrintLog.h"
 #include "Poco/Data/SQLite/Connector.h"
+#include "Poco/Data/RecordSet.h"
 using namespace Poco;
 using namespace Poco::Data;
 using namespace Poco::Data::Keywords;
@@ -111,28 +112,64 @@ int CUserRecord::deleteUser(UserRecordNode& user)
 	return ret;
 }
 
-int CUserRecord::getUser(UserRecordNode& user)
+int CUserRecord::getUserByName(UserRecordNode& user)
+{
+	return getSingleUser("Username", user);
+}
+
+int CUserRecord::getUserByToken(UserRecordNode& user)
+{
+	return getSingleUser("Token", user);
+}
+
+int CUserRecord::getUsersByAuth(int auth, std::vector<UserRecordNode>(& data_set))
+{
+	return getMultiUsers("Authority", auth, data_set);
+}
+
+int CUserRecord::getUsersByOpen(int open, std::vector<UserRecordNode>(& data_set))
+{
+	return getMultiUsers("RemainOpen", open, data_set);
+}
+
+int CUserRecord::getSingleUser(const std::string& col_name, UserRecordNode& user)
 {
 	if(m_session_ptr == NULL)
 	{
 		warnf("%s, %d: Please init database first.", __FILE__, __LINE__);
 		return -1;
 	}
-	if(user.username.empty())
+	
+	Statement sselect(*m_session_ptr);
+	if(col_name == "Username")
 	{
-		warnf("%s, %d: Username is NULL.", __FILE__, __LINE__);
+		sselect << "SELECT `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` WHERE `Username`=?",
+			into(user.password),
+			into(user.authority),
+			into(user.timeOfValidity),
+			into(user.remainOpen),
+			into(user.token),
+			into(user.lastVerify),
+			into(user.lastLogin),
+			use(user.username);
+	}
+	else if(col_name == "Token")
+	{
+		sselect << "SELECT `Username`, `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `LastVerify`, `LastLogin` FROM `User` WHERE `Token`=?",
+			into(user.username),
+			into(user.password),
+			into(user.authority),
+			into(user.timeOfValidity),
+			into(user.remainOpen),
+			into(user.lastVerify),
+			into(user.lastLogin),
+			use(user.token);
+	}
+	else
+	{
+		warnf("%s, %d: Not supported select col name[%s].", __FILE__, __LINE__, col_name.c_str());
 		return -1;
 	}
-	Statement sselect(*m_session_ptr);
-	sselect << "SELECT `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` WHERE `Username`=?",
-		into(user.password),
-		into(user.authority),
-		into(user.timeOfValidity),
-		into(user.remainOpen),
-		into(user.token),
-		into(user.lastVerify),
-		into(user.lastLogin),
-		use(user.username);
 	int ret = 0;
 	try
 	{
@@ -140,8 +177,61 @@ int CUserRecord::getUser(UserRecordNode& user)
 	}
 	catch(Exception& e)
 	{
-		warnf("%s, %d: Select from User failed[%s].", __FILE__, __LINE__, e.message().c_str());
+		warnf("%s, %d: Select single from User failed[%s].", __FILE__, __LINE__, e.message().c_str());
 		return 0;
+	}
+	return ret;
+}
+
+int CUserRecord::getMultiUsers(const std::string& col_name, int col_value, std::vector<UserRecordNode>(& data_set))
+{
+	if(m_session_ptr == NULL)
+	{
+		warnf("%s, %d: Please init database first.", __FILE__, __LINE__);
+		return -1;
+	}
+	Statement sselect(*m_session_ptr);
+	if(col_name == "Authority")
+	{	
+		sselect << "SELECT `Username`, `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` WHERE `Authority`=?",
+				use(col_value);
+	}
+	else if(col_name == "RemainOpen")
+	{
+		sselect << "SELECT `Username`, `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` WHERE `RemainOpen`=?",
+				use(col_value);
+	}
+	else
+	{
+		warnf("%s, %d: Not supported select col name[%s].", __FILE__, __LINE__, col_name.c_str());
+		return -1;
+	}
+	int ret = 0;
+	try
+	{
+		ret = sselect.execute();
+	}
+	catch(Exception& e)
+	{
+		warnf("%s, %d: Select multi from User failed[%s].", __FILE__, __LINE__, e.message().c_str());
+		return -1;
+	}
+	RecordSet rs(sselect);
+	bool more = rs.moveFirst();
+	while(more)
+	{
+		UserRecordNode user_node;
+		std::size_t col = 0;
+		user_node.username = rs[col++].convert<std::string>();
+		user_node.password = rs[col++].convert<std::string>();
+		user_node.authority = rs[col++].convert<int>();
+		user_node.timeOfValidity = rs[col++].convert<Int64>();
+		user_node.remainOpen = rs[col++].convert<int>();
+		user_node.token = rs[col++].convert<std::string>();
+		user_node.lastVerify = rs[col++].convert<Int64>();
+		user_node.lastLogin = rs[col++].convert<Int64>();
+		more = rs.moveNext();
+		data_set.push_back(user_node);
 	}
 	return ret;
 }
