@@ -5,11 +5,12 @@ class CDhcpClient
 public:
 	CDhcpClient();
 	~CDhcpClient();
-	bool	startDhcp(const char* ethname);
+	bool	startDhcp(const char* ethname, const char* hostname);
 	bool	stopDhcp();
 private:
-	bool	readPidFile();
-	int		m_pid;
+	bool			readPidFile();
+	int				m_pid;
+	char**			m_argv;
 };
 #endif
 

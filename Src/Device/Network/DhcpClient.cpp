@@ -7,20 +7,37 @@
 #include <sys/wait.h>
 CDhcpClient::CDhcpClient()
 {
+	m_argv = NULL;
 	m_pid = 0;
 }
 
 CDhcpClient::~CDhcpClient()
 {
+	if(m_argv != NULL)
+		delete[] m_argv;
 	stopDhcp();
 }
 
-bool CDhcpClient::startDhcp(const char* ethname)
+bool CDhcpClient::startDhcp(const char* ethname, const char* hostname)
 {
 	if(readPidFile())
 	{
 		stopDhcp();
 	}
+	m_argv = new char*[10];
+	for(int i = 0; i < 10; i++)
+		m_argv[i] = new char[16];
+	int index = 0;
+	snprintf(m_argv[index++], 15, "%s", "udhcpc");
+	snprintf(m_argv[index++], 15, "%s", "-i");
+	snprintf(m_argv[index++], 15, "%s", ethname);
+	snprintf(m_argv[index++], 15, "%s", "-p");
+	snprintf(m_argv[index++], 15, "%s", "/var/run/udhcpc.pid");
+	snprintf(m_argv[index++], 15, "%s", "-R");
+	snprintf(m_argv[index++], 15, "%s", "-b");
+	snprintf(m_argv[index++], 15, "%s", "-h");
+	snprintf(m_argv[index++], 15, "%s", hostname);
+	m_argv[index++] = NULL;
 	pid_t pid = -1;
 	pid = fork();
 	if(pid < 0)
@@ -35,6 +52,10 @@ bool CDhcpClient::startDhcp(const char* ethname)
 			errorf("%s, %d: wait children process error.", __FILE__, __LINE__);
 			return false;
 		}
+		for(int i = 0; i < 10; i++)
+			delete[] m_argv[i];
+		delete[] m_argv;
+		m_argv = NULL;
 		//parent
 		for(int i = 0; i < 5; i++)
 		{
@@ -56,7 +77,8 @@ bool CDhcpClient::startDhcp(const char* ethname)
 	else
 	{
 		//children
-		char* argv[] = {"udhcpc", "-i", "eth0", "-p", "/var/run/udhcpc.pid", "-R", "-b", NULL};
+		int index = 0;
+		char* const* argv = m_argv;
 		char* envp[] = {NULL};
 		execve("/sbin/udhcpc", argv, envp);
 	}
