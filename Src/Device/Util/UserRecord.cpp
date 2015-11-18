@@ -132,6 +132,11 @@ int CUserRecord::getUsersByOpen(int open, std::vector<UserRecordNode>(& data_set
 	return getMultiUsers("RemainOpen", open, data_set);
 }
 
+int CUserRecord::getAllUsers(std::vector<UserRecordNode>(& data_set))
+{
+	return getMultiUsers("All", 0, data_set);
+}
+
 int CUserRecord::getSingleUser(const std::string& col_name, UserRecordNode& user)
 {
 	if(m_session_ptr == NULL)
@@ -200,6 +205,10 @@ int CUserRecord::getMultiUsers(const std::string& col_name, int col_value, std::
 	{
 		sselect << "SELECT `Username`, `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` WHERE `RemainOpen`=?",
 				use(col_value);
+	}
+	else if(col_name == "All")
+	{
+		sselect << "SELECT `Username`, `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User`";
 	}
 	else
 	{

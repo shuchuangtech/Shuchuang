@@ -103,6 +103,28 @@ void testGet()
 			urn.username.c_str(), urn.password.c_str(), urn.authority, urn.timeOfValidity, urn.remainOpen, urn.token.c_str(), urn.lastVerify, urn.lastLogin
 			);
 	}
+
+	vec.clear();
+	Poco::Timestamp begin5;
+	ret = ur->getAllUsers(vec);
+	Poco::Timestamp end5;
+	printf("getAllUsers, ret %d, vec size %u using %llu microseconds\n", ret, vec.size(), end5 - begin5);
+	for(unsigned int i = 0; i < vec.size(); i++)
+	{
+		UserRecordNode urn = vec[i];
+		printf("\ngetAllUsers user%u\n"
+			"username:%s\n"
+			"password:%s\n"
+			"authority:%d\n"
+			"timeOfValidity:%lld\n"
+			"remainOpen:%d\n"
+			"token:%s\n"
+			"lastVerify:%lld\n"
+			"lastLogin:%lld\n",
+			i,
+			urn.username.c_str(), urn.password.c_str(), urn.authority, urn.timeOfValidity, urn.remainOpen, urn.token.c_str(), urn.lastVerify, urn.lastLogin
+			);
+	}
 	printf("==================testGet finish=================\n");
 }
 

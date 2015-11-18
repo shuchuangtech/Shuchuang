@@ -42,6 +42,7 @@ public:
 	int updateUser(UserRecordNode&);
 	int getUserByName(UserRecordNode&);
 	int getUserByToken(UserRecordNode&);
+	int getAllUsers(std::vector<UserRecordNode>&);
 	int getUsersByAuth(int auth, std::vector<UserRecordNode>&);
 	int getUsersByOpen(int open, std::vector<UserRecordNode>&);
 private:
