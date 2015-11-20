@@ -44,7 +44,6 @@ CRegProxy::~CRegProxy()
 void CRegProxy::handleNf(RequestNotification* pNf)
 {
 	RequestNotification::Ptr p(pNf);
-	debugf("%s, %d: p->id:%llu, m_sock:%llu", __FILE__, __LINE__, p->getID(), (UInt64)m_sock);
 	if(p->getID() == (UInt64)m_sock)
 	{
 		if(m_sock == 0)
@@ -61,10 +60,6 @@ void CRegProxy::handleNf(RequestNotification* pNf)
 			{
 				debugf("%s, %d: Receive notification and send:%s.", __FILE__, __LINE__, ds_str.c_str());
 			}
-		}
-		else
-		{
-			tracepoint();
 		}
 	}
 }

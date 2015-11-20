@@ -24,17 +24,23 @@ int main(int argc, char** argv)
 		configPath = "./config";
 	}
 	initPrintLogger();
+	//init config manager
+	CConfigManager* config = CConfigManager::instance();
+	config->init(configPath.c_str());
 	//init gpio
 	CDeviceController* device = CDeviceController::instance();
 	device->openDevice();
 	CNetworkManager* network = CNetworkManager::instance();
 	network->startDhcp("eth0");
-	//init config manager
-	CConfigManager* config = CConfigManager::instance();
-	config->init(configPath.c_str());
 	//初始化用户中心
 	CUserManager* user = CUserManager::instance();
+#ifdef __SC_ARM__
+	tracepoint();
 	user->init("/mnt/nand1-1/Application/user.db");
+#else
+	tracepoint();
+	user->init("/home/hj/Dev_Env/Shuchuang/user.db");
+#endif
 	//注册到网络服务器
 	CRegProxy* proxy = CRegProxy::instance();
 	proxy->start();

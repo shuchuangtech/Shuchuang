@@ -34,9 +34,9 @@ int main(int argc, char** argv)
 			"`LastVerify` BIGINT,"
 			"`LastLogin` BIGINT)", now;
 	struct User user;
-	user.username = "huangjian";
+	user.username = "admin";
 	Poco::MD5Engine md5;
-	std::string password = "huangjian";
+	std::string password = "admin@shuchuang";
 	md5.update(password);
 	const Poco::DigestEngine::Digest& digest = md5.digest();
 	std::string md5pass(Poco::DigestEngine::digestToHex(digest));

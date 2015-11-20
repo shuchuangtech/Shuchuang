@@ -118,10 +118,6 @@ void CRPCServer::handleFinish(TaskFinishedNotification* pNf)
 			std::string param = ds.toString();
 			tracef("%s, %d: Handle finish, result:%s.", __FILE__, __LINE__, param.c_str());
 		}
-		else
-		{
-			tracepoint();
-		}
 		m_center.postNotification(new RequestNotification(id, "", response));
 		client->release();
 	}

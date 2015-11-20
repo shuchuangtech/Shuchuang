@@ -20,6 +20,7 @@ CDhcpClient::~CDhcpClient()
 
 bool CDhcpClient::startDhcp(const char* ethname, const char* hostname)
 {
+#ifdef __SC_ARM__
 	if(readPidFile())
 	{
 		stopDhcp();
@@ -81,11 +82,13 @@ bool CDhcpClient::startDhcp(const char* ethname, const char* hostname)
 		char* envp[] = {NULL};
 		execve("/sbin/udhcpc", argv, envp);
 	}
+#endif
 	return true;
 }
 
 bool CDhcpClient::readPidFile()
 {
+#ifdef __SC_ARM__
 	FILE* file = fopen("/var/run/udhcpc.pid", "r");
 	if(file == NULL)
 		return false;
@@ -97,11 +100,13 @@ bool CDhcpClient::readPidFile()
 	}
 	fclose(file);
 	file = NULL;
+#endif
 	return true;
 }
 
 bool CDhcpClient::stopDhcp()
 {
+#ifdef __SC_ARM__
 	if(m_pid == 0)
 		return false;
 	int retval = kill(m_pid, SIGKILL);
@@ -116,6 +121,7 @@ bool CDhcpClient::stopDhcp()
 		return false;
 	}
 	m_pid = 0;
+#endif
 	return true;
 }
 
