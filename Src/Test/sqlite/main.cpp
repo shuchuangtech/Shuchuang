@@ -4,10 +4,10 @@
 #include "Poco/Types.h"
 #include "Common/PrintLog.h"
 #include "Poco/Thread.h"
+#include "Poco/MD5Engine.h"
 using namespace Poco::Data::Keywords;
 struct User
 {
-	int id;
 	std::string username;
 	std::string password;
 	int authority;
@@ -22,50 +22,43 @@ int main(int argc, char** argv)
 {
 	Poco::Data::SQLite::Connector::registerConnector();
 	Poco::Data::Session* session = new Poco::Data::Session("SQLite", "/home/hj/Dev_Env/Shuchuang/test.db");
-	/*
-	int t = 0;
-	for(int i = 0; i < 10; i++)
-	{
-		t = session.getLoginTimeout();
-		printf("login timeout: %d\n", t);
-		t = session.getConnectionTimeout();
-		printf("Connection timeout: %d\n", t);
-		Poco::Thread::sleep(5000);
-	}
-	session.close();
-	*/
-	/*
-	try
-	{
-		Poco::Data::Statement create(*session);
-		create << "CREATE TABLE IF NOT EXISTS `User` ("
-			<< "`Id` INTEGER PRIMARY KEY AUTOINCREMENT,"
-			<< "`Username` VARCHAR(30) NOT NULL,"
-			<< "`Password` VARCHAR(64) NOT NULL,"
-			<< "`Authority` TINYINT,"
-			<< "`TimeOfValidity` BIGINT,"
-			<< "`RemainOpen` INTEGER,"
-			<< "`Token` VARCHAR(64),"
-			<< "`LastVerify` BIGINT,"
-			<< "`LastLogin` BIGINT);";
-		create.execute();
-	}
-	catch(Poco::Exception& e)
-	{
-		printf("%s\n", e.message().c_str());
-	}*/
-	tracepoint();
-	struct User user1;
-	user1.username = "huangjian";
-	user1.password = "huangjian";
+	Poco::Data::Statement create(*session);
+	create << "CREATE TABLE IF NOT EXISTS `User` ("
+			"`Id` INTEGER PRIMARY KEY AUTOINCREMENT,"
+			"`Username` VARCHAR(30) NOT NULL UNIQUE,"
+			"`Password` VARCHAR(64) NOT NULL,"
+			"`Authority` TINYINT,"
+			"`TimeOfValidity` BIGINT,"
+			"`RemainOpen` INTEGER,"
+			"`Token` VARCHAR(64),"
+			"`LastVerify` BIGINT,"
+			"`LastLogin` BIGINT)", now;
+	struct User user;
+	user.username = "huangjian";
+	Poco::MD5Engine md5;
+	std::string password = "huangjian";
+	md5.update(password);
+	const Poco::DigestEngine::Digest& digest = md5.digest();
+	std::string md5pass(Poco::DigestEngine::digestToHex(digest));
+	user.password = md5pass;
+	user.authority = 9;
+	Poco::DateTime tov(2050, 1, 1);
+	user.timeOfValidity = tov.timestamp().epochMicroseconds();
+	user.remainOpen = -1;
+	user.token = "";
+	user.lastVerify = 0;
+	user.lastLogin = 0;
 	
 	Poco::Data::Statement insert(*session);
-	insert << "INSERT INTO `User` (`Username`, `Password`) VALUES(?, ?)",
-		   use(user1.username),
-		   use(user1.password);
-	tracepoint();
-	printf("sql string:%s\n", insert.toString().c_str());
-	/*
+	insert << "INSERT INTO `User` (`Username`, `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin`) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+		   use(user.username),
+		   use(user.password),
+		   use(user.authority),
+		   use(user.timeOfValidity),
+		   use(user.remainOpen),
+		   use(user.token),
+		   use(user.lastVerify),
+		   use(user.lastLogin);
 	try
 	{
 		insert.execute();
@@ -74,21 +67,8 @@ int main(int argc, char** argv)
 	{
 		printf("%s\n", e.message().c_str());
 	}
-	tracepoint();
-	Poco::Data::Statement select(session);
-	tracepoint();
-	select << "SELECT `Id`, `Username`, `Password` FROM `User`",
-		   into(user1.id),
-		   into(user1.username),
-		   into(user1.password),
-		   range(0, 1);
-	tracepoint();
-	while(!select.done())
-	{
-		select.execute();
-		printf("User Id: %d, Username: %s, Password: %s\n", user1.id, user1.username.c_str(), user1.password.c_str());
-	}
-*/
+	session->close();
+	delete session;
 	return 0;
 }
 

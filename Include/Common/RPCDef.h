@@ -26,6 +26,7 @@ request
 #define PARAM_PASSWORD_STR "password"
 #define PARAM_TOKEN_STR "token"
 #define PARAM_CHALLENGE_STR "challenge"
+#define PARAM_NEW_PASS_STR "newpassword"
 //register
 #define PARAM_UUID_STR "uuid"
 #define PARAM_DEV_NAME_STR "name"

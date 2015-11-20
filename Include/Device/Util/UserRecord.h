@@ -14,6 +14,7 @@ struct _UserRecordNode
 		LEVEL_LONGTERM = 8,
 		LEVEL_TEMP = 7
 	};
+	//Timestamp in UTC
 	std::string		username;
 	std::string		password;
 	int				authority;

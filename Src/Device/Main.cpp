@@ -34,7 +34,7 @@ int main(int argc, char** argv)
 	config->init(configPath.c_str());
 	//初始化用户中心
 	CUserManager* user = CUserManager::instance();
-	user->init();
+	user->init("/mnt/nand1-1/Application/user.db");
 	//注册到网络服务器
 	CRegProxy* proxy = CRegProxy::instance();
 	proxy->start();

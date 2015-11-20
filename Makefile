@@ -18,7 +18,8 @@ SRC_DIR += Src/Common \
 		  Src/Device/Network \
 		  Src/Device/Component \
 		  Src/Device/Component/User \
-		  Src/Device/Component/Task
+		  Src/Device/Component/Task	\
+		  Src/Device/Util
 else
 ifeq ($(test), SERVER)
 TEST = TransmitServer
