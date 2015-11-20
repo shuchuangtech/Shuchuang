@@ -37,7 +37,7 @@ bool CDeviceController::openDevice()
 	#endif
 #else
 	m_fd = 1;
-	tracef("%s, %d: X86 does not implement openDevice.");
+	tracef("%s, %d: X86 does not implement openDevice.", __FILE__, __LINE__);
 	return true;
 #endif
 }
@@ -72,7 +72,7 @@ bool CDeviceController::checkDoor(JSON::Object::Ptr& param, std::string& detail)
 		return true;
 	}
 #else
-	tracef("%s, %d: X86 does not implement checkDoor.");
+	tracef("%s, %d: X86 does not implement checkDoor.", __FILE__, __LINE__);
 	return true;
 #endif
 }
@@ -92,7 +92,7 @@ bool CDeviceController::openDoor(JSON::Object::Ptr& param, std::string& detail)
 	ioctl(m_fd, SC_RELAY_OFF, 0);
 #endif
 #else
-	tracef("%s, %d: X86 does not implement openDoor.");
+	tracef("%s, %d: X86 does not implement openDoor.", __FILE__, __LINE__);
 #endif
 	return true;
 }
@@ -112,7 +112,7 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 	ioctl(m_fd, SC_RELAY_ON, 0);
 #endif
 #else
-	tracef("%s, %d: X86 does not implement closeDoor.");
+	tracef("%s, %d: X86 does not implement closeDoor.", __FILE__, __LINE__);
 #endif
 	return true;
 }

@@ -139,7 +139,7 @@ bool CRegProxy::getRegisterToken()
 	SocketAddress saddr(m_ssl_host, m_ssl_port);
 	try
 	{
-		tracef("%s, %d: Connecting to %s.", __FILE__, __LINE__, saddr.toString().c_str());
+		infof("%s, %d: Connecting to %s.", __FILE__, __LINE__, saddr.toString().c_str());
 		Context::Ptr pContext = new Context(Context::TLSV1_CLIENT_USE, "", Context::VERIFY_NONE);
 		m_ssl_sock = new SecureStreamSocket(pContext);
 		m_ssl_sock->connect(saddr, Timespan(3, 0));
@@ -150,13 +150,13 @@ bool CRegProxy::getRegisterToken()
 		dealError(SECURE_SOCKET);
 		return false;
 	}
-	tracef("%s, %d: Connect to the server successfully.", __FILE__, __LINE__);
+	infof("%s, %d: Connect to the server successfully.", __FILE__, __LINE__);
 	char buf[512] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_GETTOKEN);
 	infof("%s, %d: Get token buf: %s.", __FILE__, __LINE__, buf);
 	if(m_ssl_sock->sendBytes(buf, sizeof(buf)) > 0)
 	{
-		tracef("%s, %d: Send get token message successfully.", __FILE__, __LINE__);
+		infof("%s, %d: Send get token message successfully.", __FILE__, __LINE__);
 	}
 	else
 	{
@@ -249,7 +249,7 @@ bool CRegProxy::registerToServer()
 	SocketAddress saddr(m_reg_host, m_reg_port);
 	try
 	{
-		tracef("%s, %d: Connecting to %s.", __FILE__, __LINE__, saddr.toString().c_str());
+		infof("%s, %d: Connecting to %s.", __FILE__, __LINE__, saddr.toString().c_str());
 		if(m_sock != 0)
 		{
 			m_sock->close();
@@ -297,12 +297,12 @@ bool CRegProxy::registerToServer()
 				DynamicStruct ds = *object;
 				if(ds.contains("result") && ds["result"].toString() == "good")
 				{
-					tracef("%s, %d: Register successfully.", __FILE__, __LINE__);
+					infof("%s, %d: Register successfully.", __FILE__, __LINE__);
 					return true;
 				}
 				else
 				{
-					tracef("%s, %d: Register failed.", __FILE__, __LINE__);
+					warnf("%s, %d: Register failed.", __FILE__, __LINE__);
 					return false;
 				}
 			}

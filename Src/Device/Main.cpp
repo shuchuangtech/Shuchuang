@@ -35,10 +35,8 @@ int main(int argc, char** argv)
 	//初始化用户中心
 	CUserManager* user = CUserManager::instance();
 #ifdef __SC_ARM__
-	tracepoint();
 	user->init("/mnt/nand1-1/Application/user.db");
 #else
-	tracepoint();
 	user->init("/home/hj/Dev_Env/Shuchuang/user.db");
 #endif
 	//注册到网络服务器
