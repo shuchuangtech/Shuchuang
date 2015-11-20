@@ -1,4 +1,5 @@
 #include "Device/Network/NetworkManager.h"
+#include "Common/ConfigManager.h"
 #include <string.h>
 #include <linux/sockios.h>
 #include <linux/mii.h>
@@ -8,6 +9,19 @@
 #include <unistd.h>
 #include "Common/PrintLog.h"
 #include "Poco/Types.h"
+#include "Poco/JSON/Object.h"
+CNetworkManager::CNetworkManager()
+{
+	CConfigManager* config = CConfigManager::instance();
+	Poco::JSON::Object::Ptr pConfig;
+	config->getConfig("DeviceInfo", pConfig);
+	m_hostname = pConfig->getValue<std::string>("uuid");
+}
+
+CNetworkManager::~CNetworkManager()
+{
+}
+
 bool CNetworkManager::getMiiLinkState(const char* ifname, bool& isUp)
 {
 	int sockfd = 0;
@@ -46,7 +60,7 @@ bool CNetworkManager::startDhcp(const char* ethname)
 		return false;
 	}
 	CDhcpClient* client = new CDhcpClient;
-	client->startDhcp(ethname);
+	client->startDhcp(ethname, m_hostname.c_str());
 	m_dhcp_map.insert(std::make_pair<std::string, CDhcpClient*>(std::string(ethname), client));
 	return true;
 }

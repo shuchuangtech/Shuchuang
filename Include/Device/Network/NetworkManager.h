@@ -12,9 +12,12 @@ public:
 		static Poco::SingletonHolder<CNetworkManager> sh;
 		return sh.get();
 	}
+	CNetworkManager();
+	~CNetworkManager();
 	bool startDhcp(const char* ethname);
 	bool stopDhcp(const char* ethname);
 private:
+	std::string								m_hostname;
 	std::map<std::string, CDhcpClient*>		m_dhcp_map;
 };
 #endif
