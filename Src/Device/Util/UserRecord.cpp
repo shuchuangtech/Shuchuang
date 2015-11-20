@@ -23,7 +23,16 @@ CUserRecord::~CUserRecord()
 bool CUserRecord::init(const std::string& dbPath)
 {
 	SQLite::Connector::registerConnector();
-	m_session_ptr = new Session("SQLite",dbPath);
+	try
+	{
+		m_session_ptr = new Session("SQLite",dbPath);
+	}
+	catch(Exception& e)
+	{
+		warnf("%s, %d: Init UserRecord with %s failed.", __FILE__, __LINE__, dbPath.c_str());
+		return false;
+	}
+	infof("%s, %d: Init UserRecord with %s successfully.", __FILE__, __LINE__, dbPath.c_str());
 	try
 	{
 		Statement create(*m_session_ptr);
