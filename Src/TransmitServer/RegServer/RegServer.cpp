@@ -147,9 +147,22 @@ bool CRegServer::listenSsl()
 
 bool CRegServer::listenReg()
 {
+	Context::Ptr pContext = NULL;
 	try
 	{
-		m_reg_sock = new ServerSocket(m_reg_port);
+		pContext = new Context(Context::TLSV1_SERVER_USE,
+								"./privkey.pem",
+								"./cert.pem",
+								"",
+								Context::VERIFY_NONE);
+	}
+	catch(Exception& e)
+	{
+		return false;
+	}
+	try
+	{
+		m_reg_sock = new SecureServerSocket(m_reg_port, 64, pContext);
 	}
 	catch(Exception& e)
 	{

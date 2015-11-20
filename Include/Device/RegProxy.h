@@ -29,7 +29,7 @@ public:
 		static Poco::SingletonHolder<CRegProxy> sh;
 		return sh.get();
 	}
-	CRegProxy(); 
+	CRegProxy();
 	~CRegProxy();
 	void start();
 	void stop();
@@ -43,7 +43,7 @@ private:
 	bool parseAction(std::string& action, std::string& component, std::string& method);
 	//bool handleRequest(DynamicStruct* param);
 
-	void onTimer(Poco::Timer& timer);
+	void							onTimer(Poco::Timer& timer);
 	bool							m_started;
 	Poco::Timer						m_timer;
 	std::string						m_ssl_host;
@@ -59,7 +59,7 @@ private:
 	Poco::Timestamp					m_lastCheckTime;
 	bool							m_lastRegState;
 	bool							m_serverKeepAlive;
-	Poco::Net::StreamSocket*		m_sock;
+	Poco::Net::SecureStreamSocket*	m_sock;
 	Poco::Net::SecureStreamSocket*	m_ssl_sock;
 	std::string						m_token;
 	CRPCServer*						m_rpc;

@@ -52,7 +52,7 @@ private:
 	Timer					m_reg_handler;
 	Timer					m_http_request_timer;
 	SecureServerSocket*		m_ssl_sock;
-	ServerSocket*			m_reg_sock;
+	SecureServerSocket*		m_reg_sock;
 	std::map<UInt64, SocketTime*>	m_pSsl_map;
 	std::map<UInt64, SocketTime*>	m_pReg_map;
 	std::map<UInt64, RequestInfo*>		m_request_map;

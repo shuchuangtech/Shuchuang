@@ -255,7 +255,8 @@ bool CRegProxy::registerToServer()
 			m_sock->close();
 			delete m_sock;
 		}
-		m_sock = new StreamSocket();
+		Context::Ptr pContext = new Context(Context::TLSV1_CLIENT_USE, "", Context::VERIFY_NONE);
+		m_sock = new SecureStreamSocket(pContext);
 		m_sock->connect(saddr, Timespan(3, 0));
 	}
 	catch(Exception& e)
@@ -427,12 +428,14 @@ void CRegProxy::onTimer(Timer& timer)
 			//receive connection request			
 			if(m_sock->poll(ts, Socket::SELECT_READ|Socket::SELECT_ERROR))
 			{
+				/*
 				if(!m_sock->available())
 				{
 					warnf("%s, %d: Socket not available.", __FILE__, __LINE__);
 					dealError(PLAIN_SOCKET);
 					continue;
 				}
+				*/
 				memset(buf, 0, sizeof(buf));
 				int ret = m_sock->receiveBytes(buf, sizeof(buf));
 				if(ret <= 0 )
