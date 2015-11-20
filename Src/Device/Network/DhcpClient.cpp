@@ -77,7 +77,6 @@ bool CDhcpClient::startDhcp(const char* ethname, const char* hostname)
 	else
 	{
 		//children
-		int index = 0;
 		char* const* argv = m_argv;
 		char* envp[] = {NULL};
 		execve("/sbin/udhcpc", argv, envp);
