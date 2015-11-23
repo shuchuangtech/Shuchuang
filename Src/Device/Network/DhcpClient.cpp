@@ -27,18 +27,20 @@ bool CDhcpClient::startDhcp(const char* ethname, const char* hostname)
 	}
 	m_argv = new char*[10];
 	for(int i = 0; i < 10; i++)
-		m_argv[i] = new char[16];
+		m_argv[i] = new char[32];
 	int index = 0;
-	snprintf(m_argv[index++], 15, "%s", "udhcpc");
-	snprintf(m_argv[index++], 15, "%s", "-i");
-	snprintf(m_argv[index++], 15, "%s", ethname);
-	snprintf(m_argv[index++], 15, "%s", "-p");
-	snprintf(m_argv[index++], 15, "%s", "/var/run/udhcpc.pid");
-	snprintf(m_argv[index++], 15, "%s", "-R");
-	snprintf(m_argv[index++], 15, "%s", "-b");
-	snprintf(m_argv[index++], 15, "%s", "-h");
-	snprintf(m_argv[index++], 15, "%s", hostname);
+	infof("%s, %d:Start Dhcp...", __FILE__, __LINE__);
+	snprintf(m_argv[index++], 31, "%s", "udhcpc");
+	snprintf(m_argv[index++], 31, "%s", "-i");
+	snprintf(m_argv[index++], 31, "%s", ethname);
+	snprintf(m_argv[index++], 31, "%s", "-p");
+	snprintf(m_argv[index++], 31, "%s", "/var/run/udhcpc.pid");
+	snprintf(m_argv[index++], 31, "%s", "-R");
+	snprintf(m_argv[index++], 31, "%s", "-b");
+	snprintf(m_argv[index++], 31, "%s", "-h");
+	snprintf(m_argv[index++], 31, "%s", hostname);
 	m_argv[index++] = NULL;
+	infof("%s, %d: Dhcp start argument: %s %s %s %s %s %s %s %s %s", __FILE__, __LINE__, m_argv[0], m_argv[1], m_argv[2], m_argv[3], m_argv[4], m_argv[5], m_argv[6], m_argv[7], m_argv[8]);
 	pid_t pid = -1;
 	pid = fork();
 	if(pid < 0)

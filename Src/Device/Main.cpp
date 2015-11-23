@@ -24,6 +24,10 @@ int main(int argc, char** argv)
 		configPath = "./config";
 	}
 	initPrintLogger();
+	//Pint log < infof on board
+#ifdef __SC_ARM__
+	setPrintLogLevel(LEVEL_INFO);
+#endif
 	//init config manager
 	CConfigManager* config = CConfigManager::instance();
 	config->init(configPath.c_str());

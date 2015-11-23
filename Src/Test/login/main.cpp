@@ -133,6 +133,19 @@ void passwd()
 	JSON::Parser parser;
 	Dynamic::Var var = parser.parse(g_buf);
 	JSON::Object::Ptr pObj = var.extract<JSON::Object::Ptr>();
+	if(pObj.isNull || !pObj->has("result"))
+	{
+		printf("error in passwd.\n");
+		return;
+	}
+	if(pObj->getValue<std::string>("result") != "goog")
+	{
+		std::string detail = "";
+		if(pObj->has("detail"))
+			detail = pObj->getValue<std::string>("detail");
+		printf("passwd failed, reason:%s", detail.c_str());
+		return;
+	}
 	JSON::Object::Ptr pParam = pObj->getObject("param");
 	std::string challenge = pParam->getValue<std::string>("challenge");
 	std::string oldpass;
