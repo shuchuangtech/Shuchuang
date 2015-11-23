@@ -163,13 +163,19 @@ bool CTaskManager::addTask(JSON::Object::Ptr& param, std::string& detail)
 		detail = "430";
 		return false;
 	}
-	if(param.isNull() || !param->has("option") || !param->has("hour")
-		|| !param->has("minute") || !param->has("weekday"))
+	if(param.isNull() || !param->has("task"))
 	{
 		detail = "431";
 		return false;
 	}
-	DynamicStruct dsParam = *param;
+	JSON::Object::Ptr pObjTask = param->getObject("task");
+	if(pObjTask.isNull() || !pObjTask->has("option") || !pObjTask->has("hour")
+		|| !pObjTask->has("minute") || !pObjTask->has("weekday"))
+	{
+		detail = "432";
+		return false;
+	}
+	DynamicStruct dsParam = *pObjTask;
 	//use timestamp as id
 	Timestamp t;
 	dsParam["id"] = (Int64)t.epochMicroseconds();
@@ -180,12 +186,12 @@ bool CTaskManager::addTask(JSON::Object::Ptr& param, std::string& detail)
 		(task.minute < 0 || task.minute > 59) ||
 		(task.weekday < 0 || task.weekday > 0x7F))
 	{
-		detail = "432";
+		detail = "433";
 		return false;
 	}
 	if(taskExists(task))
 	{
-		detail = "433";
+		detail = "434";
 		return false;
 	}
 	m_mutex.lock();
@@ -199,24 +205,31 @@ bool CTaskManager::addTask(JSON::Object::Ptr& param, std::string& detail)
 	m_task_map.insert(std::make_pair<Int64, CTaskHandler::Ptr>(task.id, pTask));
 	addToScheduleQueue(pTask);
 	m_mutex.unlock();
-	param->set("id", task.id);
+	pObjTask->set("id", task.id);
+	param->set("task", pObjTask);
 	return true;
 }
 
 bool CTaskManager::removeTask(JSON::Object::Ptr& param, std::string& detail)
 {
-	if(param.isNull() || !param->has("id"))
+	if(param.isNull() || !param->has("task"))
 	{
 		detail = "431";
 		return false;
 	}
-	Int64 id = param->getValue<Int64>("id");
+	JSON::Object::Ptr pObjTask = param->getObject("task");
+	if(pObjTask.isNull() || !pObjTask->has("id"))
+	{
+		detail = "432";
+		return false;
+	}
+	Int64 id = pObjTask->getValue<Int64>("id");
 	m_mutex.lock();
 	std::map<Int64, CTaskHandler::Ptr>::iterator it = m_task_map.find(id);
 	if(it == m_task_map.end())
 	{
 		m_mutex.unlock();
-		detail = "434";
+		detail = "435";
 		return false;
 	}
 	CTaskHandler::Ptr pTask = it->second;
@@ -232,8 +245,8 @@ bool CTaskManager::removeTask(JSON::Object::Ptr& param, std::string& detail)
 		{
 			m_task_config->remove(i);
 			m_config->setConfig("Tasks", m_task_config);
-			tracef("Task (%lld, %d, %d, %d, %d) deleted.", taskConfig_id, 
-					ds["option"].extract<int>(), ds["hour"].extract<int>(), 
+			tracef("Task (%lld, %d, %d, %d, %d) deleted.", taskConfig_id,
+					ds["option"].extract<int>(), ds["hour"].extract<int>(),
 					ds["minute"].extract<int>(), ds["weekday"].extract<int>());
 			break;
 		}
@@ -244,13 +257,18 @@ bool CTaskManager::removeTask(JSON::Object::Ptr& param, std::string& detail)
 
 bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 {
-	if(param.isNull() || !param->has("id") || !param->has("option") || !param->has("hour")
-			|| !param->has("minute") || !param->has("weekday"))
+	if(param.isNull() || !param->has("task"))
 	{
 		detail = "431";
 		return false;
 	}
-	DynamicStruct dsParam = *param;
+	JSON::Object::Ptr pObjTask = param->getObject("task");
+	if(pObjTask.isNull() || !pObjTask->has("id") || !pObjTask->has("option") || !pObjTask->has("hour") || !pObjTask->has("minute") || !pObjTask->has("weekday"))
+	{
+		detail = "432";
+		return false;
+	}
+	DynamicStruct dsParam = *pObjTask;
 	TaskInfo task;
 	structToTaskInfo(dsParam, task);
 	Int64 id = task.id;
@@ -259,7 +277,7 @@ bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 	if(it == m_task_map.end())
 	{
 		m_mutex.unlock();
-		detail = "434";
+		detail = "435";
 		return false;
 	}
 	if((task.option != 0 && task.option != 1)
@@ -274,7 +292,7 @@ bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 	if(taskExists(task))
 	{
 		m_mutex.unlock();
-		detail = "433";
+		detail = "434";
 		return false;
 	}
 	//adjust TaskTimer and TaskHandler map

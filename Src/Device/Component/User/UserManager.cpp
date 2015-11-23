@@ -59,7 +59,8 @@ bool CUserManager::checkUserValidity(UserRecordNode& user)
 	DateTime dateTimeValidity(timeOfValidity);
 	DateTime now;
 	Timespan diff = dateTimeValidity - now;
-
+	//if token has validity, use now and lastVerify to compute
+	//here I don't care token's validity
 	//timeOfValidity - now < 0 represents this user is out of validity
 	if(diff.totalSeconds() < 0)
 		return false;
@@ -90,19 +91,18 @@ bool CUserManager::verifyUserPassword(const std::string& username, const std::st
 
 bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 {
-	DynamicStruct param = *pParam;
-	JSON::Object::Ptr pResult = new JSON::Object(pParam);
-	pParam = NULL;
-	if(!param.contains(PARAM_USERNAME_STR))
+	if(pParam.isNull() || !pParam->has(PARAM_USERNAME_STR))
 	{
 		detail = "410";
 		return false;
 	}
-	std::string username = param[PARAM_USERNAME_STR].toString();
+	std::string username = pParam->getValue<std::string>(PARAM_USERNAME_STR);
+	infof("%s, %d: User %s require to login.", __FILE__, __LINE__, username.c_str());
 	UserRecordNode userNode = {"", "", 0, 0, 0, "", 0, 0};
 	userNode.username = username;
 	if(m_user_record->getUserByName(userNode) == 0)
 	{
+		warnf("%s, %d: User %s not exists.", __FILE__, __LINE__, username.c_str());
 		detail = "411";
 		return false;
 	}
@@ -113,6 +113,7 @@ bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 	{
 		if(!checkUserValidity(userNode))
 		{
+			warnf("%s, %d: User %s is out of validity.", __FILE__, __LINE__, username.c_str());
 			detail = "412";
 			return false;
 		}
@@ -120,13 +121,13 @@ bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 		generateNewMD5String(challenge);
 		std::string token = "";
 		generateNewMD5String(token);
-		pResult->set(PARAM_CHALLENGE_STR, challenge);
-		pResult->set(PARAM_TOKEN_STR, token);
 		userNode.token = token;
 		m_user_record->updateUser(userNode);
 		m_challenge_map.insert(std::make_pair<std::string, std::string>(username, challenge));
 		m_map_mutex.unlock();
-		pParam = pResult;
+		pParam->set(PARAM_CHALLENGE_STR, challenge);
+		pParam->set(PARAM_TOKEN_STR, token);
+		infof("%s, %d: User %s login step 1 finished, challenge:%s, token:%s.", __FILE__, __LINE__, username.c_str(), challenge.c_str(), token.c_str());
 		return true;
 	}
 	else
@@ -135,66 +136,70 @@ bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 		std::string challenge = it->second;
 		m_challenge_map.erase(it);
 		m_map_mutex.unlock();
-		if(!param.contains(PARAM_TOKEN_STR))
+		if(!pParam->has(PARAM_TOKEN_STR))
 		{
 			detail = "413";
 			return false;
 		}
-		std::string token = param[PARAM_TOKEN_STR].toString();
+		std::string token = pParam->getValue<std::string>(PARAM_TOKEN_STR);
 		UserRecordNode userNode = {"", "", 0, 0, 0, "", 0, 0};
 		userNode.token = token;
 		m_user_record->getUserByToken(userNode);
-		if(!param.contains(PARAM_PASSWORD_STR))
+		if(!pParam->has(PARAM_PASSWORD_STR))
 		{
+			warnf("%s, %d: User %s login request param incomplete.", __FILE__, __LINE__, username.c_str());
 			detail = "415";
 			return false;
 		}
-		std::string password = param[PARAM_PASSWORD_STR].toString();
+		std::string password = pParam->getValue<std::string>(PARAM_PASSWORD_STR);
+		pParam->remove(PARAM_PASSWORD_STR);
 		if(verifyUserPassword(username, password, USER_METHOD_LOGIN, challenge))
 		{
-			pResult->remove(PARAM_PASSWORD_STR);
-			pParam = pResult;
 			Timestamp now;
 			userNode.lastVerify = now.epochMicroseconds();
 			m_user_record->updateUser(userNode);
+			infof("%s, %d: User %s login step 2 finished, login successfully.", __FILE__, __LINE__, username.c_str());
 			return true;
 		}
 		else
 		{
 			userNode.token = "";
 			m_user_record->updateUser(userNode);
+			warnf("%s, %d: User %s login step 2 password verify failed.", __FILE__, __LINE__, username.c_str());
 			detail = "416";
 			return false;
 		}
 	}
+	warnf("%s, %d: User %s login unknown falure.", __FILE__, __LINE__, username.c_str());
 	detail = "419";
 	return false;
 }
 
 bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 {
-	DynamicStruct param = *pParam;
-	JSON::Object::Ptr pResult = new JSON::Object(pParam);
-	pParam = NULL;
-	if(!param.contains(PARAM_TOKEN_STR))
+	if(pParam.isNull() || !pParam->has(PARAM_TOKEN_STR))
 	{
 		detail = "413";
 		return false;
 	}
-	std::string token = param[PARAM_TOKEN_STR].toString();
+	std::string token = pParam->getValue<std::string>(PARAM_TOKEN_STR);
 	UserRecordNode userNode = {"", "", 0, 0, 0, "", 0, 0};
 	userNode.token = token;
+	infof("%s, %d: User change password.", __FILE__, __LINE__);
 	if(m_user_record->getUserByToken(userNode) == 0)
 	{
+		warnf("%s, %d: Can't find user by token %s.", __FILE__, __LINE__, token.c_str());
 		detail = "414";
 		return false;
 	}
 	if(!checkUserValidity(userNode))
 	{
+		warnf("%s, %d: User %s is out of validity.", __FILE__, __LINE__, userNode.username.c_str());
 		detail = "412";
 		return false;
 	}
 	std::string username = userNode.username;
+
 	m_map_mutex.lock();
 	std::map<std::string, std::string>::iterator it = m_challenge_map.find(username);
 	if(it == m_challenge_map.end())
@@ -202,10 +207,10 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 	{
 		std::string challenge = "";
 		generateNewMD5String(challenge);
-		pResult->set(PARAM_CHALLENGE_STR, challenge);
-		pParam = pResult;
+		pParam->set(PARAM_CHALLENGE_STR, challenge);
 		m_challenge_map.insert(std::make_pair<std::string, std::string>(username, challenge));
 		m_map_mutex.unlock();
+		infof("%s, %d: User %s change password step 1 finished, challenge:%s", __FILE__, __LINE__, username.c_str(), challenge.c_str());
 		return true;
 	}
 	else
@@ -214,30 +219,35 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 		std::string challenge = it->second;
 		m_challenge_map.erase(it);
 		m_map_mutex.unlock();
-		if(!param.contains(PARAM_NEW_PASS_STR))
+		if(!pParam->has(PARAM_NEW_PASS_STR))
 		{
+			warnf("%s, %d", __FILE__, __LINE__);
 			detail = "417";
 			return false;
 		}
-		if(!param.contains(PARAM_PASSWORD_STR))
+		if(!pParam->has(PARAM_PASSWORD_STR))
 		{
+			warnf("%s, %d", __FILE__, __LINE__);
 			detail = "413";
 			return false;
 		}
-		std::string password = param[PARAM_PASSWORD_STR].toString();
+		std::string password = pParam->getValue<std::string>(PARAM_PASSWORD_STR);
+		std::string newpass = pParam->getValue<std::string>(PARAM_NEW_PASS_STR);
+		pParam->remove(PARAM_PASSWORD_STR);
+		pParam->remove(PARAM_NEW_PASS_STR);
 		if(verifyUserPassword(username, password, USER_METHOD_PASSWD, challenge))
 		{
-			pResult->remove(PARAM_PASSWORD_STR);
-			pResult->remove(PARAM_NEW_PASS_STR);
-			pParam = pResult;
-			std::string newpass = param[PARAM_NEW_PASS_STR].toString();
 			userNode.password = newpass;
+			//when change password successfully, need to login again
+			userNode.token = "";
 			m_user_record->updateUser(userNode);
+			infof("%s, %d: User %s change password successfully, need to login again.", __FILE__, __LINE__, username.c_str());
 			return true;
 		}
 		else
 		{
 			detail = "416";
+			warnf("%s, %d: User %s change password verify failed.", __FILE__, __LINE__, username.c_str());
 			return false;
 		}
 	}
@@ -247,22 +257,24 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 
 bool CUserManager::logout(JSON::Object::Ptr& pParam, std::string& detail)
 {
-	DynamicStruct param = *pParam;
-	if(!param.contains(PARAM_TOKEN_STR))
+	if(pParam.isNull() || !pParam->has(PARAM_TOKEN_STR))
 	{
 		detail = "413";
 		return false;
 	}
-	std::string token = param[PARAM_TOKEN_STR].toString();
+	std::string token = pParam->getValue<std::string>(PARAM_TOKEN_STR);
 	UserRecordNode userNode = {"", "", 0, 0, 0, "", 0, 0};
 	userNode.token = token;
+	infof("%s, %d: User logout.", __FILE__, __LINE__);
 	if(m_user_record->getUserByToken(userNode) == 0)
 	{
+		warnf("%s, %d: Can't find user by token %s.", __FILE__, __LINE__, token.c_str());
 		detail = "414";
 		return false;
 	}
 	userNode.token = "";
 	m_user_record->updateUser(userNode);
+	infof("%s, %d; User %s logout successfully.", __FILE__, __LINE__, userNode.username.c_str());
 	return true;
 }
 

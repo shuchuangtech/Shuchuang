@@ -49,7 +49,7 @@ request
 #define TASK_METHOD_ADD "add"
 #define TASK_METHOD_REMOVE "remove"
 #define TASK_METHOD_MODIFY "modify"
-#define TASK_METHOD_GETTASKS "gettasks"
+#define TASK_METHOD_LIST "list"
 //device
 #define DEVICE_METHOD_OPEN "open"
 #define DEVICE_METHOD_CLOSE "close"

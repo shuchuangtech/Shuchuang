@@ -153,7 +153,7 @@ bool CRegProxy::getRegisterToken()
 	infof("%s, %d: Connect to the server successfully.", __FILE__, __LINE__);
 	char buf[512] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_GETTOKEN);
-	infof("%s, %d: Get token buf: %s.", __FILE__, __LINE__, buf);
+	tracef("%s, %d: Get token buf: %s.", __FILE__, __LINE__, buf);
 	if(m_ssl_sock->sendBytes(buf, sizeof(buf)) > 0)
 	{
 		infof("%s, %d: Send get token message successfully.", __FILE__, __LINE__);
@@ -265,13 +265,13 @@ bool CRegProxy::registerToServer()
 		dealError(PLAIN_SOCKET);
 		return false;
 	}
-	tracef("%s, %d: Connect to the server successfully.", __FILE__, __LINE__);
+	infof("%s, %d: Connect to the server successfully.", __FILE__, __LINE__);
 	char buf[512] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_REGISTER);
-	infof("%s, %d: Register buf: %s.", __FILE__, __LINE__, buf);
+	tracef("%s, %d: Register buf: %s.", __FILE__, __LINE__, buf);
 	if(m_sock->sendBytes(buf, sizeof(buf)) > 0)
 	{
-		tracef("%s, %d: Register information sent.", __FILE__, __LINE__);
+		infof("%s, %d: Register information sent.", __FILE__, __LINE__);
 	}
 	else
 	{
@@ -330,20 +330,6 @@ void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 		{
 			DynamicStruct param;
 			ds[KEY_ACTION_STR] = "server.token";
-			/*
-			Timestamp t;
-			UInt64 tms = t.epochMicroseconds();
-			char tms_str[32];
-			snprintf(tms_str, 31, "%llu", tms);
-			std::string key = "alpha2015";
-			key += tms_str;
-			MD5Engine md5;
-			md5.update(key);
-			const DigestEngine::Digest& digest = md5.digest();
-			std::string md5key = DigestEngine::digestToHex(digest);
-			param[PARAM_KEY_STR] = md5key;
-			param[PARAM_TIMESTAMP_STR] = tms_str;
-			*/
 			param[PARAM_DEV_NAME_STR] = m_dev_name;
 			param[PARAM_DEV_TYPE_STR] = m_dev_type;
 			param[PARAM_DEV_MANU_STR] = m_manufacture;
@@ -388,25 +374,10 @@ bool CRegProxy::parseAction(std::string& opt, std::string& component, std::strin
 	method = opt.substr(pos + 1, opt.length() - pos - 1);
 	return true;
 }
-/*
-bool CRegProxy::handleRequest(DynamicStruct* param)
-{
-	if(!(*param).contains(KEY_ACTION_STR))
-		return false;
-	std::string opt = (*param)[KEY_ACTION_STR].toString();
-	std::string component;
-	std::string method;
-	parseAction(opt, component, method);
-	if(component != COMPONENT_CONN_STR)
-		return false;
-	if(method != CONN_METHOD_CONNECT)
-		return false;
-	return true;
-}
-*/
+
 void CRegProxy::onTimer(Timer& timer)
 {
-	char buf[256] = {0, };
+	char buf[512] = {0, };
 	Timespan ts(5, 0);
 	while(m_started)
 	{

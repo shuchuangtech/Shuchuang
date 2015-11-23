@@ -82,6 +82,8 @@ bool CDhcpClient::startDhcp(const char* ethname, const char* hostname)
 		char* envp[] = {NULL};
 		execve("/sbin/udhcpc", argv, envp);
 	}
+#else
+	tracef("%s, %d: X86 does not implement start dhcp.", __FILE__, __LINE__);
 #endif
 	return true;
 }

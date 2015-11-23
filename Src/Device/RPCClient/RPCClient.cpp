@@ -82,7 +82,7 @@ void CRPCClient::runTask()
 	CUserManager* user = NULL;
 	CTaskManager* task = NULL;
 	CDeviceController* device = NULL;
-
+	
 	DynamicStruct ds_request;
 	std::string token = "";
 	try
@@ -91,9 +91,8 @@ void CRPCClient::runTask()
 	}
 	catch(Exception& e)
 	{
-		detail = "100";
-		result = false;
-		goto done;
+		m_response = NULL;
+		return;
 	}
 	request = var.extract<JSON::Object::Ptr>();
 	ds_request = *request;
@@ -138,6 +137,7 @@ void CRPCClient::runTask()
 	param = temp.extract<JSON::Object::Ptr>();
 	if(component == COMPONENT_USER_STR)
 	{
+		//User component doesn't need to check user's validity
 		if(user == NULL)
 			user = CUserManager::instance();
 		if(method == USER_METHOD_LOGIN)
@@ -161,8 +161,9 @@ void CRPCClient::runTask()
 			detail = "201";
 		}
 	}
-	else if(component == COMPONENT_TASK_STR)
+	else
 	{
+		//Else component need to check user's validity
 		if(!param->has(KEY_TOKEN_STR))
 		{
 			detail = "401";
@@ -178,67 +179,70 @@ void CRPCClient::runTask()
 			result = false;
 			goto done;
 		}
-		if(task == NULL)
-			task = CTaskManager::instance();
-		if(method == TASK_METHOD_ADD)
-		{
-			if(task->addTask(param, detail))
-				result = true;
+		if(component == COMPONENT_TASK_STR)
+		{	
+			if(task == NULL)
+				task = CTaskManager::instance();
+			if(method == TASK_METHOD_ADD)
+			{
+				if(task->addTask(param, detail))
+					result = true;
+			}
+			else if(method == TASK_METHOD_REMOVE)
+			{
+				if(task->removeTask(param, detail))
+					result = true;
+			}
+			else if(method == TASK_METHOD_MODIFY)
+			{
+				if(task->modifyTask(param, detail))
+					result = true;
+			}
+			else if(method == TASK_METHOD_LIST)
+			{
+				if(task->getTasks(param, detail))
+					result = true;
+			}
+			else
+			{
+				result = false;
+				detail = "201";
+				goto done;
+			}
 		}
-		else if(method == TASK_METHOD_REMOVE)
+		else if(component == COMPONENT_DEVICE_STR)
 		{
-			if(task->removeTask(param, detail))
-				result = true;
-		}
-		else if(method == TASK_METHOD_MODIFY)
-		{
-			if(task->modifyTask(param, detail))
-				result = true;
-		}
-		else if(method == TASK_METHOD_GETTASKS)
-		{
-			if(task->getTasks(param, detail))
-				result = true;
+			if(device == NULL)
+				device = CDeviceController::instance();
+			if(method == DEVICE_METHOD_OPEN)
+			{
+				if(device->openDoor(param, detail))
+					result = true;
+			}
+			else if(method == DEVICE_METHOD_CLOSE)
+			{
+				if(device->closeDoor(param, detail))
+					result = true;
+			}
+			else if(method == DEVICE_METHOD_CHECK)
+			{
+				if(device->checkDoor(param, detail))
+					result = true;
+			}
+			else
+			{
+				result = false;
+				detail = "201";
+				goto done;
+			}
 		}
 		else
 		{
+			warnf("%s, %d: Invalid component.", __FILE__, __LINE__);
 			result = false;
-			detail = "201";
+			detail = "200";
 			goto done;
 		}
-	}
-	else if(component == COMPONENT_DEVICE_STR)
-	{
-		if(device == NULL)
-			device = CDeviceController::instance();
-		if(method == DEVICE_METHOD_OPEN)
-		{
-			if(device->openDoor(param, detail))
-				result = true;
-		}
-		else if(method == DEVICE_METHOD_CLOSE)
-		{
-			if(device->closeDoor(param, detail))
-				result = true;
-		}
-		else if(method == DEVICE_METHOD_CHECK)
-		{
-			if(device->checkDoor(param, detail))
-				result = true;
-		}
-		else
-		{
-			result = false;
-			detail = "201";
-			goto done;
-		}
-	}
-	else
-	{
-		warnf("%s, %d: Invalid component.", __FILE__, __LINE__);
-		result = false;
-		detail = "200";
-		goto done;
 	}
 done:
 	pResult->set(KEY_ACTION_STR, action);

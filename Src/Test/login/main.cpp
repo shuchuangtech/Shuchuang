@@ -12,6 +12,7 @@
 #include "Poco/JSON/Object.h"
 #include "Poco/JSON/Parser.h"
 #include "Poco/MD5Engine.h"
+#include "Device/Component/Task/TaskInfo.h"
 using namespace Poco;
 using namespace Poco::Net;
 char g_buf[1024];
@@ -21,8 +22,31 @@ std::string g_host;
 int g_port;
 std::string g_uuid;
 std::string g_username;
+
+std::string generateMD5Password(std::string prefix, std::string password, std::string challenge)
+{
+	MD5Engine md5;
+	md5.update(password);
+	const DigestEngine::Digest& digestPrefix = md5.digest();
+	std::string md5pass(DigestEngine::digestToHex(digestPrefix));
+
+	std::string prefix_passwd = prefix + md5pass;
+	md5.reset();
+	md5.update(prefix_passwd);
+	const DigestEngine::Digest& digest = md5.digest();
+	std::string prefixpassmd5(DigestEngine::digestToHex(digest));
+	prefixpassmd5 += challenge;
+
+	md5.reset();
+	md5.update(prefixpassmd5);
+	const DigestEngine::Digest& dg = md5.digest();
+	std::string passs(DigestEngine::digestToHex(dg));
+	return passs;
+}
+
 void sendRequest(std::string content, char* buf)
 {
+	tracef("%s, %d: SendRequest:%s", __FILE__, __LINE__, content.c_str());
 	HTTPSClientSession https(g_host, (UInt16)g_port, g_pContext);
 	HTTPRequest request;
 	request.setContentType(MediaType("application", "json"));
@@ -33,7 +57,7 @@ void sendRequest(std::string content, char* buf)
 	HTTPResponse response;
 	std::istream& istr = https.receiveResponse(response);
 	istr.read(buf, 1024);
-	tracef("%s, %d: buf: %s\n", __FILE__, __LINE__, buf);
+	tracef("%s, %d: Receive buf: %s\n", __FILE__, __LINE__, buf);
 }
 
 void login()
@@ -80,25 +104,8 @@ void login()
 	std::cout << "Password:";
 	std::string pass;
 	std::cin >> pass;
-	MD5Engine md5;
-	md5.update(pass);
-	const DigestEngine::Digest& digest = md5.digest();
-	std::string passmd5(DigestEngine::digestToHex(digest));
-	std::string login = "login" + passmd5;
-
-	tracef("%s, %d: password %s\n", __FILE__, __LINE__, passmd5.c_str());
-	md5.reset();
-	md5.update(login);
-	const DigestEngine::Digest& digest2 = md5.digest();
-	std::string loginpassmd5(DigestEngine::digestToHex(digest));
-	loginpassmd5 += challenge;
-
-	md5.reset();
-	md5.update(loginpassmd5);
-	const DigestEngine::Digest& dg = md5.digest();
-	std::string passs(DigestEngine::digestToHex(digest));
-	tracef("%s, %d: password %s\n", __FILE__, __LINE__, passs.c_str());
-	param["password"] = passs;
+	std::string passmd5 = generateMD5Password("login", pass, challenge);;
+	param["password"] = passmd5;
 	param["token"] = token;
 	ds["param"] = param;
 
@@ -108,13 +115,30 @@ void login()
 
 void passwd()
 {
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
 	DynamicStruct ds;
 	ds["type"] = "request";
 	ds["action"] = "user.passwd";
 	DynamicStruct param;
 	param["uuid"] = g_uuid;
-	param["username"] = g_username;
 	param["token"] = g_token;
+	ds["param"] = param;
+	memset(g_buf, 0, 1024);
+	sendRequest(ds.toString(), g_buf);
+
+	JSON::Parser parser;
+	Dynamic::Var var = parser.parse(g_buf);
+	JSON::Object::Ptr pObj = var.extract<JSON::Object::Ptr>();
+	JSON::Object::Ptr pParam = pObj->getObject("param");
+	std::string challenge = pParam->getValue<std::string>("challenge");
+	std::string oldpass;
+	std::cout << "Old password:" << std::endl;
+	std::cin >> oldpass;
+	std::string challengemd5pass = generateMD5Password("passwd", oldpass, challenge);
 	std::string pass;
 	std::string pass2;
 	do
@@ -126,16 +150,28 @@ void passwd()
 	}while(pass != pass2);
 	MD5Engine md5;
 	md5.update(pass);
-	const DigestEngine::Digest& digest = md5.digest();
-	std::string md5password(DigestEngine::digestToHex(digest));
-	param["password"] = md5password;
-	ds["param"] = param;
+	const DigestEngine::Digest& digestNewPass = md5.digest();
+	std::string md5newPassword(DigestEngine::digestToHex(digestNewPass));
+	DynamicStruct ds2;
+	ds2["type"] = "request";
+	ds2["action"] = "user.passwd";
+	DynamicStruct param2;
+	param2["uuid"] = g_uuid;
+	param2["token"] = g_token;
+	param2["password"] = challengemd5pass;
+	param2["newpassword"] = md5newPassword;
+	ds2["param"] = param2;
 	memset(g_buf, 0, 1024);
-	sendRequest(ds.toString(), g_buf);
+	sendRequest(ds2.toString(), g_buf);
 }
 
 void logout()
 {
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
 	DynamicStruct ds;
 	ds["type"] = "request";
 	ds["action"] = "user.logout";
@@ -146,6 +182,220 @@ void logout()
 	ds["param"] = param;
 	memset(g_buf, 0, 1024);
 	sendRequest(ds.toString(), g_buf);
+}
+
+void showUserOperation()
+{
+	while(1)
+	{
+		std::cout << "Action:" << std::endl << "1.Login" << std::endl << "2.Change password" << std::endl;
+		std::cout << "3.Logout" << std::endl << "0.Return" << std::endl;
+		int choice;
+		std::cin >> choice;
+		switch(choice)
+		{
+			case 1:
+				login();
+				break;
+			case 2:
+				passwd();
+				break;
+			case 3:
+				logout();
+				break;
+			case 0:
+				return;
+			default:
+				break;
+		}
+	}
+}
+
+void checkDoor()
+{
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
+	DynamicStruct ds;
+	ds["type"] = "request";
+	ds["action"] = "device.check";
+	DynamicStruct param;
+	param["uuid"] = g_uuid;
+	param["token"] = g_token;
+	ds["param"] = param;
+	memset(g_buf, 0, 1024);
+	sendRequest(ds.toString(), g_buf);
+}
+
+void openDoor()
+{
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
+	DynamicStruct ds;
+	ds["type"] = "request";
+	ds["action"] = "device.open";
+	DynamicStruct param;
+	param["uuid"] = g_uuid;
+	param["token"] = g_token;
+	ds["param"] = param;
+	memset(g_buf, 0, 1024);
+	sendRequest(ds.toString(), g_buf);
+}
+
+void closeDoor()
+{
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
+	DynamicStruct ds;
+	ds["type"] = "request";
+	ds["action"] = "device.close";
+	DynamicStruct param;
+	param["uuid"] = g_uuid;
+	param["token"] = g_token;
+	ds["param"] = param;
+	memset(g_buf, 0, 1024);
+	sendRequest(ds.toString(), g_buf);
+}
+
+void getTasks()
+{
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
+	DynamicStruct ds;
+	ds["type"] = "request";
+	ds["action"] = "task.list";
+	DynamicStruct param;
+	param["uuid"] = g_uuid;
+	param["token"] = g_token;
+	ds["param"] = param;
+	memset(g_buf, 0, 1024);
+	sendRequest(ds.toString(), g_buf);
+}
+
+void addTask()
+{
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
+	DynamicStruct ds;
+	ds["type"] = "request";
+	ds["action"] = "task.add";
+	DynamicStruct param;
+	param["uuid"] = g_uuid;
+	param["token"] = g_token;
+	ds["param"] = param;
+	DynamicStruct dsTask;
+	ds["task"] = dsTask;
+	memset(g_buf, 0, 1024);
+	sendRequest(ds.toString(), g_buf);
+}
+
+void deleteTask()
+{
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
+	DynamicStruct ds;
+	ds["type"] = "request";
+	ds["action"] = "task.remove";
+	DynamicStruct param;
+	param["uuid"] = g_uuid;
+	param["token"] = g_token;
+	ds["param"] = param;
+	memset(g_buf, 0, 1024);
+	sendRequest(ds.toString(), g_buf);
+}
+
+void updateTask()
+{
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
+	DynamicStruct ds;
+	ds["type"] = "request";
+	ds["action"] = "task.modify";
+	DynamicStruct param;
+	param["uuid"] = g_uuid;
+	param["token"] = g_token;
+	ds["param"] = param;
+	memset(g_buf, 0, 1024);
+	sendRequest(ds.toString(), g_buf);
+}
+
+void showDoorOperation()
+{
+	while(1)
+	{
+		std::cout << "Action:" << std::endl << "1.Check" << std::endl << "2.Open" << std::endl;
+		std::cout << "3.Close" << std::endl << "0.Return" << std::endl;
+		int choice;
+		std::cin >> choice;
+		switch(choice)
+		{
+			case 1:
+				checkDoor();
+				break;
+			case 2:
+				openDoor();
+				break;
+			case 3:
+				closeDoor();
+				break;
+			case 0:
+				return;
+			default:
+				break;
+		}
+	}
+
+}
+
+void showTaskOperation()
+{
+	while(1)
+	{
+		std::cout << "Action:" << std::endl << "1.Get tasks" << std::endl << "2.Add task" << std::endl;
+		std::cout << "3.Delete task" << std::endl << "4.Update task"<< std::endl << "0.Return" << std::endl;
+		int choice;
+		std::cin >> choice;
+		switch(choice)
+		{
+			case 1:
+				getTasks();
+				break;
+			case 2:
+				addTask();
+				break;
+			case 3:
+				deleteTask();
+				break;
+			case 4:
+				updateTask();
+				break;
+			case 0:
+				return;
+			default:
+				break;
+		}
+	}
+
 }
 
 int main(int argc, char** argv)
@@ -161,8 +411,8 @@ int main(int argc, char** argv)
 	g_pContext = new Context(Context::TLSV1_CLIENT_USE, "", Context::VERIFY_NONE);
 	while(1)
 	{
-		std::cout << "Action:" << std::endl << "1.Login" << std::endl << "2.Change password" << std::endl;
-		std::cout << "3.Logout" << std::endl << "0.Exit" << std::endl;
+		std::cout << "1.User operation" << std::endl << "2.Door operation" << std::endl << "3.Task operation" << std::endl;
+		std::cout << "0.Exit" << std::endl;
 		int choice;
 		std::cin >> choice;
 		if(choice == 0)
@@ -172,11 +422,11 @@ int main(int argc, char** argv)
 		switch(choice)
 		{
 			case 1:
-				login();break;
+				showUserOperation();break;
 			case 2:
-				passwd();break;
+				showDoorOperation();break;
 			case 3:
-				logout();break;
+				showTaskOperation();break;
 			default:
 				std::cout << "Error choice" << std::endl;
 				break;
