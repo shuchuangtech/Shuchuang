@@ -3,7 +3,6 @@
 #include "Poco/SingletonHolder.h"
 #include "Poco/Types.h"
 #include "Poco/Data/Session.h"
-#include "Poco/SharedPtr.h"
 #include <vector>
 //data structure
 struct _UserRecordNode
