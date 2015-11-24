@@ -4,7 +4,7 @@
 #include "Poco/Types.h"
 #include "Common/PrintLog.h"
 #include "Poco/Thread.h"
-#include "Poco/MD5Engine.h"
+#include "Poco/SHA1Engine.h"
 using namespace Poco::Data::Keywords;
 struct User
 {
@@ -35,12 +35,12 @@ int main(int argc, char** argv)
 			"`LastLogin` BIGINT)", now;
 	struct User user;
 	user.username = "admin";
-	Poco::MD5Engine md5;
+	Poco::SHA1Engine sha1;
 	std::string password = "admin@shuchuang";
-	md5.update(password);
-	const Poco::DigestEngine::Digest& digest = md5.digest();
-	std::string md5pass(Poco::DigestEngine::digestToHex(digest));
-	user.password = md5pass;
+	sha1.update(password);
+	const Poco::DigestEngine::Digest& digest = sha1.digest();
+	std::string sha1pass(Poco::DigestEngine::digestToHex(digest));
+	user.password = sha1pass;
 	user.authority = 9;
 	Poco::DateTime tov(2050, 1, 1);
 	user.timeOfValidity = tov.timestamp().epochMicroseconds();
