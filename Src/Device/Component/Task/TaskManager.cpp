@@ -74,6 +74,7 @@ void CTaskManager::addToScheduleQueue(CTaskHandler::Ptr pTask)
 
 void CTaskManager::loadTasksConfig()
 {
+	infof("%s, %d: TaskManager loading tasks from config...", __FILE__, __LINE__);
 	if(m_timer == NULL)
 		m_timer = new Util::Timer;
 	JSON::Array::Ptr pArray;
@@ -92,6 +93,7 @@ void CTaskManager::loadTasksConfig()
 			pTask->setTaskInfo(t);
 			addToScheduleQueue(pTask);
 			m_task_map.insert(std::make_pair<Int64, CTaskHandler::Ptr>(t.id, pTask));
+			infof("%s, %d: Task loaded[id:%lld, option:%d, hour:%d, minute:%d, weekday:%d].", __FILE__, __LINE__, t.id, t.option, t.hour, t.minute, t.weekday);
 		}
 		m_mutex.unlock();
 	}
@@ -207,6 +209,7 @@ bool CTaskManager::addTask(JSON::Object::Ptr& param, std::string& detail)
 	m_mutex.unlock();
 	pObjTask->set("id", task.id);
 	param->set("task", pObjTask);
+	infof("%s, %d: Task added[id:%lld, option:%d, hour:%d, minute:%d, weekday:%d].", __FILE__, __LINE__, task.id, task.option, task.hour, task.minute, task.weekday);
 	return true;
 }
 
@@ -234,7 +237,7 @@ bool CTaskManager::removeTask(JSON::Object::Ptr& param, std::string& detail)
 	}
 	CTaskHandler::Ptr pTask = it->second;
 	pTask->cancel();
-	tracef("Task (%lld, %d, %d, %d, %d) canceled.", id, it->second->getOption(), it->second->getHour(), it->second->getMinute(), it->second->getWeekday());
+	infof("Task (%lld, %d, %d, %d, %d) canceled.", id, it->second->getOption(), it->second->getHour(), it->second->getMinute(), it->second->getWeekday());
 	m_task_map.erase(it);
 	for(unsigned int i = 0; i < m_task_config->size(); i++)
 	{
@@ -272,6 +275,7 @@ bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 	TaskInfo task;
 	structToTaskInfo(dsParam, task);
 	Int64 id = task.id;
+	infof("%s, %d: Task[id: %lld, option: %d, hour: %d, minute: %d, weekday: %d] to be changed.", __FILE__, __LINE__, task.id, task.option, task.hour, task.minute, task.weekday);
 	m_mutex.lock();
 	std::map<Int64, CTaskHandler::Ptr>::iterator it = m_task_map.find(id);
 	if(it == m_task_map.end())
@@ -296,7 +300,7 @@ bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 		return false;
 	}
 	//adjust TaskTimer and TaskHandler map
-	tracef("%s, %d: old task[%lld](%d, %d, %d, %d) stopped.", __FILE__, __LINE__, it->second->getId(), it->second->getOption(), it->second->getHour(), it->second->getMinute(), it->second->getWeekday());
+	infof("%s, %d: old task[%lld](%d, %d, %d, %d) stopped.", __FILE__, __LINE__, it->second->getId(), it->second->getOption(), it->second->getHour(), it->second->getMinute(), it->second->getWeekday());
 	it->second->cancel();
 	m_task_map.erase(it);
 	CTaskHandler::Ptr pTask = new CTaskHandler;
@@ -306,7 +310,6 @@ bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 	//adjust task config
 	DynamicStruct ds;
 	taskInfoToStruct(task, ds);
-	tracef("%s, %d: new task[%lld](%d, %d, %d, %d) started.", __FILE__, __LINE__, task.id, task.option, task.hour, task.minute, task.weekday);
 	for(unsigned int i = 0; i < m_task_config->size(); i++)
 	{
 		Dynamic::Var var = m_task_config->get(i);
@@ -316,6 +319,7 @@ bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 		{
 			m_task_config->set(i, ds);
 			m_config->setConfig("Tasks", m_task_config);
+			infof("%s, %d: Task[%lld] modified (%d, %d, %d, %d).", __FILE__, __LINE__, task.id, task.option, task.hour, task.minute, task.weekday);
 			break;
 		}
 	}
