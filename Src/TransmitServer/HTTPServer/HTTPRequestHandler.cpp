@@ -149,6 +149,7 @@ void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerRe
 	}
 	RequestInfo* req = new RequestInfo((UInt64)this, uuid, 5*1000*1000, obj);
 	CRegServer* reg_server = CRegServer::instance();
+	//it will hang until response send back, or timeout
 	reg_server->sendRequest(req);
 	res = req->response;
 	if(res.isNull())

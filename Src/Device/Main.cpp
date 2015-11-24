@@ -12,6 +12,9 @@
 #include "Poco/Semaphore.h"
 using namespace Poco;
 using namespace Poco::Net;
+extern const char* getMKTIME();
+extern const char* getGITSHA1();
+extern const char* getGITDIRTY();
 int main(int argc, char** argv)
 {
 	std::string configPath = "";
@@ -28,6 +31,7 @@ int main(int argc, char** argv)
 #ifdef __SC_ARM__
 	setPrintLogLevel(LEVEL_INFO);
 #endif
+	infof("%s, git version: sha1(%s) dirty(%s)", getMKTIME(), getGITSHA1(), getGITDIRTY());
 	//init config manager
 	CConfigManager* config = CConfigManager::instance();
 	config->init(configPath.c_str());

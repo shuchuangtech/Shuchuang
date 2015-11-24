@@ -163,7 +163,7 @@ void CHTTPSAcceptor::acceptor(Timer& timer)
 		}
 		if(!m_started)
 			break;
-		infof("%s, %d: https acceptor accept %s, impl %lu", __FILE__, __LINE__, clientAddress.toString().c_str(), (UInt64)sOut.impl());
+		infof("%s, %d: https acceptor accept %s, impl %llu", __FILE__, __LINE__, clientAddress.toString().c_str(), (UInt64)sOut.impl());
 		SocketNode* sn = new SocketNode();
 		sn->sockOut = sOut;
 		m_sock_out_map.insert(std::make_pair<UInt64, SocketNode*>((UInt64)sOut.impl(), sn));
@@ -261,7 +261,7 @@ void CHTTPSAcceptor::handleTask(TaskFinishedNotification* pNf)
 			if(!handler->getResult())
 			{
 				UInt64 impl = (UInt64)sn->sockOut.impl();
-				tracef("%s, %d: socket %s[%lu] closed.", __FILE__, __LINE__, sn->sockOut.peerAddress().toString().c_str(), impl);
+				tracef("%s, %d: socket %s[%llu] closed.", __FILE__, __LINE__, sn->sockOut.peerAddress().toString().c_str(), impl);
 				std::map<UInt64, SocketNode*>::iterator it = m_sock_out_map.find(impl);
 				if(it != m_sock_out_map.end())
 					m_sock_out_map.erase(it);

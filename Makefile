@@ -1,3 +1,5 @@
+release_hdr := $(shell sh -c './mkreleasehdr.sh')
+
 #在x86平台下, 直接make, 不要加-j8等多线程编译选项
 #工作路径
 WORK_DIR = $(shell pwd)

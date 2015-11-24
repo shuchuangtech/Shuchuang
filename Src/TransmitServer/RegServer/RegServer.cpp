@@ -449,7 +449,7 @@ void CRegServer::httpRequestTimer(Timer& timer)
 			std::map<UInt64, RequestInfo*>::iterator itemp = it++;
 			if(now - itemp->first > itemp->second->timeout)
 			{
-				infof("%s, %d: Request %lu timeout.", __FILE__, __LINE__, itemp->second->src_id);
+				infof("%s, %d: Request %llu timeout.", __FILE__, __LINE__, itemp->second->src_id);
 				itemp->second->sem.set();
 				m_request_map.erase(itemp);
 			}
