@@ -81,8 +81,8 @@ void CDeviceManager::run()
 				m_device_id_map.erase(di->id);
 				//post notification to RegServer
 				m_noti_center->postNotification(new OfflineNotification(di->id, di->uuid));
-				delete di;
 				infof("%s, %d: Device[%s：%llu] offline.", __FILE__, __LINE__, di->uuid.c_str(), di->id);
+				delete di;
 			}
 		}
 		m_mutex.unlock();
