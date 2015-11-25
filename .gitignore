@@ -2,6 +2,13 @@ Include/Poco
 Include/Poco_x86
 Include/stlport
 Include/openssl
+Include/release.h
+DeviceConfig
+testConfig
+serverlog
+test.db
+user.db
+oprecord.db
 Bin
 Build/obj
 Lib
