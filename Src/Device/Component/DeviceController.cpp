@@ -1,5 +1,6 @@
 #include "Device/Component/DeviceController.h"
 #include "Poco/Timestamp.h"
+#include "Poco/Timezone.h"
 #include "Common/PrintLog.h"
 #include "scgpio/gpioapi.h"
 #include <unistd.h>
@@ -38,13 +39,13 @@ bool CDeviceController::openDevice()
 	else
 	{
 		infof("%s, %d: IO dev file opened successfully.", __FILE__, __LINE__);
+		#ifdef __SC_ON_NORMAL_CLOSE__
+		ioctl(m_fd, SC_RELAY_OFF, 0);
+		#else
+		ioctl(m_fd, SC_RELAY_ON, 0);
+		#endif
 		return true;
 	}
-	#ifdef __SC_ON_NORMAL_CLOSE__
-	ioctl(m_fd, SC_RELAY_OFF, 0);
-	#else
-	ioctl(m_fd, SC_RELAY_ON, 0);
-	#endif
 #else
 	m_fd = 1;
 	tracef("%s, %d: X86 does not implement openDevice.", __FILE__, __LINE__);
@@ -82,8 +83,8 @@ bool CDeviceController::checkDoor(JSON::Object::Ptr& param, std::string& detail)
 	infof("%s, %d: Check door state:%s.", __FILE__, __LINE__, param->getValue<std::string>("state").c_str());
 #else
 	tracef("%s, %d: X86 does not implement checkDoor.", __FILE__, __LINE__);
-	return true;
 #endif
+	return true;
 }
 
 bool CDeviceController::openDoor(JSON::Object::Ptr& param, std::string& detail)
@@ -104,8 +105,9 @@ bool CDeviceController::openDoor(JSON::Object::Ptr& param, std::string& detail)
 	tracef("%s, %d: X86 does not implement openDoor.", __FILE__, __LINE__);
 #endif
 	OperationRecordNode op = {0, 0, "", 0};
-	Timestamp now;
-	op.timestamp = now.epochMicroseconds();
+	DateTime now;
+	now.makeLocal(Timezone::tzd());
+	op.timestamp = now.timestamp().epochMicroseconds();
 	op.operation = 1;
 	op.username = "";
 	op.schema = -1;
@@ -149,8 +151,9 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 	tracef("%s, %d: X86 does not implement closeDoor.", __FILE__, __LINE__);
 #endif
 	OperationRecordNode op = {0, 0, "", 0};
-	Timestamp now;
-	op.timestamp = now.epochMicroseconds();
+	DateTime now;
+	now.makeLocal(Timezone::tzd());
+	op.timestamp = now.timestamp().epochMicroseconds();
 	op.operation = 0;
 	op.username = "";
 	op.schema = -1;

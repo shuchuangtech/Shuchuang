@@ -99,24 +99,12 @@ bool COpManager::getRecords(JSON::Object::Ptr& param, std::string& detail)
 			pArray->add(ds);
 		}
 	}
+	DateTime dtstart(tsstart);
+	DateTime dtend(tsend);
 	param->set(RECORD_RECORDS_STR, pArray);
-	infof("%s, %d: %d operation records return.", __FILE__, __LINE__, ret);
+	infof("%s, %d: %d operation records from %04d-%02d-%02d %02d:%02d:%02d to %04d-%02d-%02d %02d:%02d:%02d return.", __FILE__, __LINE__, ret, 
+			dtstart.year(), dtstart.month(), dtstart.day(), dtstart.hour(), dtstart.minute(), dtstart.second(),
+			dtend.year(), dtend.month(), dtend.day(), dtend.hour(), dtend.minute(), dtend.second());
 	return true;
 }
-/*
-bool deleteRecords(JSON::Object::Ptr& param, std::string& detail)
-{
-	if(param.isNull() || !param->has(RECORD_STARTTIME_STR) || !param->has(RECORD_ENDTIME_STR))
-	{
-		detail = "440";
-		return false;
-	}
-	Int64 start = param->getValue<Int64>(RECORD_STARTTIME_STR);
-	Int64 end = param->getValue<Int64>(RECORD_ENDTIME_STR);
-	Timestamp tsstart(start);
-	Timestamp tsend(end);
-	int ret = m_op_record->deleteRecords(tsstart, tsend);
-	infof("%s, %d: %d operation records from %lld to %lld deleted.", __FILE__, __LINE__, ret, start, end);
-	return true;
-}
-*/
+

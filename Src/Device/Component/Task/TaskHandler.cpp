@@ -6,10 +6,12 @@ using namespace Poco;
 CTaskHandler::CTaskHandler()
 {
 	m_running = false;
+	tracef("%s, %d: TaskHandler created %llu.", __FILE__, __LINE__, (UInt64)this);
 }
 
 CTaskHandler::~CTaskHandler()
 {
+	tracef("%s, %d: TaskHandler destroyed %llu.", __FILE__, __LINE__, (UInt64)this);
 }
 
 void CTaskHandler::run()
