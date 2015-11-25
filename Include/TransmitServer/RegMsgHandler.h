@@ -22,8 +22,8 @@ public:
 	JSON::Object::Ptr	getHTTPResponse();
 	bool				socketReceive();
 private:
-	bool				receiveBytes(char* buf, int length, Timespan timeout);
-	bool				parseRequest(char* buf, JSON::Object::Ptr& request);
+	bool				receiveBytes(Timespan timeout);
+	bool				parseRequest(const char* buf, JSON::Object::Ptr& request);
 	bool				handleRegMsg(JSON::Object::Ptr request, JSON::Object::Ptr result);
 	bool				handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr result);
 	bool				formatCheck(JSON::Object::Ptr request, JSON::Object::Ptr result, DynamicStruct& param);
@@ -33,7 +33,7 @@ private:
 	//http request id, id=0 for device register request
 	UInt64				m_req_id;
 	int					m_type;
-	char*				m_buf;
+	std::string			m_recv_buf;
 	SocketTime*			m_socket;
 	JSON::Object::Ptr	m_http_response;
 };

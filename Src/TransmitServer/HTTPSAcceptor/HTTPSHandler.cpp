@@ -24,29 +24,35 @@ void CHTTPSHandler::runTask()
 	if(m_type == 0)
 		//from out to in
 	{
-		char buf[1024] = {0, };
-		char t_buf[1024] = {0, };
-		int pos = 0;
+		std::string buf = "";
+		char t_buf[512] = {0, };
 		StreamSocket sOut(m_sn->sockOut);
-		while(sOut.poll(Timespan(0, 100), Socket::SELECT_READ) > 0)
+		sOut.setReceiveTimeout(Timespan(10, 0));
+		try
 		{
-			sOut.setReceiveTimeout(Timespan(10, 0));
-			int ret = 0;
-			try
+			if(sOut.receiveBytes(t_buf, 512) <= 0)
 			{
-				ret = sOut.receiveBytes(t_buf, 1024);
+				warnf("%s, %d: socket %s[%llu] receive error.", __FILE__, __LINE__, sOut.peerAddress().toString().c_str(), (UInt64)sOut.impl());
 			}
-			catch(Exception& e)
+			else
 			{
-				warnf("%s, %d: HTTPS connection %s[%lu] receive timeout.", __FILE__, __LINE__, sOut.peerAddress().toString().c_str(), (UInt64)sOut.impl());
+				buf += t_buf;
+				while(sOut.available())
+				{
+					memset(t_buf, 0, 512);
+					if(sOut.receiveBytes(t_buf, 512) > 0)
+					{
+						buf += t_buf;
+						tracepoint();
+					}
+				}
 			}
-			if(ret == 0)
-				break;
-			snprintf(buf + pos, 1023 - pos, "%s", t_buf);
-			pos += ret;
-			memset(t_buf, 0, 1024);
 		}
-		if(pos == 0)
+		catch(Exception& e)
+		{
+			warnf("%s, %d: HTTPS connection %s[%lu] receive timeout.", __FILE__, __LINE__, sOut.peerAddress().toString().c_str(), (UInt64)sOut.impl());
+		}
+		if(buf.empty())
 			//receive nothing
 			//sockOut disconnected
 		{
@@ -58,35 +64,51 @@ void CHTTPSHandler::runTask()
 			StreamSocket sIn(sa);
 			tracef("%s, %d: socket %lu connect to http server.", __FILE__, __LINE__, (UInt64)sIn.impl());
 			m_sn->sockIn = sIn;
-			sIn.sendBytes(buf, 1024);
+			sIn.sendBytes(buf.c_str(), buf.length());
 			m_result = true;
 		}
 	}
 	else if(m_type == 1)
 		//from in to out
 	{	
-		char buf[1024] = {0, };
-		char t_buf[1024] = {0, };
-		int pos = 0;
+		std::string buf = "";
+		char t_buf[512] = {0, };
 		StreamSocket sIn(m_sn->sockIn);
-		while(sIn.poll(Timespan(0, 100), Socket::SELECT_READ) > 0)
+		sIn.setReceiveTimeout(Timespan(10, 0));
+		try
 		{
-			int ret = sIn.receiveBytes(t_buf, 1024);
-			if(ret == 0)
-				break;
-			snprintf(buf + pos, 1023 - pos, "%s", t_buf);
-			pos += ret;
-			memset(t_buf, 0, 1024);
+			if(sIn.receiveBytes(t_buf, 512) <= 0)
+			{
+				warnf("%s, %d: socket %s[%llu] receive error.", __FILE__, __LINE__, sIn.peerAddress().toString().c_str(), (UInt64)sIn.impl());
+			}
+			else
+			{
+				buf += t_buf;
+				while(sIn.available())
+				{
+					memset(t_buf, 0, 512);
+					if(sIn.receiveBytes(t_buf, 512) > 0)
+					{
+						buf += t_buf;
+						tracepoint();
+					}
+				}
+			}
+		}
+		catch(Exception& e)
+		{
+			warnf("%s, %d: HTTPS connection %s[%llu] receive timeout.", __FILE__, __LINE__, sIn.peerAddress().toString().c_str(), (UInt64)sIn.impl());
 		}
 		sIn.close();
 		StreamSocket sOut(m_sn->sockOut);
-		sOut.sendBytes(buf, 1024);
+		sOut.sendBytes(buf.c_str(), buf.length());
 		sOut.close();
-		tracef("%s, %d: socket %lu closed.", __FILE__, __LINE__, (UInt64)sIn.impl());
-		tracef("%s, %d: socket %lu closed.", __FILE__, __LINE__, (UInt64)sOut.impl());
+		tracef("%s, %d: socket %llu closed.", __FILE__, __LINE__, (UInt64)sIn.impl());
+		tracef("%s, %d: socket %llu closed.", __FILE__, __LINE__, (UInt64)sOut.impl());
 	}
 	else
 	{
+		warnf("%s, %d: HTTPSHandler deal with unkown type.", __FILE__, __LINE__);
 	}
 }
 

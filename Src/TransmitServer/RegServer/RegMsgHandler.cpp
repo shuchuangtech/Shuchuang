@@ -11,7 +11,6 @@ CRegMsgHandler::CRegMsgHandler(int type)
 :Task("RegMsgHandler")
 {
 	m_type = type;
-	m_buf = NULL;
 	m_receive = false;
 	m_req_id = 0;
 	m_http_response = NULL;
@@ -19,50 +18,57 @@ CRegMsgHandler::CRegMsgHandler(int type)
 
 CRegMsgHandler::~CRegMsgHandler()
 {
-	if(m_buf != NULL)
-	{
-		delete m_buf;
-		m_buf = NULL;
-	}
 }
 
-bool CRegMsgHandler::receiveBytes(char* buf, int length, Timespan timeout)
+bool CRegMsgHandler::receiveBytes(Timespan timeout)
 {
 	StreamSocket ss = m_socket->socket;
-	if(ss.poll(Timespan(0, 100), Socket::SELECT_READ) > 0)
+	char buf[512] = {0, };
+	ss.setReceiveTimeout(timeout);
+	try
 	{
-		ss.setReceiveTimeout(timeout);
-		try
+		if(ss.receiveBytes(buf, 512) <= 0)
 		{
-			if(ss.receiveBytes(buf, length) <= 0)
+			if(m_type == 1 && m_socket->state == SocketTime::Connected)
 			{
-				if(m_type == 1 && m_socket->state == SocketTime::Connected)
-				{
-					CDeviceManager* dm = CDeviceManager::instance();
-					UInt64 id = (UInt64)ss.impl();
-					dm->deviceOffline(id);
-				}
-				m_socket->state = SocketTime::Disconnected;
-				infof("%s, %d: Client [%s] disconnected.", __FILE__, __LINE__, m_socket->saddr.toString().c_str());
-				return false;
+				CDeviceManager* dm = CDeviceManager::instance();
+				UInt64 id = (UInt64)ss.impl();
+				dm->deviceOffline(id);
 			}
-		}
-		catch(Exception& e)
-		{
-			if(m_type == 0)
-			{
-				warnf("%s, %d: Ssl register receive timeout.", __FILE__, __LINE__);
-				m_socket->state = SocketTime::Disconnected;
-			}
-			else if(m_socket->state == SocketTime::Connecting)
-			{
-				warnf("%s, %d: Reg register receive timeout.", __FILE__, __LINE__);
-				m_socket->state = SocketTime::Disconnected;
-			}
+			m_socket->state = SocketTime::Disconnected;
+			infof("%s, %d: Client [%s] disconnected.", __FILE__, __LINE__, m_socket->saddr.toString().c_str());
 			return false;
 		}
+		else
+		{
+			m_recv_buf += buf;
+			//maybe more data
+			while(ss.available())
+			{
+				memset(buf, 0, 512);
+				if(ss.receiveBytes(buf, 512) > 0)
+				{
+					m_recv_buf += buf;
+					tracepoint();
+				}
+			}
+		}
 	}
-	tracef("%s, %d: Receive buf: %s", __FILE__, __LINE__, buf);
+	catch(Exception& e)
+	{
+		if(m_type == 0)
+		{
+			warnf("%s, %d: Ssl register receive timeout.", __FILE__, __LINE__);
+			m_socket->state = SocketTime::Disconnected;
+		}
+		else if(m_socket->state == SocketTime::Connecting)
+		{
+			warnf("%s, %d: Reg register receive timeout.", __FILE__, __LINE__);
+			m_socket->state = SocketTime::Disconnected;
+		}
+		return false;
+	}
+	tracef("%s, %d: Receive buf: %s", __FILE__, __LINE__, m_recv_buf.c_str());
 	m_socket->state = SocketTime::Connected;
 	return true;
 }
@@ -225,7 +231,7 @@ bool CRegMsgHandler::handleRegMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 	return true;
 }
 
-bool CRegMsgHandler::parseRequest(char* buf, JSON::Object::Ptr& request)
+bool CRegMsgHandler::parseRequest(const char* buf, JSON::Object::Ptr& request)
 {
 	JSON::Parser parser;
 	try
@@ -243,24 +249,16 @@ bool CRegMsgHandler::parseRequest(char* buf, JSON::Object::Ptr& request)
 
 void CRegMsgHandler::runTask()
 {
-	if(m_buf != NULL)
-	{
-		delete m_buf;
-		m_buf = NULL;
-	}
-	m_buf = new char[512];
-	memset(m_buf, 0, 512);
-	if(!receiveBytes(m_buf, 512, Timespan(20, 0)))
+	m_recv_buf = "";
+	if(!receiveBytes(Timespan(20, 0)))
 	{
 		m_receive = false;
-		delete[] m_buf;
-		m_buf = NULL;
 		return;
 	}
 	m_receive = true;
 	JSON::Object::Ptr request;
 	JSON::Object::Ptr result;
-	if(!parseRequest(m_buf, request))
+	if(!parseRequest(m_recv_buf.c_str(), request))
 	{
 		result = new JSON::Object;
 		result->set(KEY_TYPE_STR, TYPE_RESPONSE_STR);
@@ -281,8 +279,7 @@ void CRegMsgHandler::runTask()
 			handleRegMsg(request, result);
 		}
 	}
-	delete[] m_buf;
-	m_buf = NULL;
+	m_recv_buf = "";
 	if(m_req_id == 0)
 	{
 		DynamicStruct ds = *result;
