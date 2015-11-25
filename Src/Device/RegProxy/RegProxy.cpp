@@ -153,7 +153,7 @@ bool CRegProxy::getRegisterToken()
 	infof("%s, %d: Connect to the server successfully.", __FILE__, __LINE__);
 	char buf[512] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_GETTOKEN);
-	tracef("%s, %d: Get token buf: %s.", __FILE__, __LINE__, buf);
+	tracef("%s, %d: Send gettoken buf: %s.", __FILE__, __LINE__, buf);
 	if(m_ssl_sock->sendBytes(buf, sizeof(buf)) > 0)
 	{
 		infof("%s, %d: Send get token message successfully.", __FILE__, __LINE__);
@@ -171,6 +171,7 @@ bool CRegProxy::getRegisterToken()
 	{
 		if(m_ssl_sock->receiveBytes(buf, (UInt16)sizeof(buf)) > 0)
 		{
+			tracef("%s, %d: Receive gettoken response:%s.", __FILE__, __LINE__, buf);
 			JSON::Parser parser;
 			Dynamic::Var var = parser.parse(buf);
 			JSON::Object::Ptr obj = var.extract<JSON::Object::Ptr>();
@@ -268,7 +269,7 @@ bool CRegProxy::registerToServer()
 	infof("%s, %d: Connect to the server successfully.", __FILE__, __LINE__);
 	char buf[512] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_REGISTER);
-	tracef("%s, %d: Register buf: %s.", __FILE__, __LINE__, buf);
+	tracef("%s, %d: Send register buf: %s.", __FILE__, __LINE__, buf);
 	if(m_sock->sendBytes(buf, sizeof(buf)) > 0)
 	{
 		infof("%s, %d: Register information sent.", __FILE__, __LINE__);
@@ -287,10 +288,7 @@ bool CRegProxy::registerToServer()
 		{
 			if(m_sock->receiveBytes(buf, sizeof(buf)) > 0)
 			{
-				//tracef("%s, %d: Receive response: %s.", __FILE__, __LINE__, buf);
-				//SocketAddress peer;
-				//peer = m_sock->address();
-				//tracef("%s, %d: peer address %s:%u.", __FILE__, __LINE__, peer.host().toString().c_str(), peer.port());
+				tracef("%s, %d: Receive register response: %s.", __FILE__, __LINE__, buf);
 				JSON::Parser parser;
 				Dynamic::Var var = parser.parse(buf);
 				JSON::Object::Ptr object = var.extract<JSON::Object::Ptr>();
@@ -399,14 +397,6 @@ void CRegProxy::onTimer(Timer& timer)
 			//receive connection request			
 			if(m_sock->poll(ts, Socket::SELECT_READ|Socket::SELECT_ERROR))
 			{
-				/*
-				if(!m_sock->available())
-				{
-					warnf("%s, %d: Socket not available.", __FILE__, __LINE__);
-					dealError(PLAIN_SOCKET);
-					continue;
-				}
-				*/
 				memset(buf, 0, sizeof(buf));
 				int ret = m_sock->receiveBytes(buf, sizeof(buf));
 				if(ret <= 0 )
@@ -415,6 +405,7 @@ void CRegProxy::onTimer(Timer& timer)
 					continue;
 				}
 				std::string request(buf);
+				tracef("%s, %d: Receive from server:%s.", __FILE__, __LINE__, buf);
 				JSON::Object::Ptr nil = NULL;
 				m_rpc->addRequest(new RequestNotification((UInt64)m_sock, request, nil));
 				Timestamp t;
@@ -450,6 +441,7 @@ bool CRegProxy::sendKeepAlive()
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_KEEPALIVE);
 	if(m_sock->sendBytes(buf, sizeof(buf)) > 0 )
 	{
+		tracef("%s, %d: Send keepalive buf:%s.", __FILE__, __LINE__, buf);
 		infof("%s, %d: KeepAlive successfully.", __FILE__, __LINE__);
 		return true;
 	}
