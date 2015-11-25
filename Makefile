@@ -21,6 +21,7 @@ SRC_DIR += Src/Common \
 		  Src/Device/Component \
 		  Src/Device/Component/User \
 		  Src/Device/Component/Task	\
+		  Src/Device/Component/Record \
 		  Src/Device/Util
 else
 ifeq ($(test), SERVER)

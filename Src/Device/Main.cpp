@@ -3,6 +3,7 @@
 #include "Device/RPCServer.h"
 #include "Device/Component/User/UserManager.h"
 #include "Device/Component/Task/TaskManager.h"
+#include "Device/Component/Record/OperationManager.h"
 #include "Device/Component/DeviceController.h"
 #include "Poco/Types.h"
 #include "Poco/Thread.h"
@@ -35,6 +36,15 @@ int main(int argc, char** argv)
 	//init config manager
 	CConfigManager* config = CConfigManager::instance();
 	config->init(configPath.c_str());
+	CTaskManager* task = CTaskManager::instance();
+	//OpManager should before DeviceController
+	COpManager* op = COpManager::instance();
+#ifdef __SC_ARM__
+	op->init("/mnt/nand1-1/Application/oprecord.db");
+#else
+	op->init("/home/hj/Dev_Env/Shuchuang/oprecord.db");
+#endif
+	op->start();
 	//init gpio
 	CDeviceController* device = CDeviceController::instance();
 	device->openDevice();
@@ -59,9 +69,9 @@ int main(int argc, char** argv)
 	//stop
 	proxy->stop();
 	rpc->stop();
-	CTaskManager* task = CTaskManager::instance();
 	task->stopAllTasks();
 	network->stopDhcp("eth0");
+	op->stop();
 	return 0;
 }
 

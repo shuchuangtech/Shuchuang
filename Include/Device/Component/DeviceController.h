@@ -2,6 +2,8 @@
 #define __DEVICE_COMPONENT_DEVICE_CONTROLLER_H__
 #include "Poco/SingletonHolder.h"
 #include "Poco/JSON/Object.h"
+#include "Device/Util/UserRecord.h"
+#include "Device/Util/OperationRecord.h"
 class CDeviceController
 {
 public:
@@ -22,6 +24,8 @@ public:
 	bool closeDoor(Poco::JSON::Object::Ptr& param, std::string& detail);
 private:
 	int	m_fd;
+	CUserRecord*		m_user_record;
+	COperationRecord*	m_op_record;
 };
 #endif
 
