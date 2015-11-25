@@ -394,11 +394,20 @@ void CRegProxy::onTimer(Timer& timer)
 		}
 		else
 		{
-			//receive connection request			
+			//receive connection request
 			if(m_sock->poll(ts, Socket::SELECT_READ|Socket::SELECT_ERROR))
 			{
 				memset(buf, 0, sizeof(buf));
-				int ret = m_sock->receiveBytes(buf, sizeof(buf));
+				m_sock->setReceiveTimeout(Timespan(10, 0));
+				int ret = 0;
+				try
+				{
+					ret = m_sock->receiveBytes(buf, sizeof(buf));
+				}
+				catch(Exception& e)
+				{
+					warnf("%s, %d: Reg socket receive exception[%s].", __FILE__, __LINE__, e.message().c_str());
+				}
 				if(ret <= 0 )
 				{
 					warnf("%s, %d: Receive error.", __FILE__, __LINE__);
