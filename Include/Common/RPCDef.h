@@ -22,23 +22,30 @@ request
 //action×Ö¶Î component.method
 //param>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 //user
-#define PARAM_USERNAME_STR "username"
-#define PARAM_PASSWORD_STR "password"
-#define PARAM_TOKEN_STR "token"
-#define PARAM_CHALLENGE_STR "challenge"
-#define PARAM_NEW_PASS_STR "newpassword"
+#define USER_USERNAME_STR "username"
+#define USER_PASSWORD_STR "password"
+#define USER_TOKEN_STR "token"
+#define USER_CHALLENGE_STR "challenge"
+#define USER_NEW_PASS_STR "newpassword"
 //register
-#define PARAM_UUID_STR "uuid"
-#define PARAM_DEV_NAME_STR "name"
-#define PARAM_DEV_TYPE_STR "type"
-#define PARAM_DEV_MANU_STR "manufacture"
-#define PARAM_STATE_STR "state"
-#define PARAM_TIMESTAMP_STR "timestamp"
-#define PARAM_KEY_STR "key"
-//Component
+#define REG_TOKEN_STR "token"
+#define REG_UUID_STR "uuid"
+#define REG_DEV_NAME_STR "name"
+#define REG_DEV_TYPE_STR "type"
+#define REG_DEV_MANU_STR "manufacture"
+#define REG_STATE_STR "state"
+#define REG_TIMESTAMP_STR "timestamp"
+#define REG_KEY_STR "key"
+//task
+//record
+#define RECORD_STARTTIME_STR "starttime"
+#define RECORD_ENDTIME_STR "endtime"
+#define RECORD_RECORDS_STR "records"
+//Component>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #define COMPONENT_USER_STR "user"
 #define COMPONENT_TASK_STR "task"
 #define COMPONENT_DEVICE_STR "device"
+#define COMPONENT_RECORD_STR "record"
 #define COMPONENT_SERVER_STR "server"
 //Method>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 //user
@@ -54,6 +61,8 @@ request
 #define DEVICE_METHOD_OPEN "open"
 #define DEVICE_METHOD_CLOSE "close"
 #define DEVICE_METHOD_CHECK "check"
+//record
+#define RECORD_METHOD_GET "get"
 //server
 #define SERVER_METHOD_CHECK "check"
 #define SERVER_METHOD_TOKEN "token"

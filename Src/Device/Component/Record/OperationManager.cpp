@@ -1,5 +1,6 @@
 #include "Device/Component/Record/OperationManager.h"
 #include "Common/PrintLog.h"
+#include "Common/RPCDef.h"
 #include "Poco/DateTime.h"
 #include "Poco/Timespan.h"
 #include "Poco/Timestamp.h"
@@ -73,13 +74,13 @@ void COpManager::run()
 
 bool COpManager::getRecords(JSON::Object::Ptr& param, std::string& detail)
 {
-	if(param.isNull() || !param->has("begin") || !param->has("end"))
+	if(param.isNull() || !param->has(RECORD_STARTTIME_STR) || !param->has(RECORD_ENDTIME_STR))
 	{
 		detail = "440";
 		return false;
 	}
-	Int64 start = param->getValue<Int64>("begin");
-	Int64 end = param->getValue<Int64>("end");
+	Int64 start = param->getValue<Int64>(RECORD_STARTTIME_STR);
+	Int64 end = param->getValue<Int64>(RECORD_ENDTIME_STR);
 	Timestamp tsstart(start);
 	Timestamp tsend(end);
 	std::vector<OperationRecordNode> data_set;
@@ -97,7 +98,7 @@ bool COpManager::getRecords(JSON::Object::Ptr& param, std::string& detail)
 			ds["Schema"] = data_set[i].schema;
 			pArray->add(ds);
 		}
-		param->set("records", pArray);
+		param->set(RECORD_RECORDS_STR, pArray);
 	}
 	else
 	{

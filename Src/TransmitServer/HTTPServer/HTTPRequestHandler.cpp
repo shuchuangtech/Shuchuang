@@ -46,7 +46,7 @@ bool CHTTPRequestHandler::checkRequestFormat(JSON::Object::Ptr request, JSON::Ob
 		response->set(KEY_DETAIL_STR, "103");
 		return false;
 	}
-	if(!param.contains(PARAM_UUID_STR))
+	if(!param.contains(REG_UUID_STR))
 	{
 		response->set(KEY_RESULT_STR, RESULT_FAIL_STR);
 		response->set(KEY_DETAIL_STR, "104");
@@ -103,7 +103,7 @@ void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerRe
 		return;
 	}
 	DynamicStruct ds = *obj;
-	std::string uuid = ds[KEY_PARAM_STR][PARAM_UUID_STR].toString();
+	std::string uuid = ds[KEY_PARAM_STR][REG_UUID_STR].toString();
 	std::string action = ds[KEY_ACTION_STR].toString();
 	std::string component = "";
 	std::string method = "";
@@ -125,15 +125,15 @@ void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerRe
 			CDeviceManager* dev_mgr = CDeviceManager::instance();
 			DeviceInfo* dev_info = dev_mgr->getDevice(uuid);
 			DynamicStruct param;
-			param[PARAM_UUID_STR] = uuid;
+			param[REG_UUID_STR] = uuid;
 			if(dev_info != NULL)
 			{
-				param[PARAM_STATE_STR] = "online";
-				param[PARAM_DEV_TYPE_STR] = dev_info->devType;
+				param[REG_STATE_STR] = "online";
+				param[REG_DEV_TYPE_STR] = dev_info->devType;
 			}
 			else
 			{
-				param[PARAM_STATE_STR] = "offline";
+				param[REG_STATE_STR] = "offline";
 			}
 			res->set(KEY_PARAM_STR, param);
 		}

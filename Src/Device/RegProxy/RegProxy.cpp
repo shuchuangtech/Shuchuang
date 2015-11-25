@@ -202,19 +202,19 @@ bool CRegProxy::getRegisterToken()
 				warnf("%s, %d: Extract param error[%s].", __FILE__, __LINE__, e.message().c_str());
 				return false;
 			}
-			if(!param.contains(PARAM_UUID_STR) || !param.contains(PARAM_KEY_STR) || !param.contains(PARAM_TIMESTAMP_STR) || !param.contains(PARAM_TOKEN_STR))
+			if(!param.contains(REG_UUID_STR) || !param.contains(REG_KEY_STR) || !param.contains(REG_TIMESTAMP_STR) || !param.contains(REG_TOKEN_STR))
 			{
 				warnf("%s, %d: Param miss uuid, key, timestamp, or token.", __FILE__, __LINE__);
 				return false;
 			}
-			std::string uuid = param[PARAM_UUID_STR].toString();
+			std::string uuid = param[REG_UUID_STR].toString();
 			if(uuid != m_uuid)
 			{
 				warnf("%s, %d: Server response uuid error.", __FILE__, __LINE__);
 				return false;
 			}
-			std::string recvkey = param[PARAM_KEY_STR].toString();
-			std::string timestamp = param[PARAM_TIMESTAMP_STR].toString();
+			std::string recvkey = param[REG_KEY_STR].toString();
+			std::string timestamp = param[REG_TIMESTAMP_STR].toString();
 			std::string key = "alpha2015";
 			key += timestamp;
 			MD5Engine md5;
@@ -226,7 +226,7 @@ bool CRegProxy::getRegisterToken()
 				warnf("%s, %d: Verify server key failed.", __FILE__, __LINE__);
 				return false;
 			}
-			m_token = param[PARAM_TOKEN_STR].toString();
+			m_token = param[REG_TOKEN_STR].toString();
 			infof("%s, %d: Get register token successfully.", __FILE__, __LINE__);
 			return true;
 		}
@@ -328,10 +328,10 @@ void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 		{
 			DynamicStruct param;
 			ds[KEY_ACTION_STR] = "server.token";
-			param[PARAM_DEV_NAME_STR] = m_dev_name;
-			param[PARAM_DEV_TYPE_STR] = m_dev_type;
-			param[PARAM_DEV_MANU_STR] = m_manufacture;
-			param[PARAM_UUID_STR] = m_uuid;
+			param[REG_DEV_NAME_STR] = m_dev_name;
+			param[REG_DEV_TYPE_STR] = m_dev_type;
+			param[REG_DEV_MANU_STR] = m_manufacture;
+			param[REG_UUID_STR] = m_uuid;
 			ds[KEY_PARAM_STR] = param;
 			break;
 		}
@@ -339,8 +339,8 @@ void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 		{
 			ds[KEY_ACTION_STR] = "server.register";
 			DynamicStruct param;
-			param[PARAM_TOKEN_STR] = m_token;
-			param[PARAM_UUID_STR] = m_uuid;
+			param[REG_TOKEN_STR] = m_token;
+			param[REG_UUID_STR] = m_uuid;
 			ds[KEY_PARAM_STR] = param;
 			break;
 		}
@@ -348,7 +348,7 @@ void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 		{
 			ds[KEY_ACTION_STR] = "server.keepalive";
 			DynamicStruct param;
-			param[PARAM_UUID_STR] = m_uuid;
+			param[REG_UUID_STR] = m_uuid;
 			ds[KEY_PARAM_STR] = param;
 			break;
 		}

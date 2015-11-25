@@ -91,12 +91,12 @@ bool CUserManager::verifyUserPassword(const std::string& username, const std::st
 
 bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 {
-	if(pParam.isNull() || !pParam->has(PARAM_USERNAME_STR))
+	if(pParam.isNull() || !pParam->has(USER_USERNAME_STR))
 	{
 		detail = "410";
 		return false;
 	}
-	std::string username = pParam->getValue<std::string>(PARAM_USERNAME_STR);
+	std::string username = pParam->getValue<std::string>(USER_USERNAME_STR);
 	infof("%s, %d: User %s require to login.", __FILE__, __LINE__, username.c_str());
 	UserRecordNode userNode = {"", "", 0, 0, 0, "", 0, 0};
 	userNode.username = username;
@@ -125,8 +125,8 @@ bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 		m_user_record->updateUser(userNode);
 		m_challenge_map.insert(std::make_pair<std::string, std::string>(username, challenge));
 		m_map_mutex.unlock();
-		pParam->set(PARAM_CHALLENGE_STR, challenge);
-		pParam->set(PARAM_TOKEN_STR, token);
+		pParam->set(USER_CHALLENGE_STR, challenge);
+		pParam->set(USER_TOKEN_STR, token);
 		infof("%s, %d: User %s login step 1 finished, challenge:%s, token:%s.", __FILE__, __LINE__, username.c_str(), challenge.c_str(), token.c_str());
 		return true;
 	}
@@ -136,23 +136,23 @@ bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 		std::string challenge = it->second;
 		m_challenge_map.erase(it);
 		m_map_mutex.unlock();
-		if(!pParam->has(PARAM_TOKEN_STR))
+		if(!pParam->has(USER_TOKEN_STR))
 		{
 			detail = "413";
 			return false;
 		}
-		std::string token = pParam->getValue<std::string>(PARAM_TOKEN_STR);
+		std::string token = pParam->getValue<std::string>(USER_TOKEN_STR);
 		UserRecordNode userNode = {"", "", 0, 0, 0, "", 0, 0};
 		userNode.token = token;
 		m_user_record->getUserByToken(userNode);
-		if(!pParam->has(PARAM_PASSWORD_STR))
+		if(!pParam->has(USER_PASSWORD_STR))
 		{
 			warnf("%s, %d: User %s login request param incomplete.", __FILE__, __LINE__, username.c_str());
 			detail = "415";
 			return false;
 		}
-		std::string password = pParam->getValue<std::string>(PARAM_PASSWORD_STR);
-		pParam->remove(PARAM_PASSWORD_STR);
+		std::string password = pParam->getValue<std::string>(USER_PASSWORD_STR);
+		pParam->remove(USER_PASSWORD_STR);
 		if(verifyUserPassword(username, password, USER_METHOD_LOGIN, challenge))
 		{
 			Timestamp now;
@@ -177,12 +177,12 @@ bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 
 bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 {
-	if(pParam.isNull() || !pParam->has(PARAM_TOKEN_STR))
+	if(pParam.isNull() || !pParam->has(USER_TOKEN_STR))
 	{
 		detail = "413";
 		return false;
 	}
-	std::string token = pParam->getValue<std::string>(PARAM_TOKEN_STR);
+	std::string token = pParam->getValue<std::string>(USER_TOKEN_STR);
 	UserRecordNode userNode = {"", "", 0, 0, 0, "", 0, 0};
 	userNode.token = token;
 	infof("%s, %d: User change password.", __FILE__, __LINE__);
@@ -207,7 +207,7 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 	{
 		std::string challenge = "";
 		generateNewMD5String(challenge);
-		pParam->set(PARAM_CHALLENGE_STR, challenge);
+		pParam->set(USER_CHALLENGE_STR, challenge);
 		m_challenge_map.insert(std::make_pair<std::string, std::string>(username, challenge));
 		m_map_mutex.unlock();
 		infof("%s, %d: User %s change password step 1 finished, challenge:%s", __FILE__, __LINE__, username.c_str(), challenge.c_str());
@@ -219,22 +219,22 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 		std::string challenge = it->second;
 		m_challenge_map.erase(it);
 		m_map_mutex.unlock();
-		if(!pParam->has(PARAM_NEW_PASS_STR))
+		if(!pParam->has(USER_NEW_PASS_STR))
 		{
 			warnf("%s, %d", __FILE__, __LINE__);
 			detail = "417";
 			return false;
 		}
-		if(!pParam->has(PARAM_PASSWORD_STR))
+		if(!pParam->has(USER_PASSWORD_STR))
 		{
 			warnf("%s, %d", __FILE__, __LINE__);
 			detail = "413";
 			return false;
 		}
-		std::string password = pParam->getValue<std::string>(PARAM_PASSWORD_STR);
-		std::string newpass = pParam->getValue<std::string>(PARAM_NEW_PASS_STR);
-		pParam->remove(PARAM_PASSWORD_STR);
-		pParam->remove(PARAM_NEW_PASS_STR);
+		std::string password = pParam->getValue<std::string>(USER_PASSWORD_STR);
+		std::string newpass = pParam->getValue<std::string>(USER_NEW_PASS_STR);
+		pParam->remove(USER_PASSWORD_STR);
+		pParam->remove(USER_NEW_PASS_STR);
 		if(verifyUserPassword(username, password, USER_METHOD_PASSWD, challenge))
 		{
 			userNode.password = newpass;
@@ -257,12 +257,12 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 
 bool CUserManager::logout(JSON::Object::Ptr& pParam, std::string& detail)
 {
-	if(pParam.isNull() || !pParam->has(PARAM_TOKEN_STR))
+	if(pParam.isNull() || !pParam->has(USER_TOKEN_STR))
 	{
 		detail = "413";
 		return false;
 	}
-	std::string token = pParam->getValue<std::string>(PARAM_TOKEN_STR);
+	std::string token = pParam->getValue<std::string>(USER_TOKEN_STR);
 	UserRecordNode userNode = {"", "", 0, 0, 0, "", 0, 0};
 	userNode.token = token;
 	infof("%s, %d: User logout.", __FILE__, __LINE__);

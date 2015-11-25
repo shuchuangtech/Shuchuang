@@ -106,7 +106,7 @@ bool CRegMsgHandler::handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 		result->set(KEY_DETAIL_STR, "201");
 		return false;
 	}	
-	if(!param.contains(PARAM_UUID_STR) || !param.contains(PARAM_DEV_TYPE_STR) || !param.contains(PARAM_DEV_NAME_STR) || !param.contains(PARAM_DEV_MANU_STR))
+	if(!param.contains(REG_UUID_STR) || !param.contains(REG_DEV_TYPE_STR) || !param.contains(REG_DEV_NAME_STR) || !param.contains(REG_DEV_MANU_STR))
 	{
 		warnf("%s, %d: Param missing.", __FILE__, __LINE__);
 		result->set(KEY_DETAIL_STR, "104");
@@ -114,9 +114,9 @@ bool CRegMsgHandler::handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 		return false;
 	}
 	std::string token = "";
-	std::string dev_uuid = param[PARAM_UUID_STR].toString();
-	std::string dev_type = param[PARAM_DEV_TYPE_STR].toString();
-	std::string dev_name = param[PARAM_DEV_NAME_STR].toString();
+	std::string dev_uuid = param[REG_UUID_STR].toString();
+	std::string dev_type = param[REG_DEV_TYPE_STR].toString();
+	std::string dev_name = param[REG_DEV_NAME_STR].toString();
 	Timestamp now;
 	Int64 tms = now.epochMicroseconds();
 	char tms_str[32];
@@ -133,10 +133,10 @@ bool CRegMsgHandler::handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 		result->set(KEY_RESULT_STR, RESULT_GOOD_STR);
 		result->remove(KEY_PARAM_STR);
 		DynamicStruct returnParam;
-		returnParam[PARAM_UUID_STR] = dev_uuid;
-		returnParam[PARAM_TOKEN_STR] = token;
-		returnParam[PARAM_TIMESTAMP_STR] = tms_str;
-		returnParam[PARAM_KEY_STR] = md5key;
+		returnParam[REG_UUID_STR] = dev_uuid;
+		returnParam[REG_TOKEN_STR] = token;
+		returnParam[REG_TIMESTAMP_STR] = tms_str;
+		returnParam[REG_KEY_STR] = md5key;
 		result->set(KEY_PARAM_STR, returnParam);
 		return true;
 	}
@@ -188,15 +188,15 @@ bool CRegMsgHandler::handleRegMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 	}
 	if(method == SERVER_METHOD_REGISTER)
 	{
-		if(!param.contains(PARAM_TOKEN_STR) || !param.contains(PARAM_UUID_STR))
+		if(!param.contains(REG_TOKEN_STR) || !param.contains(REG_UUID_STR))
 		{
 			warnf("%s, %d: Param missing.", __FILE__, __LINE__);
 			result->set(KEY_DETAIL_STR, "104");
 			result->set(KEY_RESULT_STR, RESULT_FAIL_STR);
 			return false;
 		}
-		std::string token = param[PARAM_TOKEN_STR].toString();
-		std::string dev_uuid = param[PARAM_UUID_STR].toString();
+		std::string token = param[REG_TOKEN_STR].toString();
+		std::string dev_uuid = param[REG_UUID_STR].toString();
 		CDeviceManager* dm = CDeviceManager::instance();
 		if(dm->deviceOnline(dev_uuid, token, (UInt64)m_socket->socket.impl()))
 		{
@@ -209,14 +209,14 @@ bool CRegMsgHandler::handleRegMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 	}
 	else if(method == SERVER_METHOD_KEEPALIVE)
 	{
-		if(!param.contains(PARAM_UUID_STR))
+		if(!param.contains(REG_UUID_STR))
 		{
 			warnf("%s, %d: Param missing.", __FILE__, __LINE__);
 			result->set(KEY_DETAIL_STR, "104");
 			result->set(KEY_RESULT_STR, RESULT_FAIL_STR);
 			return false;
 		}
-		std::string dev_uuid = param[PARAM_UUID_STR].toString();
+		std::string dev_uuid = param[REG_UUID_STR].toString();
 		CDeviceManager* dm = CDeviceManager::instance();
 		dm->keepAliveDevice(dev_uuid);
 		result->set(KEY_RESULT_STR, RESULT_GOOD_STR);
