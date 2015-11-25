@@ -79,7 +79,7 @@ int COperationRecord::addRecord(OperationRecordNode& record)
 	return ret;
 }
 
-int COperationRecord::deleteRecordByDate(DateTime& date)
+int COperationRecord::deleteRecordsByDate(DateTime& date)
 {
 	if(m_session_ptr == NULL)
 	{

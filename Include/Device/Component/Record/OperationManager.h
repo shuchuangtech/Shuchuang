@@ -20,6 +20,7 @@ public:
 	bool stop();
 	void run();
 	bool getRecords(Poco::JSON::Object::Ptr& param, std::string& detail);
+//	bool deleteReocrds(Poco::JSON::Object::Ptr& param, std::string& detail);
 private:
 	COperationRecord*	m_op_record;
 	bool				m_started;

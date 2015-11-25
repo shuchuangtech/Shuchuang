@@ -26,7 +26,7 @@ public:
 	}
 	bool	init(const std::string& dbPath);
 	int		addRecord(OperationRecordNode& record);
-	int		deleteRecordByDate(Poco::DateTime& date);
+	int		deleteRecordsByDate(Poco::DateTime& date);
 	int		getRecords(Poco::Timestamp& start, Poco::Timestamp& end, std::vector<OperationRecordNode>&);
 private:
 	Poco::Data::Session*		m_session_ptr;
