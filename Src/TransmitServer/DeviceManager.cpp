@@ -96,6 +96,12 @@ bool CDeviceManager::addDevice(const std::string uuid, UInt64 id, const std::str
 	it = m_device_map.find(uuid);
 	if(it != m_device_map.end())
 	{
+		DeviceInfo* d = it->second;
+		if(d->id != id)
+		{
+			warnf("%s, %d: New device's UUID[%llu] conflict with exist one[%llu]", __FILE__, __LINE__, id, d->id);
+			return false;
+		}
 		token = it->second->token;
 		Timestamp now;
 		it->second->time = now;
