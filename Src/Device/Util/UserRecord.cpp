@@ -38,7 +38,7 @@ bool CUserRecord::init(const std::string& dbPath)
 		Statement create(*m_session_ptr);
 		create << "CREATE TABLE IF NOT EXISTS `User` ("
 			<< "`Id` INTEGER PRIMARY KEY AUTOINCREMENT,"
-			<< "`Username` VARCHAR(30) NOT NULL UNIQUE,"
+			<< "`Username` VARCHAR(64) NOT NULL UNIQUE,"
 			<< "`Password` VARCHAR(64) NOT NULL,"
 			<< "`Authority` TINYINT,"
 			<< "`TimeOfValidity` BIGINT,"

@@ -25,7 +25,7 @@ int main(int argc, char** argv)
 	Poco::Data::Statement create(*session);
 	create << "CREATE TABLE IF NOT EXISTS `User` ("
 			"`Id` INTEGER PRIMARY KEY AUTOINCREMENT,"
-			"`Username` VARCHAR(30) NOT NULL UNIQUE,"
+			"`Username` VARCHAR(64) NOT NULL UNIQUE,"
 			"`Password` VARCHAR(64) NOT NULL,"
 			"`Authority` TINYINT,"
 			"`TimeOfValidity` BIGINT,"
