@@ -7,11 +7,15 @@
 #include "Poco/Types.h"
 #include "Common/ConfigManager.h"
 using namespace Poco;
+extern const char* getMKTIME();
+extern const char* getGITSHA1();
+extern const char* getGITDIRTY();
 int main(int argc, char** argv)
 {
 	//setPrintLogLevel(LEVEL_INFO);
 	initPrintLogger();
 	infof("\n\n=================================================================");
+	infof("%s, git version: sha1(%s) dirty(%s)", getMKTIME(), getGITSHA1(), getGITDIRTY());
 	infof("TransmitServer started now.");
 	CConfigManager* config = CConfigManager::instance();
 	config->init("./Config");
