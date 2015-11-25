@@ -402,6 +402,7 @@ void CRegProxy::onTimer(Timer& timer)
 				if(ret <= 0 )
 				{
 					warnf("%s, %d: Receive error.", __FILE__, __LINE__);
+					dealError(PLAIN_SOCKET);
 					continue;
 				}
 				std::string request(buf);
