@@ -137,7 +137,7 @@ std::string generateMD5Password(std::string prefix, std::string password, std::s
 	return passs;
 }
 
-void sendRequest(std::string content)
+bool sendRequest(std::string content)
 {
 	tracef("%s, %d: SendRequest:%s", __FILE__, __LINE__, content.c_str());
 	HTTPSClientSession https(g_host, (UInt16)g_port, g_pContext);
@@ -164,8 +164,10 @@ void sendRequest(std::string content)
 	catch(Exception& e)
 	{
 		warnf("%s, %d: %s", __FILE__, __LINE__, e.message().c_str());
+		return false;
 	}
 	tracef("%s, %d: Receive buf length:%d, content:\n%s", __FILE__, __LINE__, g_buf.length(), g_buf.c_str());
+	return true;
 }
 
 void login()
@@ -182,7 +184,11 @@ void login()
 	param["username"] = g_username;
 	param["uuid"] = g_uuid;
 	ds["param"] = param;
-	sendRequest(ds.toString());
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 
 	JSON::Parser parser;
 	Dynamic::Var var = parser.parse(g_buf);
@@ -216,7 +222,11 @@ void login()
 	param["token"] = token;
 	ds["param"] = param;
 
-	sendRequest(ds.toString());
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 }
 
 void passwd()
@@ -233,7 +243,11 @@ void passwd()
 	param["uuid"] = g_uuid;
 	param["token"] = g_token;
 	ds["param"] = param;
-	sendRequest(ds.toString());
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 
 	JSON::Parser parser;
 	Dynamic::Var var = parser.parse(g_buf);
@@ -279,7 +293,12 @@ void passwd()
 	param2["password"] = challengemd5pass;
 	param2["newpassword"] = md5newPassword;
 	ds2["param"] = param2;
-	sendRequest(ds2.toString());
+	if(!sendRequest(ds2.toString()))
+	{
+
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 }
 
 void logout()
@@ -296,7 +315,11 @@ void logout()
 	param["uuid"] = g_uuid;
 	param["token"] = g_token;
 	ds["param"] = param;
-	sendRequest(ds.toString());
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 }
 
 void showUserOperation()
@@ -340,7 +363,11 @@ void checkDoor()
 	param["uuid"] = g_uuid;
 	param["token"] = g_token;
 	ds["param"] = param;
-	sendRequest(ds.toString());
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 }
 
 void openDoor()
@@ -357,7 +384,11 @@ void openDoor()
 	param["uuid"] = g_uuid;
 	param["token"] = g_token;
 	ds["param"] = param;
-	sendRequest(ds.toString());
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 }
 
 void closeDoor()
@@ -374,7 +405,11 @@ void closeDoor()
 	param["uuid"] = g_uuid;
 	param["token"] = g_token;
 	ds["param"] = param;
-	sendRequest(ds.toString());
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 }
 
 void getTasks()
@@ -391,7 +426,11 @@ void getTasks()
 	param["uuid"] = g_uuid;
 	param["token"] = g_token;
 	ds["param"] = param;
-	sendRequest(ds.toString());
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 	updateTasksList(g_buf.c_str());
 	showTasksList();
 }
@@ -438,7 +477,11 @@ void addTask()
 	dsTask["weekday"] = weekday;
 	param["task"] = dsTask;
 	ds["param"] = param;
-	sendRequest(ds.toString());
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 }
 
 void deleteTask()
@@ -462,7 +505,11 @@ void deleteTask()
 	param["token"] = g_token;
 	param["task"] = task;
 	ds["param"] = param;
-	sendRequest(ds.toString());
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 }
 
 void updateTask()
@@ -511,7 +558,11 @@ void updateTask()
 	dsTask["weekday"] = weekday;
 	param["task"] = dsTask;
 	ds["param"] = param;
-	sendRequest(ds.toString());
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 }
 
 void getOpRecords()
@@ -569,7 +620,11 @@ void getOpRecords()
 	param["starttime"] = ts_start;
 	param["endtime"] = ts_end;
 	ds["param"] = param;
-	sendRequest(ds.toString());
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 	displayRecords(g_buf.c_str());
 }
 
@@ -628,7 +683,11 @@ void deleteOpRecord()
 	param["starttime"] = ts_start;
 	param["endtime"] = ts_end;
 	ds["param"] = param;
-	sendRequest(ds.toString());
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
 }
 
 void showDoorOperation()
