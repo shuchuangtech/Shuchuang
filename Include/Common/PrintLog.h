@@ -1,6 +1,7 @@
 #ifndef __COMMON_PRINTLOG_H__
 #define __COMMON_PRINTLOG_H__
 #include "stdio.h"
+#include <string>
 enum
 {
 	LEVEL_FATAL = 1,
@@ -21,7 +22,7 @@ enum
 };
 #define tracepoint() debugf("tracepoint: %s, %d.", __FILE__, __LINE__)
 bool setPrintLogLevel(int logLevel);
-bool initPrintLogger();
+bool initPrintLogger(const std::string& logPath);
 int debugf(const char* fmt, ... );
 int infof(const char* fmt, ...);
 int tracef(const char* fmt, ...);

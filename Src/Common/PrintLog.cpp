@@ -21,10 +21,10 @@ inline void reset_console_color()
 	fprintf(stdout, "\033[0m");
 }
 
-bool initPrintLogger()
+bool initPrintLogger(const std::string& logPath)
 {
 	s_pChannel = new Poco::FileChannel;
-	s_pChannel->setProperty("path", "serverlog");
+	s_pChannel->setProperty("path", logPath);
 	s_pChannel->setProperty("rotation", "512 K");
 	s_pChannel->setProperty("archive", "timestamp");
 	s_pChannel->setProperty("purgeAge", "7 days");

@@ -19,15 +19,23 @@ extern const char* getGITDIRTY();
 int main(int argc, char** argv)
 {
 	std::string configPath = "";
-	if(argc == 2)
+	std::string logPath = "";
+	if(argc >=3)
 	{
 		configPath = argv[1];
+		logPath = argv[2];
 	}
 	else
 	{
-		configPath = "./config";
+#ifdef __SC_ARM__
+		configPath = "/mnt/nand1-1/Application/config";
+		logPath = "/mnt/nand1-1/Application/log/logfile";
+#else
+		printf("argc < 3.");
+		return 0;
+#endif
 	}
-	initPrintLogger();
+	initPrintLogger(logPath);
 	//Pint log < infof on board
 #ifdef __SC_ARM__
 	setPrintLogLevel(LEVEL_INFO);
