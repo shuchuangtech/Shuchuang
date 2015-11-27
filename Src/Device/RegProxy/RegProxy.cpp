@@ -165,8 +165,7 @@ bool CRegProxy::getRegisterToken()
 		return false;
 	}
 	memset(buf, 0 ,sizeof(buf));
-	Timespan ts(10, 0);
-	m_ssl_sock->setReceiveTimeout(ts);
+	m_ssl_sock->setReceiveTimeout(Timespan(10, 0));
 	try
 	{
 		if(m_ssl_sock->receiveBytes(buf, (UInt16)sizeof(buf)) > 0)
@@ -258,7 +257,7 @@ bool CRegProxy::registerToServer()
 		}
 		Context::Ptr pContext = new Context(Context::TLSV1_CLIENT_USE, "", Context::VERIFY_NONE);
 		m_sock = new SecureStreamSocket(pContext);
-		m_sock->connect(saddr, Timespan(3, 0));
+		m_sock->connect(saddr, Timespan(10, 0));
 	}
 	catch(Exception& e)
 	{
@@ -281,8 +280,7 @@ bool CRegProxy::registerToServer()
 		return false;
 	}
 	memset(buf, 0, sizeof(buf));
-	Timespan ts(10, 0);
-	if(m_sock->poll(ts, Socket::SELECT_READ) > 0)
+	if(m_sock->poll(Timespan(10, 0), Socket::SELECT_READ) > 0)
 	{
 		try
 		{
@@ -376,7 +374,6 @@ bool CRegProxy::parseAction(std::string& opt, std::string& component, std::strin
 void CRegProxy::onTimer(Timer& timer)
 {
 	char buf[512] = {0, };
-	Timespan ts(5, 0);
 	while(m_started)
 	{
 		if(m_sock == 0)
@@ -395,7 +392,7 @@ void CRegProxy::onTimer(Timer& timer)
 		else
 		{
 			//receive connection request
-			if(m_sock->poll(ts, Socket::SELECT_READ|Socket::SELECT_ERROR))
+			if(m_sock->poll(Timespan(5, 0), Socket::SELECT_READ|Socket::SELECT_ERROR))
 			{
 				memset(buf, 0, sizeof(buf));
 				m_sock->setReceiveTimeout(Timespan(10, 0));
