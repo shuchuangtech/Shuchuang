@@ -25,7 +25,7 @@ bool initPrintLogger()
 {
 	s_pChannel = new Poco::FileChannel;
 	s_pChannel->setProperty("path", "serverlog");
-	s_pChannel->setProperty("rotation", "50 M");
+	s_pChannel->setProperty("rotation", "512 K");
 	s_pChannel->setProperty("archive", "timestamp");
 	s_pChannel->setProperty("purgeAge", "7 days");
 	s_pChannel->setProperty("flush", "false");
