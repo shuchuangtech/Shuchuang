@@ -6,6 +6,7 @@
 #include "Poco/Thread.h"
 #include "Poco/SHA1Engine.h"
 using namespace Poco::Data::Keywords;
+Poco::Data::Session* session;
 struct User
 {
 	std::string username;
@@ -18,25 +19,11 @@ struct User
 	Poco::Int64 lastLogin;
 };
 
-int main(int argc, char** argv)
+void generateUser(const std::string& username, const std::string& password)
 {
-	Poco::Data::SQLite::Connector::registerConnector();
-	Poco::Data::Session* session = new Poco::Data::Session("SQLite", "/home/hj/Dev_Env/Shuchuang/test.db");
-	Poco::Data::Statement create(*session);
-	create << "CREATE TABLE IF NOT EXISTS `User` ("
-			"`Id` INTEGER PRIMARY KEY AUTOINCREMENT,"
-			"`Username` VARCHAR(64) NOT NULL UNIQUE,"
-			"`Password` VARCHAR(64) NOT NULL,"
-			"`Authority` TINYINT,"
-			"`TimeOfValidity` BIGINT,"
-			"`RemainOpen` INTEGER,"
-			"`Token` VARCHAR(64),"
-			"`LastVerify` BIGINT,"
-			"`LastLogin` BIGINT)", now;
 	struct User user;
-	user.username = "admin";
+	user.username = username;
 	Poco::SHA1Engine sha1;
-	std::string password = "admin@shuchuang";
 	sha1.update(password);
 	const Poco::DigestEngine::Digest& digest = sha1.digest();
 	std::string sha1pass(Poco::DigestEngine::digestToHex(digest));
@@ -67,6 +54,27 @@ int main(int argc, char** argv)
 	{
 		printf("%s\n", e.message().c_str());
 	}
+
+}
+
+int main(int argc, char** argv)
+{
+	Poco::Data::SQLite::Connector::registerConnector();
+	session = new Poco::Data::Session("SQLite", "/home/hj/Dev_Env/Shuchuang/test.db");
+	Poco::Data::Statement create(*session);
+	create << "CREATE TABLE IF NOT EXISTS `User` ("
+			"`Id` INTEGER PRIMARY KEY AUTOINCREMENT,"
+			"`Username` VARCHAR(64) NOT NULL UNIQUE,"
+			"`Password` VARCHAR(64) NOT NULL,"
+			"`Authority` TINYINT,"
+			"`TimeOfValidity` BIGINT,"
+			"`RemainOpen` INTEGER,"
+			"`Token` VARCHAR(64),"
+			"`LastVerify` BIGINT,"
+			"`LastLogin` BIGINT)", now;
+	generateUser("admin", "admin@shuchuang");
+	generateUser("linshu", "linshu@shuchuang");
+	generateUser("wangshuai", "wangshuai@shuchuang");
 	session->close();
 	delete session;
 	return 0;
