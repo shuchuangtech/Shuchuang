@@ -26,6 +26,7 @@ public:
 	}
 	bool	init(const std::string& dbPath);
 	int		addRecord(OperationRecordNode& record);
+	int		addRecord(std::vector<OperationRecordNode>&);
 	int		deleteRecordsByDate(Poco::DateTime& date);
 	int		getRecords(Poco::Timestamp& start, Poco::Timestamp& end, std::vector<OperationRecordNode>&);
 private:

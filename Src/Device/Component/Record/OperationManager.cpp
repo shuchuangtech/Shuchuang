@@ -19,6 +19,7 @@ COpManager::~COpManager()
 
 bool COpManager::init(const std::string& dbPath)
 {
+	tracepoint();
 	m_op_record = COperationRecord::instance();
 	return m_op_record->init(dbPath);
 }
@@ -30,6 +31,7 @@ bool COpManager::start()
 		warnf("%s, %d: OpManager already started.", __FILE__, __LINE__);
 		return false;
 	}
+	m_cache_map.clear();
 	m_thread = new Thread("OpManager");
 	m_started = true;
 	m_thread->start(*this);
@@ -43,32 +45,44 @@ bool COpManager::stop()
 		warnf("%s, %d: OpManager not running.", __FILE__, __LINE__);
 		return false;
 	}
+	writeAllRecords();
 	m_thread->join();
 	m_started = false;
 	return true;
 }
 
+void COpManager::writeAllRecords()
+{
+	Mutex::ScopedLock lock(m_mutex);
+	int ret = m_op_record->addRecord(m_cache_map);
+	m_cache_map.clear();
+	infof("%s, %d: %d records insert into database.", __FILE__, __LINE__, ret);
+}
+
 void COpManager::run()
 {
+	//set lastCheckTime to 2000-1-1 0:0:0 to triger process
+	DateTime lastDeleteTime(2000, 1, 1, 0, 0, 0);
 	while(m_started)
 	{
+		writeAllRecords();
 		DateTime now;
-		//sleep 1 seconds, 
-		Thread::sleep(1000);
-		DateTime today(now.year(),
+		Timespan diff = now - lastDeleteTime;
+		if(diff.days() > 0)
+		{
+			DateTime today(now.year(),
 						now.month(),
 						now.day(),
 						0,
 						0,
 						0);
-		Timespan oneday(1, 0, 0, 0, 0);
-		Timespan tenday(10, 0, 0, 0, 0);
-		Timespan nextRun = today + oneday - now;
-		int sleepVal = nextRun.totalSeconds();
-		DateTime deleteDay = today - tenday;
-		int ret = m_op_record->deleteRecordsByDate(deleteDay);
-		infof("%s, %d: Operation records[num %d] on %04d-%02d-%02d deleted.", __FILE__, __LINE__, ret, deleteDay.year(), deleteDay.month(), deleteDay.day());
-		Thread::sleep(sleepVal * 1000);
+			Timespan tenday(10, 0, 0, 0, 0);
+			DateTime deleteDay = today - tenday;
+			int ret = m_op_record->deleteRecordsByDate(deleteDay);
+			infof("%s, %d: Operation records[num %d] on %04d-%02d-%02d deleted.", __FILE__, __LINE__, ret, deleteDay.year(), deleteDay.month(), deleteDay.day());
+			lastDeleteTime = now;
+		}
+		Thread::sleep(60 * 1000);
 	}
 }
 
@@ -99,12 +113,63 @@ bool COpManager::getRecords(JSON::Object::Ptr& param, std::string& detail)
 			pArray->add(ds);
 		}
 	}
+	Int64 numStart = tsstart.epochMicroseconds();
+	Int64 numEnd = tsend.epochMicroseconds();
+	m_mutex.lock();
+	if(((m_cache_map.begin())->timestamp <= numEnd)
+			&& ((m_cache_map.end())->timestamp >= numStart))
+	{
+		//find begin and end
+		std::vector<OperationRecordNode>::iterator it_begin = m_cache_map.begin();
+		std::vector<OperationRecordNode>::iterator it_end = m_cache_map.end();
+		bool reverse = false;
+		// if it->first begin < numStart, then reverse
+		if(it_begin->timestamp < numStart)
+		{
+			it_begin = m_cache_map.end();
+			it_end = m_cache_map.begin();
+			reverse = true;
+		}
+		while(true)
+		{
+			if(it_begin->timestamp >= numStart && it_begin->timestamp <= numEnd)
+			{
+				ret++;
+				DynamicStruct ds;
+				ds["Timestamp"] = it_begin->timestamp;
+				ds["Operation"] = it_begin->operation;
+				ds["Username"] = it_begin->username;
+				ds["Schema"] = it_begin->schema;
+				pArray->add(ds);
+			}
+			else
+			{
+				break;
+			}
+			if(it_begin == it_end)
+				break;
+			if(reverse)
+				it_begin--;
+			else
+				it_begin++;
+		}
+			
+	}
+	m_mutex.unlock();
 	DateTime dtstart(tsstart);
 	DateTime dtend(tsend);
 	param->set(RECORD_RECORDS_STR, pArray);
 	infof("%s, %d: %d operation records from %04d-%02d-%02d %02d:%02d:%02d to %04d-%02d-%02d %02d:%02d:%02d return.", __FILE__, __LINE__, ret, 
 			dtstart.year(), dtstart.month(), dtstart.day(), dtstart.hour(), dtstart.minute(), dtstart.second(),
 			dtend.year(), dtend.month(), dtend.day(), dtend.hour(), dtend.minute(), dtend.second());
+	return true;
+}
+
+bool COpManager::addRecord(OperationRecordNode& node)
+{
+	m_mutex.lock();
+	m_cache_map.push_back(node);
+	m_mutex.unlock();
 	return true;
 }
 

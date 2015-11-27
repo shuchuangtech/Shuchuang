@@ -3,7 +3,7 @@
 #include "Poco/SingletonHolder.h"
 #include "Poco/JSON/Object.h"
 #include "Device/Util/UserRecord.h"
-#include "Device/Util/OperationRecord.h"
+#include "Device/Component/Record/OperationManager.h"
 class CDeviceController
 {
 public:
@@ -25,7 +25,7 @@ public:
 private:
 	int	m_fd;
 	CUserRecord*		m_user_record;
-	COperationRecord*	m_op_record;
+	COpManager*			m_op_manager;
 };
 #endif
 

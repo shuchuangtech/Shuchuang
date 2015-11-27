@@ -13,7 +13,7 @@ CDeviceController::CDeviceController()
 {
 	m_fd = 0;
 	m_user_record = CUserRecord::instance();
-	m_op_record = COperationRecord::instance();
+	m_op_manager = COpManager::instance();
 }
 
 CDeviceController::~CDeviceController()
@@ -129,7 +129,7 @@ bool CDeviceController::openDoor(JSON::Object::Ptr& param, std::string& detail)
 		}
 		infof("%s, %d: Door opened by manual[User:%s].", __FILE__, __LINE__, op.username.c_str());
 	}
-	m_op_record->addRecord(op);
+	m_op_manager->addRecord(op);
 	return true;
 }
 
@@ -175,7 +175,7 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 		}
 		infof("%s, %d: Door closed by manual[User:%s].", __FILE__, __LINE__, op.username.c_str());
 	}
-	m_op_record->addRecord(op);
+	m_op_manager->addRecord(op);
 	return true;
 }
 

@@ -5,6 +5,7 @@
 #include "Device/Util/OperationRecord.h"
 #include "Poco/Thread.h"
 #include "Poco/JSON/Object.h"
+#include "Poco/Mutex.h"
 class COpManager : public Poco::Runnable
 {
 public:
@@ -19,12 +20,17 @@ public:
 	bool start();
 	bool stop();
 	void run();
+	//interface to RPCClient
 	bool getRecords(Poco::JSON::Object::Ptr& param, std::string& detail);
-//	bool deleteReocrds(Poco::JSON::Object::Ptr& param, std::string& detail);
+	//interface to DeviceControler
+	bool addRecord(OperationRecordNode& node);
 private:
+	void writeAllRecords();
 	COperationRecord*	m_op_record;
 	bool				m_started;
 	Poco::Thread*		m_thread;
+	Poco::Mutex			m_mutex;
+	std::vector<OperationRecordNode>		m_cache_map;
 };
 #endif
 
