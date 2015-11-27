@@ -501,7 +501,7 @@ bool CRegServer::sendRequest(RequestInfo* request)
 {
 	DynamicStruct ds = *(request->request);
 	CDeviceManager* dev_manager = CDeviceManager::instance();
-	DeviceInfo* dev = dev_manager->getDevice(request->uuid);	
+	DeviceInfo* dev = dev_manager->getDevice(request->uuid);
 	if(dev == NULL)
 	{
 		JSON::Object::Ptr obj = new JSON::Object(*(request->request));

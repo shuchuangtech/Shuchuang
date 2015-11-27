@@ -13,11 +13,13 @@ using namespace Poco;
 CRPCClient::CRPCClient()
 :Task("RPCClient")
 {
+	tracef("%s, %d: RPCClient created, %llu", __FILE__, __LINE__, (UInt64)this);
 	m_response = NULL;
 }
 
 CRPCClient::~CRPCClient()
 {
+	tracef("%s, %d: RPCClient destroyed, %llu", __FILE__, __LINE__, (UInt64)this);
 }
 
 JSON::Object::Ptr& CRPCClient::getResponse()
