@@ -25,7 +25,11 @@ bool initPrintLogger(const std::string& logPath)
 {
 	s_pChannel = new Poco::FileChannel;
 	s_pChannel->setProperty("path", logPath);
+#ifdef __SC_ARM__
 	s_pChannel->setProperty("rotation", "512 K");
+#else
+	s_pChannel->setProperty("rotation", "2 M");
+#endif
 	s_pChannel->setProperty("archive", "timestamp");
 	s_pChannel->setProperty("purgeAge", "7 days");
 	s_pChannel->setProperty("flush", "false");
