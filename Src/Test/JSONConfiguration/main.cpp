@@ -13,23 +13,40 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 	JSON::Object::Ptr pNode = new JSON::Object;
 	if(choice == 1)
 	{
+		//DeviceInfo
 		JSON::Object::Ptr pDeviceInfo = new JSON::Object;
 		pDeviceInfo->set("uuid", "SC0000000001");
 		pDeviceInfo->set("type", "sc-lock0001");
 		pDeviceInfo->set("name", "SC0000000001");
 		pDeviceInfo->set("manufacture", "Shuchuangtech");
-	
+		//RegProxy
 		JSON::Object::Ptr pRegProxy = new JSON::Object;
 		pRegProxy->set("host", "shuchuangtech.com");
 		pRegProxy->set("ssl_port", 12222);
 		pRegProxy->set("reg_port", 13333);
-	
+		//Tasks
 		JSON::Array::Ptr pTasks = new JSON::Array;
+		//DataPath
+		JSON::Object::Ptr pDataPath = new JSON::Object;
+		printf("Database on 1.board\t2.virtual machine\n");
+		int i = 0;
+		int ret = scanf("%d", &i);
+		if(ret && i == 1)
+		{
+			pDataPath->set("User", "/mnt/nand1-1/Application/user.db");
+			pDataPath->set("Operation", "/mnt/nand1-1/Application/oprecord.db");
+		}
+		else if(ret && i == 2)
+		{
+			pDataPath->set("User", "/home/hj/Dev_Env/Shuchuang/user.db");
+			pDataPath->set("Operation", "/home/hj/Dev_Env/Shuchuang/oprecord.db");
+		}
 		//JSON::Object::Ptr nil = NULL;
 		//pTasks->add(nil);
 		pNode->set("Tasks", pTasks);
 		pNode->set("DeviceInfo", pDeviceInfo);
 		pNode->set("RegProxy", pRegProxy);
+		pNode->set("DataPath", pDataPath);
 	}
 	else if(choice == 2)
 	{

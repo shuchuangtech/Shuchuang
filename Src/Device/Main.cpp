@@ -16,8 +16,10 @@ using namespace Poco::Net;
 extern const char* getMKTIME();
 extern const char* getGITSHA1();
 extern const char* getGITDIRTY();
+extern void registerSignalHandler();
 int main(int argc, char** argv)
 {
+	registerSignalHandler();
 	std::string configPath = "";
 	std::string logPath = "";
 	if(argc >=3)
@@ -38,7 +40,7 @@ int main(int argc, char** argv)
 	initPrintLogger(logPath);
 	//Pint log < infof on board
 #ifdef __SC_ARM__
-	setPrintLogLevel(LEVEL_INFO);
+	//setPrintLogLevel(LEVEL_INFO);
 #endif
 	infof("%s, git version: sha1(%s) dirty(%s)", getMKTIME(), getGITSHA1(), getGITDIRTY());
 	//init config manager
@@ -47,25 +49,37 @@ int main(int argc, char** argv)
 	CTaskManager* task = CTaskManager::instance();
 	//OpManager should before DeviceController
 	COpManager* op = COpManager::instance();
+	JSON::Object::Ptr pDataConfig = NULL;
+	config->getConfig("DataPath", pDataConfig);
+	std::string userdata = "";
+	std::string opdata = "";
+	if(!pDataConfig.isNull() && pDataConfig->has("User") && pDataConfig->has("Operation"))
+	{
+		userdata = pDataConfig->getValue<std::string>("User");
+		opdata = pDataConfig->getValue<std::string>("Operation");
+	}
+	else
+	{
 #ifdef __SC_ARM__
-	op->init("/mnt/nand1-1/Application/oprecord.db");
+		userdata = "/mnt/nand1-1/Application/oprecord.db";
+		opdata = "/mnt/nand1-1/Application/user.db";
 #else
-	op->init("/home/hj/Dev_Env/Shuchuang/oprecord.db");
+		userdata = "/home/hj/Dev_Env/Shuchuang/user.db";
+		opdata = "/home/hj/Dev_Env/Shuchuang/oprecord.db"
 #endif
+	}
+	//初始化用户中心
+	CUserManager* user = CUserManager::instance();
+	op->init(opdata);
+	user->init(userdata);
 	op->start();
+	pDataConfig = NULL;
 	//init gpio
 	CDeviceController* device = CDeviceController::instance();
 	device->openDevice();
 	CNetworkManager* network = CNetworkManager::instance();
 	network->startDhcp("eth0");
-	//初始化用户中心
-	CUserManager* user = CUserManager::instance();
-#ifdef __SC_ARM__
-	user->init("/mnt/nand1-1/Application/user.db");
-#else
-	user->init("/home/hj/Dev_Env/Shuchuang/user.db");
-#endif
-	//注册到网络服务器
+		//注册到网络服务器
 	CRegProxy* proxy = CRegProxy::instance();
 	proxy->start();
 	//开启rpc server
