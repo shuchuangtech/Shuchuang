@@ -19,6 +19,7 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 		pDeviceInfo->set("type", "sc-lock0001");
 		pDeviceInfo->set("name", "SC0000000001");
 		pDeviceInfo->set("manufacture", "Shuchuangtech");
+		pDeviceInfo->set("mac", "1234567890ab");
 		//RegProxy
 		JSON::Object::Ptr pRegProxy = new JSON::Object;
 		pRegProxy->set("host", "shuchuangtech.com");

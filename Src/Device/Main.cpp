@@ -78,8 +78,10 @@ int main(int argc, char** argv)
 	CDeviceController* device = CDeviceController::instance();
 	device->openDevice();
 	CNetworkManager* network = CNetworkManager::instance();
+	//设置Mac地址
+	network->initIf("eth0");
 	network->startDhcp("eth0");
-		//注册到网络服务器
+	//注册到网络服务器
 	CRegProxy* proxy = CRegProxy::instance();
 	proxy->start();
 	//开启rpc server

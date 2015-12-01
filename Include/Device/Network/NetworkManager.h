@@ -14,10 +14,13 @@ public:
 	}
 	CNetworkManager();
 	~CNetworkManager();
+	bool initIf(const char* ethname);
 	bool startDhcp(const char* ethname);
 	bool stopDhcp(const char* ethname);
 private:
-	std::string								m_hostname;
+	bool setIfUp(const char* ethname);
+	bool setIfDown(const char* ethname);
+	bool setIfMac(const char* ethname, const char* mac);
 	std::map<std::string, CDhcpClient*>		m_dhcp_map;
 };
 #endif
