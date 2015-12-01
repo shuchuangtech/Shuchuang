@@ -5,8 +5,17 @@
 #include "Poco/Timespan.h"
 #include <stdio.h>
 using namespace Poco;
+void myTest1()
+{
+	DateTime dt1(2015, 11, 25, 23, 50);
+	DateTime dt2(2015, 11, 26, 0, 10);
+	Timespan diff = dt2 - dt1;
+	printf("days: %d hours: %d minutes: %d seconds:%d\n", diff.days(), diff.hours(), diff.minutes(), diff.seconds());
+}
+
 int main()
 {
+	myTest1();
 	Poco::Int64 ti = -1;
 	Timestamp test(ti);
 	DateTime dtest(test);

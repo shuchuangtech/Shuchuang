@@ -10,10 +10,12 @@ using namespace Poco;
 extern const char* getMKTIME();
 extern const char* getGITSHA1();
 extern const char* getGITDIRTY();
+extern void registerSignalHandler();
 int main(int argc, char** argv)
 {
+	registerSignalHandler();
 	//setPrintLogLevel(LEVEL_INFO);
-	initPrintLogger();
+	initPrintLogger("log/serverlog");
 	infof("\n\n=================================================================");
 	infof("%s, git version: sha1(%s) dirty(%s)", getMKTIME(), getGITSHA1(), getGITDIRTY());
 	infof("TransmitServer started now.");
