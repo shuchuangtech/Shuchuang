@@ -142,11 +142,8 @@ bool CNetworkManager::initIf(const char* ethname)
 	}
 	bool ret = true;
 	ret = ret && setIfDown("eth0");
-	tracepoint();
 	ret = ret && setIfMac("eth0", mac);
-	tracepoint();
 	ret = ret && setIfUp("eth0");
-	tracepoint();
 	return ret;
 }
 

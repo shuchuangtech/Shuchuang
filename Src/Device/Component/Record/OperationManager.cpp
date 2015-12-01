@@ -19,7 +19,6 @@ COpManager::~COpManager()
 
 bool COpManager::init(const std::string& dbPath)
 {
-	tracepoint();
 	m_op_record = COperationRecord::instance();
 	return m_op_record->init(dbPath);
 }
@@ -35,6 +34,7 @@ bool COpManager::start()
 	m_thread = new Thread("OpManager");
 	m_started = true;
 	m_thread->start(*this);
+	infof("%s, %d: Operation record manager start successfully.", __FILE__, __LINE__);
 	return true;
 }
 
@@ -48,15 +48,21 @@ bool COpManager::stop()
 	writeAllRecords();
 	m_thread->join();
 	m_started = false;
+	infof("%s, %d: Operation record manager stop successfully.", __FILE__, __LINE__);
 	return true;
 }
 
 void COpManager::writeAllRecords()
 {
 	Mutex::ScopedLock lock(m_mutex);
-	int ret = m_op_record->addRecord(m_cache_map);
-	m_cache_map.clear();
-	infof("%s, %d: %d records insert into database.", __FILE__, __LINE__, ret);
+	if(m_cache_map.size() > 0)
+	{
+		int ret = m_op_record->addRecord(m_cache_map);
+		if(ret != m_cache_map.size())
+			warnf("%s, %d: Not supposed to be here.", __FILE__, __LINE__);
+		m_cache_map.clear();
+		infof("%s, %d: %d records insert into database.", __FILE__, __LINE__, ret);
+	}
 }
 
 void COpManager::run()
@@ -79,7 +85,7 @@ void COpManager::run()
 			Timespan tenday(10, 0, 0, 0, 0);
 			DateTime deleteDay = today - tenday;
 			int ret = m_op_record->deleteRecordsByDate(deleteDay);
-			infof("%s, %d: Operation records[num %d] on %04d-%02d-%02d deleted.", __FILE__, __LINE__, ret, deleteDay.year(), deleteDay.month(), deleteDay.day());
+			infof("%s, %d: Operation %d records on %04d-%02d-%02d deleted.", __FILE__, __LINE__, ret, deleteDay.year(), deleteDay.month(), deleteDay.day());
 			lastDeleteTime = now;
 		}
 		Thread::sleep(60 * 1000);
@@ -116,7 +122,7 @@ bool COpManager::getRecords(JSON::Object::Ptr& param, std::string& detail)
 	Int64 numStart = tsstart.epochMicroseconds();
 	Int64 numEnd = tsend.epochMicroseconds();
 	m_mutex.lock();
-	if(((m_cache_map.begin())->timestamp <= numEnd)
+	if((m_cache_map.size() > 0) && ((m_cache_map.begin())->timestamp <= numEnd)
 			&& ((m_cache_map.end())->timestamp >= numStart))
 	{
 		//find begin and end
@@ -153,7 +159,6 @@ bool COpManager::getRecords(JSON::Object::Ptr& param, std::string& detail)
 			else
 				it_begin++;
 		}
-			
 	}
 	m_mutex.unlock();
 	DateTime dtstart(tsstart);
