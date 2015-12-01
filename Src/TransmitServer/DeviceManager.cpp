@@ -97,9 +97,9 @@ bool CDeviceManager::addDevice(const std::string uuid, UInt64 id, const std::str
 	if(it != m_device_map.end())
 	{
 		DeviceInfo* d = it->second;
-		if(d->id != id)
+		if(d->online)
 		{
-			warnf("%s, %d: New device's UUID[%llu] conflict with exist one[%llu]", __FILE__, __LINE__, id, d->id);
+			warnf("%s, %d: Device[%s] already online", __FILE__, __LINE__, uuid.c_str());
 			return false;
 		}
 		token = it->second->token;
