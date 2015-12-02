@@ -35,43 +35,26 @@ CRegServer::~CRegServer()
 		delete m_task_manager;
 }
 
-void CRegServer::start()
+bool CRegServer::start()
 {
 	if(m_started)
 	{
 		warnf("%s, %d: Register server has already started.", __FILE__, __LINE__);
-		return;
+		return false;
 	}
 	CConfigManager* config = CConfigManager::instance();
 	JSON::Object::Ptr pConfig;
 	config->getConfig("RegServer", pConfig);
-	if(pConfig.isNull())
+	if(pConfig.isNull() || !pConfig->has("ssl_port") || !pConfig->has("reg_port"))
 	{
-		pConfig = new JSON::Object;
-		pConfig->set("ssl_port", 12222);
-		pConfig->set("reg_port", 13333);
-		config->setConfig("RegServer", pConfig);
-		m_ssl_port = 12222;
-		m_reg_port = 13333;
+		warnf("%s, %d: RegServer config not exists, or ssl_port reg_port not exists.", __FILE__, __LINE__);
+		return false;
 	}
-	else
-	{
-		if(pConfig->has("ssl_port") && pConfig->has("reg_port"))
-		{
-			m_ssl_port = pConfig->getValue<UInt16>("ssl_port");
-			m_reg_port = pConfig->getValue<UInt16>("reg_port");
-		}
-		else
-		{
-			m_ssl_port = 12222;
-			m_reg_port = 13333;
-			pConfig = NULL;
-			pConfig = new JSON::Object;
-			pConfig->set("ssl_port", 12222);
-			pConfig->set("reg_port", 13333);
-			config->setConfig("RegServer", pConfig);
-		}
-	}
+	m_ssl_port = pConfig->getValue<UInt16>("ssl_port");
+	m_reg_port = pConfig->getValue<UInt16>("reg_port");
+	createInnerSocket();
+	listenSsl();
+	listenReg();
 	std::string tp_name = "RegThreadPool";
 	m_thread_pool = new ThreadPool(tp_name);
 	m_task_manager = new TaskManager(*m_thread_pool);
@@ -80,8 +63,6 @@ void CRegServer::start()
 	Observer<CRegServer, OfflineNotification> device_observer(*this, &CRegServer::handleOffline);
 	CDeviceManager* device_manager = CDeviceManager::instance();
 	device_manager->addObserver(device_observer);
-	listenSsl();
-	listenReg();
 	m_started = true;
 	TimerCallback<CRegServer> sslCallback(*this, &CRegServer::sslAccept);
 	m_ssl_accept.start(sslCallback);
@@ -99,12 +80,13 @@ void CRegServer::start()
 	m_reg_handler.start(regHanCall);
 	infof("%s, %d: Register server start successfully.", __FILE__, __LINE__);
 	infof("%s, %d: Register server ssl port:%d, reg port:%d", __FILE__, __LINE__, m_ssl_port, m_reg_port);
+	return true;
 }
 
-void CRegServer::stop()
+bool CRegServer::stop()
 {
 	if(!m_started)
-		return;
+		return false;
 	m_started = false;
 	m_ssl_accept.stop();
 	m_reg_accept.stop();
@@ -117,10 +99,59 @@ void CRegServer::stop()
 	delete m_reg_sock;
 	m_thread_pool->stopAll();
 	infof("%s, %d: Register server stop successfully.", __FILE__, __LINE__);
+	return true;
 }
 
 bool CRegServer::createInnerSocket()
 {
+	Timer timer;
+	TimerCallback<CRegServer> innerCallback(*this, &CRegServer::handleInnerSocket);
+	timer.start(innerCallback);
+	Thread::sleep(500);
+	try
+	{
+		m_inner_write_socket.connect(SocketAddress("127.0.0.1", 3819), Timespan(5, 0));
+	}
+	catch(Exception& e)
+	{
+		warnf("%s, %d: Create inner write socket error[%s].", __FILE__, __LINE__, e.message().c_str());
+		timer.stop();
+		return false;
+	}
+	timer.stop();
+	m_reg_sock_list.push_back(m_inner_read_socket);	
+	infof("%s, %d: Create inner write socket[%s] successfully.", __FILE__, __LINE__, m_inner_write_socket.address().toString().c_str());
+	return true;
+}
+
+bool CRegServer::writeInnerSocket()
+{
+	std::string buf = "A";
+	m_inner_write_socket.sendBytes(buf.c_str(), buf.length());
+	return true;
+}
+
+bool CRegServer::readInnerSocket()
+{
+	char buf[2] = {0, };
+	m_inner_read_socket.receiveBytes(buf, 2);
+	return true;
+}
+
+void CRegServer::handleInnerSocket(Timer& timer)
+{
+	//inner socket port 3819
+	ServerSocket svr(3819);
+	while(1)
+	{
+		if(svr.poll(Timespan(5, 0), Socket::SELECT_READ) > 0)
+		{
+			SocketAddress sa;
+			m_inner_read_socket = svr.acceptConnection(sa);
+			infof("%s, %d: Create inner read socket[%s] successfully.", __FILE__, __LINE__, m_inner_read_socket.address().toString().c_str());
+			break;
+		}
+	}
 }
 
 bool CRegServer::listenSsl()
@@ -351,6 +382,7 @@ void CRegServer::handleTaskFinish(TaskFinishedNotification* pNf)
 					m_request_queue_mutex.unlock();
 				}
 			}
+			writeInnerSocket();
 		}//type == 1
 	}
 }
@@ -409,12 +441,17 @@ void CRegServer::regHandler(Timer& timer)
 		std::copy(m_reg_sock_list.begin(), m_reg_sock_list.end(), std::back_inserter(errorList));
 		m_reg_queue_mutex.unlock();
 		//may result in http response hung up
-		int ret = Socket::select(readList, writeList, errorList, Timespan(5, 0));
+		int ret = Socket::select(readList, writeList, errorList, Timespan(60, 0));
 		if(ret > 0)
 		{
 			for(Socket::SocketList::iterator it = readList.begin(); it != readList.end(); it++)
 			{
 				StreamSocket ss((*it));
+				if(ss == m_inner_read_socket)
+				{
+					readInnerSocket();
+					continue;
+				}
 				m_reg_queue_mutex.lock();
 				Socket::SocketList::iterator it_reg = find(m_reg_sock_list.begin(), m_reg_sock_list.end(), ss);
 				if(it_reg != m_reg_sock_list.end())
@@ -433,6 +470,10 @@ void CRegServer::regHandler(Timer& timer)
 				m_reg_queue_mutex.unlock();
 			}// for readList
 		}//select ret
+		else
+		{
+			writeInnerSocket();
+		}
 	}
 }
 
@@ -501,6 +542,7 @@ void CRegServer::regAccept(Timer& timer)
 		Mutex::ScopedLock lock(m_reg_queue_mutex);
 		m_pReg_map.insert(std::make_pair<UInt64, SocketTime*>((UInt64)ss.impl() ,pReg));
 		m_reg_sock_list.push_back(ss);
+		writeInnerSocket();
 	}
 }
 

@@ -25,8 +25,8 @@ public:
 	};
 	CRegServer();
 	~CRegServer();
-	void start();
-	void stop();
+	bool start();
+	bool stop();
 	bool setServerPort(Poco::UInt16 ssl_port, Poco::UInt16 reg_port);
 	void sslAccept(Poco::Timer& timer);
 	void sslHandler(Poco::Timer& timer);
@@ -38,6 +38,7 @@ public:
 	void handleOffline(OfflineNotification* pNf);
 private:
 	bool removeSocket(int choice, std::map<Poco::UInt64, SocketTime*>::iterator it);
+	void handleInnerSocket(Poco::Timer& timer);
 	bool writeInnerSocket();
 	bool readInnerSocket();
 	bool createInnerSocket();
@@ -65,8 +66,8 @@ private:
 	Poco::TaskManager*					m_task_manager;
 	Poco::ThreadPool*					m_thread_pool;
 	//Inner socket
-	Poco::Net::StreamSocket*			m_inner_wirte_socket;
-	Poco::Net::StreamSocket*			m_inner_read_socket;
+	Poco::Net::StreamSocket				m_inner_write_socket;
+	Poco::Net::StreamSocket				m_inner_read_socket;
 };
 #endif
 
