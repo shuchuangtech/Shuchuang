@@ -41,8 +41,10 @@ bool CDeviceController::openDevice()
 		infof("%s, %d: IO dev file opened successfully.", __FILE__, __LINE__);
 		#ifdef __SC_ON_NORMAL_CLOSE__
 		ioctl(m_fd, SC_RELAY_OFF, 0);
+		ioctl(m_fd,	SC_RUN_ON, 0 );
 		#else
 		ioctl(m_fd, SC_RELAY_ON, 0);
+		ioctl(m_fd, SC_RUN_OFF, 0);
 		#endif
 		return true;
 	}
