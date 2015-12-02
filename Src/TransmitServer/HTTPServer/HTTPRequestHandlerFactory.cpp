@@ -1,5 +1,7 @@
-#include "TransmitServer/HTTPRequestHandlerFactory.h"
-#include "TransmitServer/HTTPRequestHandler.h"
+#include "TransmitServer/HTTPServer/HTTPRequestHandlerFactory.h"
+#include "TransmitServer/HTTPServer/HTTPRequestHandler.h"
+using namespace Poco;
+using namespace Poco::Net;
 CHTTPRequestHandlerFactory::CHTTPRequestHandlerFactory()
 {
 }

@@ -1,5 +1,7 @@
-#include "TransmitServer/HTTPSHandler.h"
+#include "TransmitServer/HTTPSAcceptor/HTTPSHandler.h"
 #include "Common/PrintLog.h"
+using namespace Poco;
+using namespace Poco::Net;
 CHTTPSHandler::CHTTPSHandler()
 :Task("HTTPSHandler")
 {

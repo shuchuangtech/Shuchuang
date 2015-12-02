@@ -1,12 +1,13 @@
-#include "TransmitServer/HTTPSAcceptor.h"
-#include "TransmitServer/HTTPSHandler.h"
+#include "TransmitServer/HTTPSAcceptor/HTTPSAcceptor.h"
+#include "TransmitServer/HTTPSAcceptor/HTTPSHandler.h"
 #include "Poco/Net/Context.h"
 #include "Poco/Net/SecureServerSocket.h"
 #include "Poco/Observer.h"
 #include "Common/PrintLog.h"
 #include "Common/ConfigManager.h"
+using namespace Poco;
+using namespace Poco::Net;
 CHTTPSAcceptor::CHTTPSAcceptor()
-:m_sem(0, 1000)
 {
 	m_started = false;
 	m_port = 0;

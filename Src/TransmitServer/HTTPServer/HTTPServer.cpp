@@ -1,8 +1,10 @@
-#include "TransmitServer/HTTPServer.h"
-#include "TransmitServer/HTTPRequestHandlerFactory.h"
+#include "TransmitServer/HTTPServer/HTTPServer.h"
+#include "TransmitServer/HTTPServer/HTTPRequestHandlerFactory.h"
 #include "Poco/Net/HTTPServerParams.h"
 #include "Common/PrintLog.h"
 #include "Common/ConfigManager.h"
+using namespace Poco;
+using namespace Poco::Net;
 CHTTPServer::CHTTPServer()
 {
 	m_started = false;

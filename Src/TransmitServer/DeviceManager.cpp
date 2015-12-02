@@ -3,6 +3,7 @@
 #include "Poco/UUIDGenerator.h"
 #include "Poco/MD5Engine.h"
 #include "Common/PrintLog.h"
+using namespace Poco;
 CDeviceManager::CDeviceManager()
 :m_thread("DeviceManager")
 {

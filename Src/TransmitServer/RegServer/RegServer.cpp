@@ -1,5 +1,5 @@
-#include "TransmitServer/RegServer.h"
-#include "TransmitServer/RegMsgHandler.h"
+#include "TransmitServer/RegServer/RegServer.h"
+#include "TransmitServer/RegServer/RegMsgHandler.h"
 #include "Common/PrintLog.h"
 #include "Common/RPCDef.h"
 #include "Poco/Net/SocketImpl.h"
@@ -9,6 +9,8 @@
 #include "Poco/Observer.h"
 #include "TransmitServer/DeviceManager.h"
 #include "Common/ConfigManager.h"
+using namespace Poco;
+using namespace Poco::Net;
 CRegServer::CRegServer()
 {
 	m_started = false;
@@ -115,6 +117,10 @@ void CRegServer::stop()
 	delete m_reg_sock;
 	m_thread_pool->stopAll();
 	infof("%s, %d: Register server stop successfully.", __FILE__, __LINE__);
+}
+
+bool CRegServer::createInnerSocket()
+{
 }
 
 bool CRegServer::listenSsl()
@@ -402,6 +408,7 @@ void CRegServer::regHandler(Timer& timer)
 		errorList.clear();
 		std::copy(m_reg_sock_list.begin(), m_reg_sock_list.end(), std::back_inserter(errorList));
 		m_reg_queue_mutex.unlock();
+		//may result in http response hung up
 		int ret = Socket::select(readList, writeList, errorList, Timespan(5, 0));
 		if(ret > 0)
 		{
@@ -528,8 +535,8 @@ bool CRegServer::sendRequest(RequestInfo* request)
 	m_request_map.insert(std::make_pair<UInt64, RequestInfo*>(request_id, request));
 	m_request_queue_mutex.unlock();
 	ds[KEY_REQUEST_ID_STR] = request_id;
-	tracef("%s, %d: Request %s sent to device.", __FILE__, __LINE__, ds.toString().c_str());
 	it->second->socket.sendBytes(ds.toString().c_str(), ds.toString().length());
+	tracef("%s, %d: Request %s sent to device.", __FILE__, __LINE__, ds.toString().c_str());
 	request->sem.wait();
 	return true;
 }

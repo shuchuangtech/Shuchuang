@@ -1,13 +1,15 @@
-#include "TransmitServer/HTTPRequestHandler.h"
-#include "TransmitServer/RequestInfo.h"
+#include "TransmitServer/HTTPServer/HTTPRequestHandler.h"
+#include "TransmitServer/RegServer/RequestInfo.h"
 #include "Common/RPCDef.h"
 #include "Common/PrintLog.h"
 #include "Poco/Dynamic/Var.h"
 #include "Poco/JSON/Object.h"
 #include "Poco/JSON/Parser.h"
 #include "Poco/Dynamic/Struct.h"
-#include "TransmitServer/RegServer.h"
+#include "TransmitServer/RegServer/RegServer.h"
 #include "TransmitServer/DeviceManager.h"
+using namespace Poco;
+using namespace Poco::Net;
 CHTTPRequestHandler::CHTTPRequestHandler()
 {
 	m_buf = NULL;

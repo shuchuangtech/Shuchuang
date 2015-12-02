@@ -4,16 +4,14 @@
 #include "Poco/Net/HTTPServerRequest.h"
 #include "Poco/Net/HTTPServerResponse.h"
 #include "Poco/JSON/Object.h"
-using namespace Poco;
-using namespace Poco::Net;
-class CHTTPRequestHandler : public HTTPRequestHandler
+class CHTTPRequestHandler : public Poco::Net::HTTPRequestHandler
 {
 public:
 	CHTTPRequestHandler();
 	~CHTTPRequestHandler();
-	void handleRequest(HTTPServerRequest& request, HTTPServerResponse& response);
+	void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response);
 private:
-	bool checkRequestFormat(JSON::Object::Ptr request, JSON::Object::Ptr response);
+	bool checkRequestFormat(Poco::JSON::Object::Ptr request, Poco::JSON::Object::Ptr response);
 	bool parseAction(std::string action, std::string& component, std::string& method);
 	char* m_buf;
 };

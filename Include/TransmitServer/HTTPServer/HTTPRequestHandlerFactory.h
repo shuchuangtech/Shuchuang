@@ -3,14 +3,12 @@
 #include "Poco/Net/HTTPRequestHandlerFactory.h"
 #include "Poco/Net/HTTPRequestHandler.h"
 #include "Poco/Net/HTTPServerRequest.h"
-using namespace Poco;
-using namespace Poco::Net;
-class CHTTPRequestHandlerFactory : public HTTPRequestHandlerFactory
+class CHTTPRequestHandlerFactory : public Poco::Net::HTTPRequestHandlerFactory
 {
 public:
 	CHTTPRequestHandlerFactory();
 	~CHTTPRequestHandlerFactory();
-	HTTPRequestHandler* createRequestHandler(const HTTPServerRequest& request);
+	Poco::Net::HTTPRequestHandler* createRequestHandler(const Poco::Net::HTTPServerRequest& request);
 };
 #endif
 

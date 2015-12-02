@@ -2,8 +2,7 @@
 #define __SERVER_HTTPS_HANDLER_H__
 #include "Poco/Task.h"
 #include "TransmitServer/SocketNode.h"
-using namespace Poco;
-class CHTTPSHandler : public Task
+class CHTTPSHandler : public Poco::Task
 {
 public:
 	CHTTPSHandler();

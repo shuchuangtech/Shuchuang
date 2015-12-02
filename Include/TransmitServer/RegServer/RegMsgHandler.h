@@ -4,7 +4,7 @@
 #include "Poco/JSON/Object.h"
 #include "Poco/Net/StreamSocket.h"
 #include "Poco/Timespan.h"
-#include "TransmitServer/SocketTime.h"
+#include "TransmitServer/RegServer/SocketTime.h"
 using namespace Poco;
 using namespace Poco::Net;
 #define SERVER_KEY_STR "alpha2015"

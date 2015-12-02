@@ -1,4 +1,4 @@
-#include "TransmitServer/RegMsgHandler.h"
+#include "TransmitServer/RegServer/RegMsgHandler.h"
 #include "TransmitServer/DeviceManager.h"
 #include "Common/RPCDef.h"
 #include "Poco/JSON/Parser.h"
