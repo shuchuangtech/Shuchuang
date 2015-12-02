@@ -353,8 +353,7 @@ void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 		default :
 			break;
 	}
-	std::string bufStr = ds.toString();
-	snprintf(buf, size - 1, "%s", bufStr.c_str());
+	snprintf(buf, size - 1, "%s", ds.toString().c_str());
 }
 
 bool CRegProxy::parseAction(std::string& opt, std::string& component, std::string& method)
@@ -392,7 +391,7 @@ void CRegProxy::onTimer(Timer& timer)
 		else
 		{
 			//receive connection request
-			if(m_sock->poll(Timespan(5, 0), Socket::SELECT_READ|Socket::SELECT_ERROR))
+			if(m_sock->poll(Timespan(5, 0), Socket::SELECT_READ|Socket::SELECT_ERROR) > 0)
 			{
 				memset(buf, 0, sizeof(buf));
 				m_sock->setReceiveTimeout(Timespan(10, 0));
@@ -415,16 +414,10 @@ void CRegProxy::onTimer(Timer& timer)
 				tracef("%s, %d: Receive from server:%s.", __FILE__, __LINE__, buf);
 				JSON::Object::Ptr nil = NULL;
 				m_rpc->addRequest(new RequestNotification((UInt64)m_sock, request, nil));
-				Timestamp t;
-				m_lastCheckTime = t;
 			}
-			else
+			Timestamp t;
+			if(t - m_lastCheckTime >= m_checkPeriod)
 			{
-				Timestamp t;
-				if(t - m_lastCheckTime < m_checkPeriod)
-				{
-					continue;
-				}
 				if(sendKeepAlive())
 				{
 					m_lastCheckTime = t;
@@ -437,7 +430,7 @@ void CRegProxy::onTimer(Timer& timer)
 						dealError(SECURE_SOCKET|PLAIN_SOCKET);
 					}
 				}
-			}		
+			}
 		}
 	}
 }
@@ -446,7 +439,7 @@ bool CRegProxy::sendKeepAlive()
 {
 	char buf[512] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_KEEPALIVE);
-	if(m_sock->sendBytes(buf, sizeof(buf)) > 0 )
+	if(m_sock->sendBytes(buf, strlen(buf)) > 0 )
 	{
 		tracef("%s, %d: Send keepalive buf:%s.", __FILE__, __LINE__, buf);
 		infof("%s, %d: KeepAlive successfully.", __FILE__, __LINE__);
