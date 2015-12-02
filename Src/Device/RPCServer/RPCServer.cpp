@@ -85,7 +85,6 @@ void CRPCServer::run()
 		Notification::Ptr pNf = m_queue.waitDequeueNotification();
 		if(pNf)
 		{
-			tracef("%s, %d: RPCServer receive a task.", __FILE__, __LINE__);
 			Mutex::ScopedLock lock(m_mutex);
 			RequestNotification* pR = pNf.cast<RequestNotification>();
 			CRPCClient* client;
@@ -95,7 +94,6 @@ void CRPCServer::run()
 			client->reset();
 			client->setRequest(request);
 			client->setID(id);
-			tracef("%s, %d: TaskManager start a handler task.", __FILE__, __LINE__);
 			m_task_manager->start(client);
 		}
 		else

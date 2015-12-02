@@ -92,7 +92,6 @@ void CHTTPSHandler::runTask()
 					if(sIn.receiveBytes(t_buf, 512) > 0)
 					{
 						buf += t_buf;
-						tracepoint();
 					}
 				}
 			}
