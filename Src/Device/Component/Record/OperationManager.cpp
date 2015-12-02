@@ -57,7 +57,7 @@ void COpManager::writeAllRecords()
 	Mutex::ScopedLock lock(m_mutex);
 	if(m_cache_map.size() > 0)
 	{
-		int ret = m_op_record->addRecord(m_cache_map);
+		unsigned int ret = m_op_record->addRecord(m_cache_map);
 		if(ret != m_cache_map.size())
 			warnf("%s, %d: Not supposed to be here.", __FILE__, __LINE__);
 		m_cache_map.clear();
@@ -82,8 +82,8 @@ void COpManager::run()
 						0,
 						0,
 						0);
-			Timespan tenday(10, 0, 0, 0, 0);
-			DateTime deleteDay = today - tenday;
+			Timespan thirtyday(30, 0, 0, 0, 0);
+			DateTime deleteDay = today - thirtyday;
 			int ret = m_op_record->deleteRecordsByDate(deleteDay);
 			infof("%s, %d: Operation %d records on %04d-%02d-%02d deleted.", __FILE__, __LINE__, ret, deleteDay.year(), deleteDay.month(), deleteDay.day());
 			lastDeleteTime = now;
