@@ -26,14 +26,18 @@ int main(int argc, char** argv)
 		}
 	}
 */
+
 	Context::Ptr pContext = NULL;
 	try
 	{
-	pContext = new Context(Context::TLSV1_SERVER_USE, 
-							"./privkey.pem",
-							"./cert.pem",
+		pContext = new Context(Context::TLSV1_2_SERVER_USE, 
+							"./my.key",
+							"./my.crt",
 							"",
-							Context::VERIFY_NONE);
+							Context::VERIFY_NONE,
+							9,
+							false,
+							"ALL:!LOW:!EXP:!MD5:@STRENGTH");
 	}
 	catch(Exception& e)
 	{
@@ -41,57 +45,50 @@ int main(int argc, char** argv)
 	}
 	SecureServerSocket* ssl_server = NULL;
 	ssl_server = new SecureServerSocket(port, 64, pContext);
+	SocketAddress clientAddress;
+	StreamSocket ss;
 	while(1)
 	{
-		SocketAddress clientAddress;
-		SecureStreamSocket ss;
-		while(1)
+		if(ssl_server->poll(Timespan(5, 0), Socket::SELECT_READ) > 0)
 		{
-			if(ssl_server->poll(Timespan(5, 0), Socket::SELECT_READ) > 0)
-			{
-				ss = ssl_server->acceptConnection(clientAddress);
-				break;
-			}
+			ss = ssl_server->acceptConnection(clientAddress);
+			break;
 		}
-		tracef("%s, %d: Accept connection from %s.\n", __FILE__, __LINE__, clientAddress.toString().c_str());
-		char buf[1024] = {0, };
-		char t_buf[1024] = {0, };
-		while(1)
+	}
+	tracef("%s, %d: Accept connection from %s.\n", __FILE__, __LINE__, clientAddress.toString().c_str());
+	while(1)
+	{
+		if(ss.poll(Timespan(5, 0), Socket::SELECT_READ|Socket::SELECT_ERROR) > 0)
 		{
-			int pos = 0;
-			if(ss.poll(Timespan(5, 0), Socket::SELECT_READ|Socket::SELECT_ERROR) > 0)
+			std::string buf = "";
+			char t_buf[512] = {0, };
+			ss.setReceiveTimeout(Timespan(10, 0));
+			try
 			{
-				try
+				if(ss.receiveBytes(t_buf, 512) <= 0)
 				{
-					while(ss.poll(Timespan(0, 100), Socket::SELECT_READ) > 0)
-					{
-						tracepoint();
-						int ret = ss.receiveBytes(t_buf, 1024);
-						if(ret == 0)
-							break;
-						snprintf(buf + pos, 1023 - pos, "%s", t_buf);
-						pos += ret;
-						tracef("%s, %d: receive bytes: %s\n", __FILE__, __LINE__, t_buf);
-						memset(t_buf, 0, 1024);
-					}
+					warnf("reveice error.");
 					break;
 				}
-				catch(Exception& e)
+				else
 				{
-					errorf("%s, %d: message %s\n", __FILE__, __LINE__, e.message().c_str());
+					buf += t_buf;
+					while(ss.available())
+					{
+						memset(t_buf, 0, 512);
+						if(ss.receiveBytes(t_buf, 512) > 0)
+						{
+							buf += t_buf;
+						}
+					}
 				}
 			}
-		}
-		tracef("%s, %d: read %s\n", __FILE__, __LINE__, buf);
-		SocketAddress sa("127.0.0.1", 8888);
-		StreamSocket sss(sa);
-		sss.sendBytes(buf, 1024);
-		if(sss.poll(Timespan(5, 0), Socket::SELECT_READ) > 0)
-		{
-			memset(buf, 0, 1024);
-			sss.receiveBytes(buf, 1024);
-			tracef("%s, %d: %s\n", __FILE__, __LINE__, buf);
-			ss.sendBytes(buf, 1024);
+			catch(Exception& e)
+			{
+				errorf("%s, %d: message %s\n", __FILE__, __LINE__, e.message().c_str());
+				break;
+			}
+			infof("receive buf : %s", buf.c_str());
 		}
 	}
 	delete ssl_server;

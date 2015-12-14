@@ -1,12 +1,13 @@
-#include "TransmitServer/HTTPSAcceptor.h"
-#include "TransmitServer/HTTPSHandler.h"
+#include "TransmitServer/HTTPSAcceptor/HTTPSAcceptor.h"
+#include "TransmitServer/HTTPSAcceptor/HTTPSHandler.h"
 #include "Poco/Net/Context.h"
 #include "Poco/Net/SecureServerSocket.h"
 #include "Poco/Observer.h"
 #include "Common/PrintLog.h"
 #include "Common/ConfigManager.h"
+using namespace Poco;
+using namespace Poco::Net;
 CHTTPSAcceptor::CHTTPSAcceptor()
-:m_sem(0, 1000)
 {
 	m_started = false;
 	m_port = 0;
@@ -27,55 +28,20 @@ bool CHTTPSAcceptor::start()
 		warnf("%s, %d: HTTPS acceptor has already started.", __FILE__, __LINE__);
 		return false;
 	}
-	CConfigManager* config = CConfigManager::instance();
-	JSON::Object::Ptr pConfig;
-	config->getConfig("HTTPSAcceptor", pConfig);
 	std::string cert = "";
 	std::string privkey = "";
-	if(pConfig.isNull())
-	{
-		pConfig = new JSON::Object;
-		m_port = 9999;
-		cert = "./cert.pem";
-		privkey = "./privkey.pem";
-		pConfig->set("port", 9999);
-		pConfig->set("cert", cert);
-		pConfig->set("privkey", privkey);
-		config->setConfig("HTTPSAcceptor", pConfig);
-	}
-	else
-	{
-		if(pConfig->has("port") && pConfig->has("cert") && pConfig->has("privkey"))
-		{
-			m_port = pConfig->getValue<UInt16>("port");
-			cert = pConfig->getValue<std::string>("cert");
-			privkey = pConfig->getValue<std::string>("privkey");
-		}
-		else
-		{
-			m_port = 9999;
-			cert = "./cert.pem";
-			privkey = "./privkey.pem";
-			pConfig = NULL;
-			pConfig = new JSON::Object;
-			pConfig->set("port", 9999);
-			pConfig->set("cert", cert);
-			pConfig->set("privkey", privkey);
-			config->setConfig("HTTPSAcceptor", pConfig);
-		}
-	}
-
-	pConfig = NULL;
-	config->getConfig("HTTPServer", pConfig);
-	if(!pConfig.isNull())
-	{
-		m_http_port = pConfig->getValue<UInt16>("port");
-	}
-	Context::Ptr pContext = new Context(Context::TLSV1_SERVER_USE,
+	m_http_port = 8666;
+	m_port = 9777;
+	cert = "./my.crt";
+	privkey = "./my.key";
+	Context::Ptr pContext = new Context(Context::TLSV1_2_SERVER_USE,
 									privkey,
 									cert,
 									"",
-									Context::VERIFY_NONE);
+									Context::VERIFY_NONE,
+									9,
+									false,
+									"ALL:!LOW:!EXP:!MD5:@STRENGTH");
 	if(m_ssl_acceptor != NULL)
 		delete m_ssl_acceptor;
 	m_ssl_acceptor = new SecureServerSocket(m_port, 64, pContext);
@@ -163,7 +129,7 @@ void CHTTPSAcceptor::acceptor(Timer& timer)
 		}
 		if(!m_started)
 			break;
-		infof("%s, %d: https acceptor accept %s, impl %lu", __FILE__, __LINE__, clientAddress.toString().c_str(), (UInt64)sOut.impl());
+		infof("%s, %d: https acceptor accept %s, impl %llu", __FILE__, __LINE__, clientAddress.toString().c_str(), (UInt64)sOut.impl());
 		SocketNode* sn = new SocketNode();
 		sn->sockOut = sOut;
 		m_sock_out_map.insert(std::make_pair<UInt64, SocketNode*>((UInt64)sOut.impl(), sn));
@@ -261,7 +227,7 @@ void CHTTPSAcceptor::handleTask(TaskFinishedNotification* pNf)
 			if(!handler->getResult())
 			{
 				UInt64 impl = (UInt64)sn->sockOut.impl();
-				tracef("%s, %d: socket %s[%lu] closed.", __FILE__, __LINE__, sn->sockOut.peerAddress().toString().c_str(), impl);
+				tracef("%s, %d: socket %s[%llu] closed.", __FILE__, __LINE__, sn->sockOut.peerAddress().toString().c_str(), impl);
 				std::map<UInt64, SocketNode*>::iterator it = m_sock_out_map.find(impl);
 				if(it != m_sock_out_map.end())
 					m_sock_out_map.erase(it);

@@ -160,8 +160,8 @@ bool CRegServer::listenSsl()
 	try
 	{
 		pContext = new Context(Context::TLSV1_SERVER_USE,
-							"./privkey.pem",
-							"./cert.pem",
+							"./my.key",
+							"./my.crt",
 							"",
 							Context::VERIFY_NONE);
 	}
@@ -188,8 +188,8 @@ bool CRegServer::listenReg()
 	try
 	{
 		pContext = new Context(Context::TLSV1_SERVER_USE,
-								"./privkey.pem",
-								"./cert.pem",
+								"./my.key",
+								"./my.crt",
 								"",
 								Context::VERIFY_NONE);
 	}

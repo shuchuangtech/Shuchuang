@@ -12,7 +12,7 @@ using namespace Poco::Net;
 int main(int argc, char** argv)
 {
 	UInt16 port = atoi(argv[1]);
-	Context::Ptr pContext = new Context(Context::TLSV1_CLIENT_USE, "", Context::VERIFY_NONE);
+	Context::Ptr pContext = new Context(Context::TLSV1_2_CLIENT_USE, "", Context::VERIFY_NONE);
 	SocketAddress sa("127.0.0.1", port);
 	SecureStreamSocket ss1(sa, pContext);
 	Thread::sleep(50);
@@ -58,7 +58,8 @@ int main(int argc, char** argv)
 	if(ss1.poll(Timespan(5, 0), Socket::SELECT_READ) > 0)
 	{
 		ss1.receiveBytes(buf, 1024);
-		std::cout << "recv: " << buf << std::endl;
+		std::cout << "recv: " << std::endl << buf << std::endl;
 	}
+	return 0;
 }
 

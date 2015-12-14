@@ -37,8 +37,8 @@ bool CHTTPSAcceptor::start()
 	{
 		pConfig = new JSON::Object;
 		m_port = 9999;
-		cert = "./cert.pem";
-		privkey = "./privkey.pem";
+		cert = "./my.crt";
+		privkey = "./my.key";
 		pConfig->set("port", 9999);
 		pConfig->set("cert", cert);
 		pConfig->set("privkey", privkey);
@@ -55,8 +55,8 @@ bool CHTTPSAcceptor::start()
 		else
 		{
 			m_port = 9999;
-			cert = "./cert.pem";
-			privkey = "./privkey.pem";
+			cert = "./my.crt";
+			privkey = "./my.key";
 			pConfig = NULL;
 			pConfig = new JSON::Object;
 			pConfig->set("port", 9999);
@@ -72,7 +72,7 @@ bool CHTTPSAcceptor::start()
 	{
 		m_http_port = pConfig->getValue<UInt16>("port");
 	}
-	Context::Ptr pContext = new Context(Context::TLSV1_SERVER_USE,
+	Context::Ptr pContext = new Context(Context::TLSV1_2_SERVER_USE,
 									privkey,
 									cert,
 									"",

@@ -52,7 +52,7 @@ void CHTTPSHandler::runTask()
 		}
 		catch(Exception& e)
 		{
-			warnf("%s, %d: HTTPS connection %s[%lu] receive timeout.", __FILE__, __LINE__, sOut.peerAddress().toString().c_str(), (UInt64)sOut.impl());
+			warnf("%s, %d: HTTPS connection %s[%llu] receive timeout.", __FILE__, __LINE__, sOut.peerAddress().toString().c_str(), (UInt64)sOut.impl());
 		}
 		if(buf.empty())
 			//receive nothing
@@ -64,7 +64,7 @@ void CHTTPSHandler::runTask()
 		{
 			SocketAddress sa("127.0.0.1", m_http_port);
 			StreamSocket sIn(sa);
-			tracef("%s, %d: socket %lu connect to http server.", __FILE__, __LINE__, (UInt64)sIn.impl());
+			tracef("%s, %d: socket %llu connect to http server.", __FILE__, __LINE__, (UInt64)sIn.impl());
 			m_sn->sockIn = sIn;
 			sIn.sendBytes(buf.c_str(), buf.length());
 			m_result = true;
