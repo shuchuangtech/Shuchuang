@@ -154,14 +154,24 @@ bool CRegProxy::getRegisterToken()
 	char buf[512] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_GETTOKEN);
 	tracef("%s, %d: Send gettoken buf: %s.", __FILE__, __LINE__, buf);
-	if(m_ssl_sock->sendBytes(buf, sizeof(buf)) > 0)
+	m_ssl_sock->setSendTimeout(Timespan(10, 0));
+	try
 	{
-		infof("%s, %d: Send get token message successfully.", __FILE__, __LINE__);
+		if(m_ssl_sock->sendBytes(buf, sizeof(buf)) > 0)
+		{
+			infof("%s, %d: Send get token message successfully.", __FILE__, __LINE__);
+		}
+		else
+		{
+			dealError(SECURE_SOCKET);
+			errorf("%s, %d: Send get token message failed.", __FILE__, __LINE__);
+			return false;
+		}
 	}
-	else
+	catch(Exception& e)
 	{
+		errorf("%s, %d: Send get token message exception[%s].", __FILE__, __LINE__, e.message().c_str());
 		dealError(SECURE_SOCKET);
-		errorf("%s, %d: Send get token message failed.", __FILE__, __LINE__);
 		return false;
 	}
 	memset(buf, 0 ,sizeof(buf));
@@ -171,49 +181,50 @@ bool CRegProxy::getRegisterToken()
 		if(m_ssl_sock->receiveBytes(buf, (UInt16)sizeof(buf)) > 0)
 		{
 			tracef("%s, %d: Receive gettoken response:%s.", __FILE__, __LINE__, buf);
+			m_ssl_sock->close();
+			delete m_ssl_sock;
+			m_ssl_sock = NULL;
 			JSON::Parser parser;
-			Dynamic::Var var = parser.parse(buf);
-			JSON::Object::Ptr obj = var.extract<JSON::Object::Ptr>();
-			DynamicStruct ds = *obj;
-			if(!ds.contains(KEY_TYPE_STR) || !ds.contains(KEY_RESULT_STR) || !ds.contains(KEY_PARAM_STR))
+			Dynamic::Var var;
+			try
+			{
+				var = parser.parse(buf);
+			}
+			catch(Exception& e)
+			{
+				errorf("%s, %d: Get token response not json format.", __FILE__, __LINE__);
+				return false;
+			}
+			JSON::Object::Ptr pObj = var.extract<JSON::Object::Ptr>();
+			if(pObj.isNull() || !pObj->has(KEY_TYPE_STR) || !pObj->has(KEY_RESULT_STR) || !pObj->has(KEY_PARAM_STR))
 			{
 				warnf("%s, %d: Receive message miss type, result, or param.", __FILE__, __LINE__);
 				return false;
 			}
-			if(ds[KEY_TYPE_STR].toString() != TYPE_RESPONSE_STR)
+			if(pObj->getValue<std::string>(KEY_TYPE_STR) != TYPE_RESPONSE_STR)
 			{
 				warnf("%s, %d: Receive message type is not response.", __FILE__, __LINE__);
 				return false;
 			}
-			if(ds[KEY_RESULT_STR] != RESULT_GOOD_STR)
+			if(pObj->getValue<std::string>(KEY_RESULT_STR) != RESULT_GOOD_STR)
 			{
 				warnf("%s, %d: Server request failed.", __FILE__, __LINE__);
 				return false;
 			}
-			var = ds[KEY_PARAM_STR];
-			DynamicStruct param;
-			try
-			{
-				param = var.extract<DynamicStruct>();
-			}
-			catch(Exception& e)
-			{
-				warnf("%s, %d: Extract param error[%s].", __FILE__, __LINE__, e.message().c_str());
-				return false;
-			}
-			if(!param.contains(REG_UUID_STR) || !param.contains(REG_KEY_STR) || !param.contains(REG_TIMESTAMP_STR) || !param.contains(REG_TOKEN_STR))
+			JSON::Object::Ptr pParam = pObj->getObject(KEY_PARAM_STR);
+			if(pParam.isNull() || !pParam->has(REG_UUID_STR) || !pParam->has(REG_KEY_STR) || !pParam->has(REG_TIMESTAMP_STR) || !pParam->has(REG_TOKEN_STR))
 			{
 				warnf("%s, %d: Param miss uuid, key, timestamp, or token.", __FILE__, __LINE__);
 				return false;
 			}
-			std::string uuid = param[REG_UUID_STR].toString();
+			std::string uuid = pParam->getValue<std::string>(REG_UUID_STR);
 			if(uuid != m_uuid)
 			{
 				warnf("%s, %d: Server response uuid error.", __FILE__, __LINE__);
 				return false;
 			}
-			std::string recvkey = param[REG_KEY_STR].toString();
-			std::string timestamp = param[REG_TIMESTAMP_STR].toString();
+			std::string recvkey = pParam->getValue<std::string>(REG_KEY_STR);
+			std::string timestamp = pParam->getValue<std::string>(REG_TIMESTAMP_STR);
 			std::string key = "alpha2015";
 			key += timestamp;
 			MD5Engine md5;
@@ -225,7 +236,7 @@ bool CRegProxy::getRegisterToken()
 				warnf("%s, %d: Verify server key failed.", __FILE__, __LINE__);
 				return false;
 			}
-			m_token = param[REG_TOKEN_STR].toString();
+			m_token = pParam->getValue<std::string>(REG_TOKEN_STR);
 			infof("%s, %d: Get register token successfully.", __FILE__, __LINE__);
 			return true;
 		}
@@ -269,48 +280,70 @@ bool CRegProxy::registerToServer()
 	char buf[512] = {0, };
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_REGISTER);
 	tracef("%s, %d: Send register buf: %s.", __FILE__, __LINE__, buf);
-	if(m_sock->sendBytes(buf, sizeof(buf)) > 0)
+	m_sock->setSendTimeout(Timespan(10, 0));
+	try
 	{
-		infof("%s, %d: Register information sent.", __FILE__, __LINE__);
+		if(m_sock->sendBytes(buf, sizeof(buf)) > 0)
+		{
+			infof("%s, %d: Register information sent.", __FILE__, __LINE__);
+		}
+		else
+		{
+			dealError(PLAIN_SOCKET);
+			errorf("%s, %d: Send register message failed.", __FILE__, __LINE__);
+			return false;
+		}
 	}
-	else
+	catch(Exception& e)
 	{
+		errorf("%s, %d: Send register message exception[%s].", __FILE__, __LINE__, e.message().c_str());
 		dealError(PLAIN_SOCKET);
-		errorf("%s, %d: Send register message failed.", __FILE__, __LINE__);
 		return false;
 	}
 	memset(buf, 0, sizeof(buf));
-	if(m_sock->poll(Timespan(10, 0), Socket::SELECT_READ) > 0)
+	m_sock->setReceiveTimeout(Timespan(10, 0));
+	try
 	{
-		try
+		if(m_sock->receiveBytes(buf, sizeof(buf)) > 0)
 		{
-			if(m_sock->receiveBytes(buf, sizeof(buf)) > 0)
+			tracef("%s, %d: Receive register response: %s.", __FILE__, __LINE__, buf);
+			JSON::Parser parser;
+			Dynamic::Var var; 
+			try
 			{
-				tracef("%s, %d: Receive register response: %s.", __FILE__, __LINE__, buf);
-				JSON::Parser parser;
-				Dynamic::Var var = parser.parse(buf);
-				JSON::Object::Ptr object = var.extract<JSON::Object::Ptr>();
-				DynamicStruct ds = *object;
-				if(ds.contains("result") && ds["result"].toString() == "good")
-				{
-					infof("%s, %d: Register successfully.", __FILE__, __LINE__);
-					return true;
-				}
-				else
-				{
-					warnf("%s, %d: Register failed.", __FILE__, __LINE__);
-					return false;
-				}
+				var = parser.parse(buf);
+			}
+			catch(Exception& e)
+			{
+				errorf("%s, %d: Register response not json format.", __FILE__, __LINE__);
+				dealError(PLAIN_SOCKET);
+				return false;
+			}
+			JSON::Object::Ptr pObj = var.extract<JSON::Object::Ptr>();
+			if(pObj.isNull() || !pObj->has("result") || pObj->getValue<std::string>("result") != "good")
+			{
+				warnf("%s, %d: Register failed.", __FILE__, __LINE__);
+				dealError(PLAIN_SOCKET);
+				return false;
+			}
+			else
+			{
+				infof("%s, %d: Register successfully.", __FILE__, __LINE__);
+				return true;
 			}
 		}
-		catch(Exception& e)
+		else
 		{
-			errorf("%s, %d: Receive exception[%s].", __FILE__, __LINE__, e.message().c_str());
+			errorf("%s, %d: Receive register response error.", __FILE__, __LINE__);
+			dealError(PLAIN_SOCKET);
+			return false;
 		}
 	}
-	else
+	catch(Exception& e)
 	{
-		errorf("%s, %d: Receive register response timeout.", __FILE__, __LINE__);
+		errorf("%s, %d: Receive register response exception[%s].", __FILE__, __LINE__, e.message().c_str());
+		dealError(PLAIN_SOCKET);
+		return false;
 	}
 	dealError(PLAIN_SOCKET);
 	return false;
@@ -441,7 +474,6 @@ bool CRegProxy::sendKeepAlive()
 	createPacket(buf, (UInt16)sizeof(buf), ACTION_KEEPALIVE);
 	if(m_sock->sendBytes(buf, strlen(buf)) > 0 )
 	{
-		tracef("%s, %d: Send keepalive buf:%s.", __FILE__, __LINE__, buf);
 		infof("%s, %d: KeepAlive successfully.", __FILE__, __LINE__);
 		return true;
 	}
