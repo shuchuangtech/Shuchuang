@@ -15,3 +15,5 @@ Lib
 Compile
 Config
 log
+my.crt
+my.key
