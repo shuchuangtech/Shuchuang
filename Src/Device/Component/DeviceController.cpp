@@ -50,7 +50,7 @@ bool CDeviceController::openDevice()
 	}
 #else
 	m_fd = 1;
-	tracef("%s, %d: X86 does not implement openDevice.", __FILE__, __LINE__);
+	infof("%s, %d: X86 does not implement openDevice.", __FILE__, __LINE__);
 	return true;
 #endif
 }

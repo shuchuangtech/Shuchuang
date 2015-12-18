@@ -100,6 +100,10 @@ bool CNetworkManager::setIfMac(const char* ethname, const char* mac)
 
 bool CNetworkManager::initIf(const char* ethname)
 {
+#ifndef __SC_ARM__
+	infof("%s, %d: X86 does not init if.", __FILE__, __LINE__);
+	return true;
+#else
 	CConfigManager* config = CConfigManager::instance();
 	Poco::JSON::Object::Ptr pConfig = NULL;
 	config->getConfig("DeviceInfo", pConfig);
@@ -145,6 +149,7 @@ bool CNetworkManager::initIf(const char* ethname)
 	ret = ret && setIfMac("eth0", mac);
 	ret = ret && setIfUp("eth0");
 	return ret;
+#endif
 }
 
 bool CNetworkManager::getMiiLinkState(const char* ifname, bool& isUp)
