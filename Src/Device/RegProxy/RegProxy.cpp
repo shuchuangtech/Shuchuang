@@ -33,11 +33,13 @@ CRegProxy::~CRegProxy()
 	{
 		m_sock->close();
 		delete m_sock;
+		m_sock = 0;
 	}
 	if(m_ssl_sock != 0)
 	{
 		m_ssl_sock->close();
 		delete m_ssl_sock;
+		m_ssl_sock = 0;
 	}
 }
 
@@ -265,6 +267,7 @@ bool CRegProxy::registerToServer()
 		{
 			m_sock->close();
 			delete m_sock;
+			m_sock = 0;
 		}
 		Context::Ptr pContext = new Context(Context::TLSV1_CLIENT_USE, "", Context::VERIFY_NONE);
 		m_sock = new SecureStreamSocket(pContext);
