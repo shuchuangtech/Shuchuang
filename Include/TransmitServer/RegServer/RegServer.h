@@ -39,8 +39,8 @@ public:
 private:
 	bool removeSocket(int choice, std::map<Poco::UInt64, SocketTime*>::iterator it);
 	void handleInnerSocket(Poco::Timer& timer);
-	bool writeInnerSocket();
-	bool readInnerSocket();
+	bool writeInnerSocket(int choice);
+	bool readInnerSocket(int choice);
 	bool createInnerSocket();
 	//0 ssl, 1 reg
 	bool								listenSsl();
@@ -66,8 +66,12 @@ private:
 	Poco::TaskManager*					m_task_manager;
 	Poco::ThreadPool*					m_thread_pool;
 	//Inner socket
-	Poco::Net::StreamSocket				m_inner_write_socket;
-	Poco::Net::StreamSocket				m_inner_read_socket;
+	Poco::Mutex							m_inner_ssl_socket_mutex;
+	Poco::Mutex							m_inner_reg_socket_mutex;
+	Poco::Net::StreamSocket				m_inner_ssl_write_socket;
+	Poco::Net::StreamSocket				m_inner_ssl_read_socket;
+	Poco::Net::StreamSocket				m_inner_reg_write_socket;
+	Poco::Net::StreamSocket				m_inner_reg_read_socket;
 };
 #endif
 

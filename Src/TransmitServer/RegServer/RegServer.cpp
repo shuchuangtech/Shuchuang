@@ -110,48 +110,91 @@ bool CRegServer::createInnerSocket()
 	Thread::sleep(500);
 	try
 	{
-		m_inner_write_socket.connect(SocketAddress("127.0.0.1", 3819), Timespan(5, 0));
+		m_inner_ssl_read_socket.connect(SocketAddress("127.0.0.1", 9701), Timespan(5, 0));
+		m_inner_reg_read_socket.connect(SocketAddress("127.0.0.1", 9701), Timespan(5, 0));
 	}
 	catch(Exception& e)
 	{
-		warnf("%s, %d: Create inner write socket error[%s].", __FILE__, __LINE__, e.message().c_str());
+		warnf("%s, %d: Create inner read socket error[%s].", __FILE__, __LINE__, e.message().c_str());
 		timer.stop();
 		return false;
 	}
 	timer.stop();
-	m_reg_sock_list.push_back(m_inner_read_socket);	
-	infof("%s, %d: Create inner write socket[%s] successfully.", __FILE__, __LINE__, m_inner_write_socket.address().toString().c_str());
+	m_ssl_sock_list.push_back(m_inner_ssl_read_socket);
+	m_reg_sock_list.push_back(m_inner_reg_read_socket);
+	infof("%s, %d: Create inner ssl read socket[%s] successfully.", __FILE__, __LINE__, m_inner_ssl_read_socket.address().toString().c_str());
+	infof("%s, %d: Create inner reg read socket[%s] successfully.", __FILE__, __LINE__, m_inner_reg_read_socket.address().toString().c_str());
 	return true;
 }
 
-bool CRegServer::writeInnerSocket()
+bool CRegServer::writeInnerSocket(int choice)
 {
-	std::string buf = "A";
-	m_inner_write_socket.sendBytes(buf.c_str(), buf.length());
+	if(choice == 0)
+	{
+		m_inner_ssl_socket_mutex.lock();
+		m_inner_ssl_write_socket.sendBytes("A", 1);
+		m_inner_ssl_socket_mutex.unlock();
+	}
+	else if(choice == 1)
+	{
+		m_inner_reg_socket_mutex.lock();
+		m_inner_reg_write_socket.sendBytes("A", 1);
+		m_inner_reg_socket_mutex.unlock();
+	}
 	return true;
 }
 
-bool CRegServer::readInnerSocket()
+bool CRegServer::readInnerSocket(int choice)
 {
 	char buf[2] = {0, };
-	m_inner_read_socket.receiveBytes(buf, 2);
+	if(choice == 0)
+	{
+		m_inner_ssl_read_socket.receiveBytes(buf, 1);
+	}
+	else if(choice == 1)
+	{
+		m_inner_reg_read_socket.receiveBytes(buf, 1);
+	}
 	return true;
 }
 
 void CRegServer::handleInnerSocket(Timer& timer)
 {
-	//inner socket port 3819
-	ServerSocket svr(3819);
+	//inner socket port 9701
+	ServerSocket* svr = NULL;
+	try
+	{
+		svr = new ServerSocket(9701);
+	}
+	catch(Exception& e)
+	{
+		errorf("%s, %d: Create inner read socket error[%s].", __FILE__, __LINE__, e.message().c_str());
+		if(svr != NULL)
+			delete svr;
+		return;
+	}
 	while(1)
 	{
-		if(svr.poll(Timespan(5, 0), Socket::SELECT_READ) > 0)
+		if(svr->poll(Timespan(5, 0), Socket::SELECT_READ) > 0)
 		{
 			SocketAddress sa;
-			m_inner_read_socket = svr.acceptConnection(sa);
-			infof("%s, %d: Create inner read socket[%s] successfully.", __FILE__, __LINE__, m_inner_read_socket.address().toString().c_str());
+			m_inner_ssl_write_socket = svr->acceptConnection(sa);
+			infof("%s, %d: Create inner ssl write socket[%s] successfully.", __FILE__, __LINE__, m_inner_ssl_write_socket.address().toString().c_str());
 			break;
 		}
 	}
+	while(1)
+	{
+		if(svr->poll(Timespan(5, 0), Socket::SELECT_READ) > 0)
+		{
+			SocketAddress sa;
+			m_inner_reg_write_socket = svr->acceptConnection(sa);
+			infof("%s, %d: Create inner reg write socket[%s] successfully.", __FILE__, __LINE__, m_inner_reg_write_socket.address().toString().c_str());
+			break;
+		}
+	}
+	delete svr;
+	return;
 }
 
 bool CRegServer::listenSsl()
@@ -255,12 +298,13 @@ void CRegServer::sslAccept(Timer& timer)
 		}
 		if(!m_started)
 			break;
-		tracef("%s, %d: Ssl accept connection from %s to port %u.", __FILE__, __LINE__, clientAddress.toString().c_str(), ss.address().port());
+		infof("%s, %d: Ssl accept connection from %s to port %u.", __FILE__, __LINE__, clientAddress.toString().c_str(), ss.address().port());
 		Timestamp t;
 		SocketTime* pSsl = new SocketTime(ss, t);
 		Mutex::ScopedLock lock(m_ssl_queue_mutex);
 		m_pSsl_map.insert(std::make_pair<UInt64, SocketTime*>((UInt64)ss.impl() ,pSsl));
 		m_ssl_sock_list.push_back(ss);
+		writeInnerSocket(0);
 	}
 }
 
@@ -272,23 +316,22 @@ void CRegServer::sslHandler(Timer& timer)
 	while(m_started)
 	{
 		m_ssl_queue_mutex.lock();
-		if(m_ssl_sock_list.empty())
-		{
-			m_ssl_queue_mutex.unlock();
-			Thread::sleep(500);
-			continue;
-		}
 		writeList.clear();
 		readList.clear();
 		std::copy(m_ssl_sock_list.begin(), m_ssl_sock_list.end(), std::back_inserter(readList));
 		errorList.clear();
 		std::copy(m_ssl_sock_list.begin(), m_ssl_sock_list.end(), std::back_inserter(errorList));
 		m_ssl_queue_mutex.unlock();
-		int ret = Socket::select(readList, writeList, errorList, Timespan(5, 0));
+		int ret = Socket::select(readList, writeList, errorList, Timespan(60, 0));
 		if( ret > 0)
 		{
 			for(Socket::SocketList::iterator it = readList.begin(); it != readList.end(); it++)
 			{
+				if(*it == m_inner_ssl_read_socket)
+				{
+					readInnerSocket(0);
+					continue;
+				}
 				m_ssl_queue_mutex.lock();
 				Socket::SocketList::iterator it_ssl = find(m_ssl_sock_list.begin(), m_ssl_sock_list.end(), *it);
 				if(it_ssl != m_ssl_sock_list.end())
@@ -354,6 +397,7 @@ void CRegServer::handleTaskFinish(TaskFinishedNotification* pNf)
 					UInt64 impl = (UInt64)st->socket.impl();
 					m_pReg_map.insert(std::make_pair<UInt64, SocketTime*>(impl, st));
 					m_reg_queue_mutex.unlock();
+					writeInnerSocket(1);
 				}
 			}
 			else
@@ -381,10 +425,10 @@ void CRegServer::handleTaskFinish(TaskFinishedNotification* pNf)
 					}
 					m_request_queue_mutex.unlock();
 				}
+				writeInnerSocket(1);
 			}
-			writeInnerSocket();
 		}//type == 1
-	}
+	}//if p
 }
 
 bool CRegServer::removeSocket(int choice, std::map<UInt64, SocketTime*>::iterator it)
@@ -428,12 +472,6 @@ void CRegServer::regHandler(Timer& timer)
 	while(m_started)
 	{
 		m_reg_queue_mutex.lock();
-		if(m_reg_sock_list.empty())
-		{
-			m_reg_queue_mutex.unlock();
-			Thread::sleep(500);
-			continue;
-		}
 		writeList.clear();
 		readList.clear();
 		std::copy(m_reg_sock_list.begin(), m_reg_sock_list.end(), std::back_inserter(readList));
@@ -446,14 +484,13 @@ void CRegServer::regHandler(Timer& timer)
 		{
 			for(Socket::SocketList::iterator it = readList.begin(); it != readList.end(); it++)
 			{
-				StreamSocket ss((*it));
-				if(ss == m_inner_read_socket)
+				if(*it == m_inner_reg_read_socket)
 				{
-					readInnerSocket();
+					readInnerSocket(1);
 					continue;
 				}
 				m_reg_queue_mutex.lock();
-				Socket::SocketList::iterator it_reg = find(m_reg_sock_list.begin(), m_reg_sock_list.end(), ss);
+				Socket::SocketList::iterator it_reg = find(m_reg_sock_list.begin(), m_reg_sock_list.end(), *it);
 				if(it_reg != m_reg_sock_list.end())
 				{
 					m_reg_sock_list.erase(it_reg);
@@ -470,10 +507,6 @@ void CRegServer::regHandler(Timer& timer)
 				m_reg_queue_mutex.unlock();
 			}// for readList
 		}//select ret
-		else
-		{
-			writeInnerSocket();
-		}
 	}
 }
 
@@ -542,7 +575,7 @@ void CRegServer::regAccept(Timer& timer)
 		Mutex::ScopedLock lock(m_reg_queue_mutex);
 		m_pReg_map.insert(std::make_pair<UInt64, SocketTime*>((UInt64)ss.impl() ,pReg));
 		m_reg_sock_list.push_back(ss);
-		writeInnerSocket();
+		writeInnerSocket(1);
 	}
 }
 
