@@ -23,17 +23,20 @@ inline void reset_console_color()
 
 bool initPrintLogger(const std::string& logPath)
 {
-	s_pChannel = new Poco::FileChannel;
-	s_pChannel->setProperty("path", logPath);
+	if(!logPath.empty())
+	{
+		s_pChannel = new Poco::FileChannel;
+		s_pChannel->setProperty("path", logPath);
 #ifdef __SC_ARM__
-	s_pChannel->setProperty("rotation", "512 K");
+		s_pChannel->setProperty("rotation", "512 K");
 #else
-	s_pChannel->setProperty("rotation", "2 M");
+		s_pChannel->setProperty("rotation", "2 M");
 #endif
-	s_pChannel->setProperty("archive", "timestamp");
-	s_pChannel->setProperty("purgeAge", "7 days");
-	s_pChannel->setProperty("flush", "false");
-	Poco::Logger::root().setChannel(s_pChannel);
+		s_pChannel->setProperty("archive", "timestamp");
+		s_pChannel->setProperty("purgeAge", "7 days");
+		s_pChannel->setProperty("flush", "false");
+		Poco::Logger::root().setChannel(s_pChannel);
+	}
 	s_timeDiff = Poco::Timezone::utcOffset();
 	return true;
 }
