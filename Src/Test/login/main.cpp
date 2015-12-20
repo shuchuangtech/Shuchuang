@@ -780,7 +780,7 @@ int main(int argc, char** argv)
 	int port;
 	std::cin >> port;
 	g_port = port;
-	g_pContext = new Context(Context::TLSV1_2_CLIENT_USE, "", Context::VERIFY_NONE);
+	g_pContext = new Context(Context::TLSV1_2_CLIENT_USE, "", Context::VERIFY_NONE, 9, false, "EECDH+aRSA+AESGCM");
 	pTask = new TaskInfo* [20];
 	for(int i = 0; i < 20; i++)
 	{

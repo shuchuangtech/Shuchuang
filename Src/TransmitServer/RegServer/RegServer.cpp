@@ -220,6 +220,7 @@ bool CRegServer::listenSsl()
 	{
 		if(m_ssl_sock != NULL)
 			delete m_ssl_sock;
+		errorf("%s, %d: Listen port %u failed.", __FILE__, __LINE__, m_ssl_port);
 		return false;
 	}
 	return true;
@@ -248,6 +249,7 @@ bool CRegServer::listenReg()
 	{
 		if(m_reg_sock != NULL)
 			delete m_reg_sock;
+		errorf("%s, %d: Listen port %u failed.", __FILE__, __LINE__, m_reg_port);
 		return false;
 	}
 	return true;

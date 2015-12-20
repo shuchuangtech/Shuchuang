@@ -1,7 +1,6 @@
 #include "TransmitServer/RegServer/RegServer.h"
 #include "TransmitServer/DeviceManager.h"
 #include "TransmitServer/HTTPServer/HTTPServer.h"
-#include "TransmitServer/HTTPSAcceptor/HTTPSAcceptor.h"
 #include "Common/PrintLog.h"
 #include "Poco/Semaphore.h"
 #include "Poco/Types.h"
@@ -27,8 +26,6 @@ int main(int argc, char** argv)
 	reg_server->start();
 	CHTTPServer* http_server = CHTTPServer::instance();
 	http_server->start();
-	CHTTPSAcceptor* https_acceptor = CHTTPSAcceptor::instance();
-	https_acceptor->start();
 	try{
 		Poco::Semaphore sem(0, 1);
 		sem.wait();
@@ -37,7 +34,6 @@ int main(int argc, char** argv)
 	{
 		tracef("%s", e.message().c_str());
 	}
-	https_acceptor->stop();
 	http_server->stop();
 	reg_server->stop();
 	device_manager->stop();

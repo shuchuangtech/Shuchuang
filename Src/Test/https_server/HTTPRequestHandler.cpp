@@ -16,13 +16,20 @@ CHTTPRequestHandler::~CHTTPRequestHandler()
 
 void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerResponse& response)
 {
+	
+	if(m_buf != NULL)
+		delete[] m_buf;
+	m_buf = new char[512];
+	memset(m_buf, 0, 512);
+	std::istream& reqStream = request.stream();
+	if(!reqStream.eof())
+	{
+		reqStream.getline(m_buf, 512, '\n');
+	}
+	tracef("%s, %d: Receive HTTP request[%s].", __FILE__, __LINE__, m_buf);
+	
 	response.setContentType("application/json");
 	response.setChunkedTransferEncoding(true);
-	if(m_buf == NULL)
-		m_buf = new char[512];
-	memset(m_buf, 0, 512);
-	request.stream().getline(m_buf, 512, '\n');
-	infof("%s, %d: Receive HTTP request[%s]", __FILE__, __LINE__, m_buf);
 	DynamicStruct ds;
 	ds["attr1"] = "content1";
 	ds["attr2"] = "content2";

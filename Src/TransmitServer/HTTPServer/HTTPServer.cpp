@@ -3,13 +3,14 @@
 #include "Poco/Net/HTTPServerParams.h"
 #include "Common/PrintLog.h"
 #include "Common/ConfigManager.h"
+#include "Poco/Net/Context.h"
+#include "Poco/Net/SecureServerSocket.h"
 using namespace Poco;
 using namespace Poco::Net;
 CHTTPServer::CHTTPServer()
 {
 	m_started = false;
 	m_svr = NULL;
-	m_port = 0;
 }
 
 CHTTPServer::~CHTTPServer()
@@ -18,15 +19,9 @@ CHTTPServer::~CHTTPServer()
 		delete m_svr;
 }
 
-bool CHTTPServer::setPort(UInt16 port)
-{
-	m_port = port;
-	return true;
-}
-
 bool CHTTPServer::start()
 {
-	if(m_started || m_svr != NULL || m_port > 65535)
+	if(m_started || m_svr != NULL)
 	{
 		warnf("%s, %d: HTTP server start failed.", __FILE__, __LINE__);
 		return false;
@@ -34,37 +29,62 @@ bool CHTTPServer::start()
 	CConfigManager* config = CConfigManager::instance();
 	JSON::Object::Ptr pConfig;
 	config->getConfig("HTTPServer", pConfig);
+	UInt16 port = 0;
+	std::string keyPath = "";
+	std::string certPath = "";
 	if(pConfig.isNull())
 	{
-		m_port = 8888;
-		pConfig = new JSON::Object;
-		pConfig->set("port", 8888);
-		config->setConfig("HTTPServer", pConfig);
+		errorf("%s, %d: HTTPServer config does not exists.", __FILE__, __LINE__);
+		return false;
 	}
 	else
 	{
-		if(pConfig->has("port"))
+		if(!pConfig->has("port") || !pConfig->has("cert") || !pConfig->has("privkey"))
 		{
-			m_port = pConfig->getValue<UInt16>("port");
+			errorf("%s, %d: HTTPServer config error, missing 'port', 'cert' or 'privkey'.", __FILE__, __LINE__);
+			return false;
 		}
 		else
 		{
-			m_port = 8888;
-			pConfig = NULL;
-			pConfig = new JSON::Object;
-			pConfig->set("port", 8888);
-			config->setConfig("HTTPServer", pConfig);
+			port = (UInt16)pConfig->getValue<int>("port");
+			certPath = pConfig->getValue<std::string>("cert");
+			keyPath = pConfig->getValue<std::string>("privkey");
 		}
 	}
-	HTTPServerParams* pParams = new HTTPServerParams;
+	HTTPServerParams::Ptr pParams = new HTTPServerParams;
 	pParams->setMaxQueued(100);
 	pParams->setMaxThreads(16);
-	ServerSocket svs(m_port);
-	m_svr = new HTTPServer(new CHTTPRequestHandlerFactory(), svs, pParams);
+	Context::Ptr pContext = new Context(Context::SERVER_USE,
+									keyPath,
+									certPath,
+									"",
+									Context::VERIFY_RELAXED,
+									9,
+									false,
+									"HIGH");
+	//support ECDH
+	SSL_CONF_CTX * cctx = NULL;
+	cctx = SSL_CONF_CTX_new();
+	SSL_CONF_CTX_set_flags(cctx, SSL_CONF_FLAG_SERVER);
+	SSL_CONF_CTX_set_flags(cctx, SSL_CONF_FLAG_CMDLINE);
+	SSL_CONF_CTX_set_ssl_ctx(cctx, pContext->sslContext());
+	if(SSL_CONF_cmd(cctx, "-named_curve", "P-256") <= 0)
+	{
+		warnf("%s, %d: Error setting Ec curve.", __FILE__, __LINE__);
+	}
+	if(!SSL_CONF_CTX_finish(cctx))
+	{
+		warnf("%s, %d: Error finishing config context.", __FILE__, __LINE__);
+	}
+	SSL_CONF_CTX_free(cctx);
+	//end of support ECDH	
+	SecureServerSocket svr(port, 64, pContext);
+
+	m_svr = new HTTPServer(new CHTTPRequestHandlerFactory(), svr, pParams);
 	m_svr->start();
 	m_started = true;
 	infof("%s, %d: HTTP server start successfully.", __FILE__, __LINE__);
-	infof("%s, %d: HTTP server port:%d", __FILE__, __LINE__, m_port);
+	infof("%s, %d: HTTP server port:%d", __FILE__, __LINE__, port);
 	return true;
 }
 

@@ -15,11 +15,9 @@ public:
 	}
 	bool start();
 	bool stop();
-	bool setPort(Poco::UInt16 port);
 private:
 	bool						m_started;
 	Poco::Net::HTTPServer*		m_svr;
-	Poco::UInt16				m_port;
 };
 #endif
 
