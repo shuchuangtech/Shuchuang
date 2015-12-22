@@ -10,7 +10,6 @@ CHTTPServer::CHTTPServer()
 {
 	m_started = false;
 	m_svr = NULL;
-	m_port = 0;
 }
 
 CHTTPServer::~CHTTPServer()
@@ -19,22 +18,16 @@ CHTTPServer::~CHTTPServer()
 		delete m_svr;
 }
 
-bool CHTTPServer::setPort(UInt16 port)
-{
-	m_port = port;
-	return true;
-}
-
 bool CHTTPServer::start()
 {
-	if(m_started || m_svr != NULL || m_port > 65535)
+	if(m_started || m_svr != NULL )
 	{
 		warnf("%s, %d: HTTP server start failed.", __FILE__, __LINE__);
 		return false;
 	}
 	std::string cert = "";
 	std::string privkey = "";
-	m_port = 9777;
+	UInt16 m_port = 3819;
 	cert = "./my.crt";
 	privkey = "./my.key";
 	std::string ciphers = "HIGH";
