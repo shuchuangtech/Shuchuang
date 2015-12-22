@@ -11,7 +11,7 @@
 #include <map>
 struct _DeviceInfo
 {
-	_DeviceInfo(std::string u, int i, std::string type, std::string t)
+	_DeviceInfo(std::string u, Poco::UInt64 i, std::string type, std::string t)
 		:uuid(u), id(i), devType(type), token(t)
 	{
 		online = false;

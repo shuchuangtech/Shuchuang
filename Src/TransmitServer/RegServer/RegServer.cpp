@@ -595,7 +595,7 @@ bool CRegServer::sendRequest(RequestInfo* request)
 		request->response = obj;
 		return false;
 	}
-	int id = dev->id;
+	UInt64 id = dev->id;
 	std::map<UInt64, SocketTime*>::iterator it = m_pReg_map.find(id);
 	if(it == m_pReg_map.end())
 	{
