@@ -6,8 +6,6 @@
 #include <unistd.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
-#define __SC_IN_NORMAL_CLOSE__
-#define __SC_ON_NORMAL_CLOSE__
 using namespace Poco;
 CDeviceController::CDeviceController()
 {
@@ -178,6 +176,36 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 		infof("%s, %d: Door closed by manual[User:%s].", __FILE__, __LINE__, op.username.c_str());
 	}
 	m_op_manager->addRecord(op);
+	return true;
+}
+
+bool CDeviceController::errOn()
+{
+	if(m_fd == 0)
+	{
+		warnf("%s, %d: Maybe should call openDevice first.", __FILE__, __LINE__);
+		return false;
+	}
+#ifdef __SC_ARM__
+	ioctl(m_fd, SC_ERROR_ON, 0);
+#else
+	tracef("%s, %d: X86 does not implement errOn.", __FILE__, __LINE__);
+#endif
+	return true;
+}
+
+bool CDeviceController::errOff()
+{
+	if(m_fd == 0)
+	{
+		warnf("%s, %d: Maybe should call openDevice first.", __FILE__, __LINE__);
+		return false;
+	}
+#ifdef __SC_ARM__
+	ioctl(m_fd, SC_ERROR_OFF, 0);
+#else
+	tracef("%s, %d: X86 does not implement errOff.", __FILE__, __LINE__);
+#endif
 	return true;
 }
 

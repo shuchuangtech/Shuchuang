@@ -10,8 +10,8 @@
 #define		SC_ERROR_ON			0x1233
 #define		SC_ERROR_OFF		0x1234
 
-#define		SC_RELAY_OFF		0x1235 
-#define		SC_RELAY_ON			0x1236
+#define		SC_RELAY_ON			0x1235 
+#define		SC_RELAY_OFF		0x1236
 
 #define		SC_READ_KEY			0x2221
 

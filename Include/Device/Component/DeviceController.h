@@ -22,6 +22,10 @@ public:
 	bool openDoor(Poco::JSON::Object::Ptr& param, std::string& detail);
 	//close door
 	bool closeDoor(Poco::JSON::Object::Ptr& param, std::string& detail);
+	//used inside programme
+	//error led
+	bool errOn();
+	bool errOff();
 private:
 	int	m_fd;
 	CUserRecord*		m_user_record;
