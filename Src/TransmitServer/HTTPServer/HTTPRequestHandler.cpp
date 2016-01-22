@@ -145,6 +145,7 @@ void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerRe
 			res->set(KEY_DETAIL_STR, "106");
 		}
 		DynamicStruct ds_res = *res;
+		infof("%s, %d: Send Http response[%s].", __FILE__, __LINE__, ds_res.toString().c_str());
 		response.sendBuffer(ds_res.toString().c_str(), ds_res.toString().length());
 		res = NULL;
 		return;
