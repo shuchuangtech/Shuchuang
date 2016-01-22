@@ -1,4 +1,5 @@
 #include "Device/RegProxy.h"
+#include "Device/Component/DeviceController.h"
 #include "Common/ConfigManager.h"
 #include "Common/PrintLog.h"
 #include "Common/RPCDef.h"
@@ -109,7 +110,8 @@ void CRegProxy::start()
 		m_manufacture = pConfig->getValue<std::string>("manufacture");
 	}
 	Observer<CRegProxy, RequestNotification> observer(*this, &CRegProxy::handleNf);
-	m_rpc->addObserver(observer);	
+	m_rpc->addObserver(observer);
+	CDeviceController::instance()->errOn();
 	m_timer.setPeriodicInterval(0);
 	m_timer.setStartInterval(500);
 	m_started = true;
@@ -418,6 +420,7 @@ void CRegProxy::onTimer(Timer& timer)
 			{
 				Timestamp t;
 				m_lastCheckTime =  t;
+				CDeviceController::instance()->errOff();
 			}
 			else
 			{
@@ -443,6 +446,7 @@ void CRegProxy::onTimer(Timer& timer)
 				if(ret <= 0 )
 				{
 					warnf("%s, %d: Receive error.", __FILE__, __LINE__);
+					CDeviceController::instance()->errOn();
 					dealError(PLAIN_SOCKET);
 					continue;
 				}

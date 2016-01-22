@@ -8,7 +8,6 @@
 #include "Poco/Types.h"
 #include "Poco/Thread.h"
 #include "Common/ConfigManager.h"
-#include "Device/Network/NetworkManager.h"
 #include "Common/PrintLog.h"
 #include "Poco/Semaphore.h"
 using namespace Poco;
@@ -77,10 +76,6 @@ int main(int argc, char** argv)
 	//init gpio
 	CDeviceController* device = CDeviceController::instance();
 	device->openDevice();
-	CNetworkManager* network = CNetworkManager::instance();
-	//设置Mac地址
-	network->initIf("eth0");
-	network->startDhcp("eth0");
 	//注册到网络服务器
 	CRegProxy* proxy = CRegProxy::instance();
 	proxy->start();
@@ -94,7 +89,6 @@ int main(int argc, char** argv)
 	proxy->stop();
 	rpc->stop();
 	task->stopAllTasks();
-	network->stopDhcp("eth0");
 	op->stop();
 	return 0;
 }
