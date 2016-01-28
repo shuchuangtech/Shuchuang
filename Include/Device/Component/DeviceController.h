@@ -28,6 +28,7 @@ public:
 	bool errOff();
 private:
 	int	m_fd;
+	bool				m_door_open;
 	CUserRecord*		m_user_record;
 	COpManager*			m_op_manager;
 };

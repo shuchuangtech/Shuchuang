@@ -119,6 +119,10 @@ bool CTaskManager::getTasks(JSON::Object::Ptr& param, std::string& detail)
 		array->add(ds);
 	}
 	param->set("tasks", array);
+	if(param->has("token"))
+	{
+		param->remove("token");
+	}
 	m_mutex.unlock();
 	return true;
 }
@@ -209,6 +213,10 @@ bool CTaskManager::addTask(JSON::Object::Ptr& param, std::string& detail)
 	m_mutex.unlock();
 	pObjTask->set("id", task.id);
 	param->set("task", pObjTask);
+	if(param->has("token"))
+	{
+		param->remove("token");
+	}
 	infof("%s, %d: Task added[id:%lld, option:%d, hour:%d, minute:%d, weekday:%d].", __FILE__, __LINE__, task.id, task.option, task.hour, task.minute, task.weekday);
 	return true;
 }
@@ -253,6 +261,10 @@ bool CTaskManager::removeTask(JSON::Object::Ptr& param, std::string& detail)
 					ds["minute"].extract<int>(), ds["weekday"].extract<int>());
 			break;
 		}
+	}
+	if(param->has("token"))
+	{
+		param->remove("token");
 	}
 	m_mutex.unlock();
 	return true;
@@ -322,6 +334,10 @@ bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 			infof("%s, %d: Task[%lld] modified (%d, %d, %d, %d).", __FILE__, __LINE__, task.id, task.option, task.hour, task.minute, task.weekday);
 			break;
 		}
+	}
+	if(param->has("token"))
+	{
+		param->remove("token");
 	}
 	m_mutex.unlock();
 	return true;

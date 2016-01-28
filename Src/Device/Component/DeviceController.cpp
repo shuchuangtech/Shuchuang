@@ -10,6 +10,7 @@ using namespace Poco;
 CDeviceController::CDeviceController()
 {
 	m_fd = 0;
+	m_door_open = false;
 	m_user_record = CUserRecord::instance();
 	m_op_manager = COpManager::instance();
 }
@@ -44,6 +45,7 @@ bool CDeviceController::openDevice()
 		ioctl(m_fd, SC_RELAY_ON, 0);
 		ioctl(m_fd, SC_RUN_OFF, 0);
 		#endif
+		m_door_open = false;
 		return true;
 	}
 #else
@@ -64,6 +66,8 @@ bool CDeviceController::checkDoor(JSON::Object::Ptr& param, std::string& detail)
 #ifdef __SC_ARM__
 	int value;
 	value = ioctl(m_fd, SC_READ_KEY, 0);
+	tracef("%s, %d: Check door read key value: %d", __FILE__, __FILE__, value);
+	
 	if(value == 1)
 	{
 	#ifdef __SC_IN_NORMAL_CLOSE__
@@ -80,10 +84,23 @@ bool CDeviceController::checkDoor(JSON::Object::Ptr& param, std::string& detail)
 		param->set("state", "close");
 	#endif
 	}
-	infof("%s, %d: Check door state:%s.", __FILE__, __LINE__, param->getValue<std::string>("state").c_str());
+	
+	if(m_door_open)
+	{
+		param->set("switch", "open");
+	}
+	else
+	{
+		param->set("switch", "close");
+	}
+	infof("%s, %d: Check door state:%s, switch state:%s.", __FILE__, __LINE__, param->getValue<std::string>("state").c_str(), m_door_open?"open":"close");
 #else
 	tracef("%s, %d: X86 does not implement checkDoor.", __FILE__, __LINE__);
 #endif
+	if(param->has("token"))
+	{
+		param->remove("token");
+	}
 	return true;
 }
 
@@ -104,6 +121,7 @@ bool CDeviceController::openDoor(JSON::Object::Ptr& param, std::string& detail)
 #else
 	tracef("%s, %d: X86 does not implement openDoor.", __FILE__, __LINE__);
 #endif
+	m_door_open = true;
 	OperationRecordNode op = {0, 0, "", 0};
 	DateTime now;
 	now.makeLocal(Timezone::tzd());
@@ -130,6 +148,10 @@ bool CDeviceController::openDoor(JSON::Object::Ptr& param, std::string& detail)
 		infof("%s, %d: Door opened by manual[User:%s].", __FILE__, __LINE__, op.username.c_str());
 	}
 	m_op_manager->addRecord(op);
+	if(param->has("token"))
+	{
+		param->remove("token");
+	}
 	return true;
 }
 
@@ -150,6 +172,7 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 #else
 	tracef("%s, %d: X86 does not implement closeDoor.", __FILE__, __LINE__);
 #endif
+	m_door_open = false;
 	OperationRecordNode op = {0, 0, "", 0};
 	DateTime now;
 	now.makeLocal(Timezone::tzd());
@@ -176,6 +199,10 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 		infof("%s, %d: Door closed by manual[User:%s].", __FILE__, __LINE__, op.username.c_str());
 	}
 	m_op_manager->addRecord(op);
+	if(param->has("token"))
+	{
+		param->remove("token");
+	}
 	return true;
 }
 
