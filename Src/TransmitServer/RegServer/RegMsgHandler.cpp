@@ -120,7 +120,7 @@ bool CRegMsgHandler::handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 	Timestamp now;
 	Int64 tms = now.epochMicroseconds();
 	char tms_str[32];
-	snprintf(tms_str, 31, "%lld", tms);
+	snprintf(tms_str, 31, "%ld", tms);
 	std::string key = "alpha2015";
 	key += tms_str;
 	MD5Engine md5;
