@@ -41,6 +41,11 @@ request
 #define RECORD_STARTTIME_STR "starttime"
 #define RECORD_ENDTIME_STR "endtime"
 #define RECORD_RECORDS_STR "records"
+//device
+#define DEVICE_STATE_STR "state"
+#define DEVICE_SWITCH_STR "switch"
+#define DEVICE_OPEN_STR "open"
+#define DEVICE_CLOSE_STR "close"
 //Component>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #define COMPONENT_USER_STR "user"
 #define COMPONENT_TASK_STR "task"
@@ -61,6 +66,8 @@ request
 #define DEVICE_METHOD_OPEN "open"
 #define DEVICE_METHOD_CLOSE "close"
 #define DEVICE_METHOD_CHECK "check"
+#define DEVICE_METHOD_RESET "reset"
+#define DEVICE_METHOD_RESTART "restart"
 //record
 #define RECORD_METHOD_GET "get"
 //server

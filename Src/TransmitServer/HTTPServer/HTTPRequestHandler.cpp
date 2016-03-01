@@ -21,9 +21,11 @@ CHTTPRequestHandler::~CHTTPRequestHandler()
 		delete[] m_buf;
 }
 
-bool CHTTPRequestHandler::checkRequestFormat(JSON::Object::Ptr request, JSON::Object::Ptr response)
+bool CHTTPRequestHandler::checkRequestFormat(JSON::Object::Ptr& request, JSON::Object::Ptr& response)
 {
 	DynamicStruct ds = *request;
+	response->remove(KEY_TYPE_STR);
+	response->set(KEY_TYPE_STR, TYPE_RESPONSE_STR);
 	if(!ds.contains(KEY_TYPE_STR) || !ds.contains(KEY_ACTION_STR) || !ds.contains(KEY_PARAM_STR))
 	{
 		response->set(KEY_RESULT_STR, RESULT_FAIL_STR);
@@ -88,10 +90,12 @@ void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerRe
 	catch(Exception& e)
 	{
 		JSON::Object::Ptr re = new JSON::Object;
+		re->set(KEY_TYPE_STR, TYPE_RESPONSE_STR);
 		re->set(KEY_RESULT_STR, RESULT_FAIL_STR);
 		re->set(KEY_DETAIL_STR, "100");
 		DynamicStruct ds_res = *re;
 		response.sendBuffer(ds_res.toString().c_str(), ds_res.toString().length());
+		infof("%s, %d: Send Http response[%s].", __FILE__, __LINE__, ds_res.toString().c_str());
 		re = NULL;
 		return;
 	}
@@ -101,6 +105,7 @@ void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerRe
 	{
 		DynamicStruct ds_res = *res;
 		response.sendBuffer(ds_res.toString().c_str(), ds_res.toString().length());
+		infof("%s, %d: Send Http response[%s].", __FILE__, __LINE__, ds_res.toString().c_str());
 		res = NULL;
 		return;
 	}
@@ -116,6 +121,7 @@ void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerRe
 		res->set(KEY_DETAIL_STR, "105");
 		DynamicStruct ds_res = *res;
 		response.sendBuffer(ds_res.toString().c_str(), ds_res.toString().length());
+		infof("%s, %d: Send Http response[%s].", __FILE__, __LINE__, ds_res.toString().c_str());
 		res = NULL;
 		return;
 	}
@@ -137,6 +143,7 @@ void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerRe
 			{
 				param[REG_STATE_STR] = "offline";
 			}
+			res->remove(KEY_PARAM_STR);
 			res->set(KEY_PARAM_STR, param);
 		}
 		else

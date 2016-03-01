@@ -11,7 +11,7 @@ public:
 	~CHTTPRequestHandler();
 	void handleRequest(Poco::Net::HTTPServerRequest& request, Poco::Net::HTTPServerResponse& response);
 private:
-	bool checkRequestFormat(Poco::JSON::Object::Ptr request, Poco::JSON::Object::Ptr response);
+	bool checkRequestFormat(Poco::JSON::Object::Ptr& request, Poco::JSON::Object::Ptr& response);
 	bool parseAction(std::string action, std::string& component, std::string& method);
 	char* m_buf;
 };
