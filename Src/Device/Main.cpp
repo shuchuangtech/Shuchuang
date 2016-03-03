@@ -63,8 +63,8 @@ int main(int argc, char** argv)
 		userdata = "/mnt/nand1-1/Application/oprecord.db";
 		opdata = "/mnt/nand1-1/Application/user.db";
 #else
-		userdata = "/home/hj/Dev_Env/Shuchuang/user.db";
-		opdata = "/home/hj/Dev_Env/Shuchuang/oprecord.db";
+		userdata = "/home/huang_jian/Dev_Env/Shuchuang/user.db";
+		opdata = "/home/huang_jian/Dev_Env/Shuchuang/oprecord.db";
 #endif
 	}
 	//初始化用户中心
