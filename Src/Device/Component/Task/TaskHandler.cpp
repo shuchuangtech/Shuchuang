@@ -6,6 +6,7 @@ using namespace Poco;
 CTaskHandler::CTaskHandler()
 {
 	m_running = false;
+	m_active = false;
 	tracef("%s, %d: TaskHandler created %llu.", __FILE__, __LINE__, (UInt64)this);
 }
 
@@ -49,6 +50,7 @@ void CTaskHandler::setTaskInfo(TaskInfo task)
 	m_hour = task.hour;
 	m_minute = task.minute;
 	m_weekday = task.weekday;
+	m_active = (task.active == 1);
 }
 
 UInt64 CTaskHandler::getId()
@@ -75,3 +77,9 @@ UInt8 CTaskHandler::getWeekday()
 {
 	return m_weekday;
 }
+
+bool CTaskHandler::isActive()
+{
+	return m_active;
+}
+

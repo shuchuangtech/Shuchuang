@@ -26,6 +26,9 @@ struct _TaskInfo
 	//bit 5 Friday
 	//bit 6 Saturday
 	//bit 7 whole week
+	int active;
+	//is this task active
+	//0 inactive, 1 active
 };
 typedef struct _TaskInfo TaskInfo;
 #endif

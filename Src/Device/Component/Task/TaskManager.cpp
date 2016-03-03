@@ -91,7 +91,10 @@ void CTaskManager::loadTasksConfig()
 			structToTaskInfo(ds, t);
 			CTaskHandler::Ptr pTask = new CTaskHandler;
 			pTask->setTaskInfo(t);
-			addToScheduleQueue(pTask);
+			if(pTask->isActive())
+			{
+				addToScheduleQueue(pTask);
+			}
 			m_task_map.insert(std::make_pair<Int64, CTaskHandler::Ptr>(t.id, pTask));
 			infof("%s, %d: Task loaded[id:%lld, option:%d, hour:%d, minute:%d, weekday:%d].", __FILE__, __LINE__, t.id, t.option, t.hour, t.minute, t.weekday);
 		}
@@ -134,6 +137,7 @@ void CTaskManager::taskInfoToStruct(const TaskInfo& task, DynamicStruct& ds)
 	ds["hour"]= task.hour;
 	ds["minute"] = task.minute;
 	ds["weekday"] = task.weekday;
+	ds["active"] = task.active;
 }
 
 void CTaskManager::structToTaskInfo(const DynamicStruct& ds, TaskInfo& task)
@@ -149,6 +153,8 @@ void CTaskManager::structToTaskInfo(const DynamicStruct& ds, TaskInfo& task)
 	task.minute = var.extract<int>();
 	var = ds["weekday"];
 	task.weekday = var.extract<int>();
+	var = ds["active"];
+	task.active = var.extract<int>();
 }
 
 bool CTaskManager::taskExists(const TaskInfo& task)
@@ -156,7 +162,9 @@ bool CTaskManager::taskExists(const TaskInfo& task)
 	Mutex::ScopedLock lock(m_mutex);
 	for(std::map<Int64, CTaskHandler::Ptr>::iterator it = m_task_map.begin(); it != m_task_map.end(); it++)
 	{
-		if(it->second->getHour() == task.hour && it->second->getMinute() == task.minute)
+		bool isActive = it->second->isActive();
+		bool activeSame = (isActive && (task.active == 1)) || (!isActive && (task.active == 0));
+		if(it->second->getHour() == task.hour && it->second->getMinute() == task.minute && it->second->getWeekday() == task.weekday && activeSame)
 			return true;
 	}
 	return false;
@@ -176,7 +184,7 @@ bool CTaskManager::addTask(JSON::Object::Ptr& param, std::string& detail)
 	}
 	JSON::Object::Ptr pObjTask = param->getObject("task");
 	if(pObjTask.isNull() || !pObjTask->has("option") || !pObjTask->has("hour")
-		|| !pObjTask->has("minute") || !pObjTask->has("weekday"))
+		|| !pObjTask->has("minute") || !pObjTask->has("weekday") || !pObjTask->has("active"))
 	{
 		detail = "432";
 		return false;
@@ -209,7 +217,10 @@ bool CTaskManager::addTask(JSON::Object::Ptr& param, std::string& detail)
 	CTaskHandler::Ptr pTask = new CTaskHandler;
 	pTask->setTaskInfo(task);
 	m_task_map.insert(std::make_pair<Int64, CTaskHandler::Ptr>(task.id, pTask));
-	addToScheduleQueue(pTask);
+	if(pTask->isActive())
+	{
+		addToScheduleQueue(pTask);
+	}
 	m_mutex.unlock();
 	pObjTask->set("id", task.id);
 	param->set("task", pObjTask);
@@ -278,7 +289,7 @@ bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 		return false;
 	}
 	JSON::Object::Ptr pObjTask = param->getObject("task");
-	if(pObjTask.isNull() || !pObjTask->has("id") || !pObjTask->has("option") || !pObjTask->has("hour") || !pObjTask->has("minute") || !pObjTask->has("weekday"))
+	if(pObjTask.isNull() || !pObjTask->has("id") || !pObjTask->has("option") || !pObjTask->has("hour") || !pObjTask->has("minute") || !pObjTask->has("weekday") || !pObjTask->has("active"))
 	{
 		detail = "432";
 		return false;
@@ -318,7 +329,10 @@ bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 	CTaskHandler::Ptr pTask = new CTaskHandler;
 	pTask->setTaskInfo(task);
 	m_task_map.insert(std::make_pair<Int64, CTaskHandler::Ptr>(task.id, pTask));
-	addToScheduleQueue(pTask);
+	if(pTask->isActive())
+	{
+		addToScheduleQueue(pTask);
+	}
 	//adjust task config
 	DynamicStruct ds;
 	taskInfoToStruct(task, ds);
