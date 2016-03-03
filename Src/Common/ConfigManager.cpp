@@ -102,6 +102,7 @@ bool CConfigManager::getConfig(const std::string configName, JSON::Array::Ptr& c
 
 bool CConfigManager::setConfig(const std::string configName, JSON::Object::Ptr config)
 {
+	tracepoint();
 	if(m_config.isNull() || configName.empty() || config.isNull())
 		return false;
 	Mutex::ScopedLock lock(m_mutex);
@@ -113,6 +114,7 @@ bool CConfigManager::setConfig(const std::string configName, JSON::Object::Ptr c
 	{
 		if(pObj->isObject(configName))
 		{
+			pObj->remove(configName);
 			pObj->set(configName, config);
 		}
 		else
@@ -125,6 +127,7 @@ bool CConfigManager::setConfig(const std::string configName, JSON::Object::Ptr c
 		pObj->set(configName, config);
 	}
 	DynamicStruct ds = *pObj;
+	m_config->remove("root");
 	m_config->setString("root", ds.toString());
 	FileOutputStream fos(m_path);
 	m_config->save(fos);
@@ -145,6 +148,7 @@ bool CConfigManager::setConfig(const std::string configName, JSON::Array::Ptr co
 	{
 		if(pObj->isArray(configName))
 		{
+			pObj->remove(configName);
 			pObj->set(configName, config);
 		}
 		else
@@ -157,6 +161,7 @@ bool CConfigManager::setConfig(const std::string configName, JSON::Array::Ptr co
 		pObj->set(configName, config);
 	}
 	DynamicStruct ds = *pObj;
+	m_config->remove("root");
 	m_config->setString("root", ds.toString());
 	FileOutputStream fos(m_path);
 	m_config->save(fos);
