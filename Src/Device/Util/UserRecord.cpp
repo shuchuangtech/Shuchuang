@@ -2,6 +2,7 @@
 #include "Common/PrintLog.h"
 #include "Poco/Data/SQLite/Connector.h"
 #include "Poco/Data/RecordSet.h"
+#include <fstream>
 using namespace Poco;
 using namespace Poco::Data;
 using namespace Poco::Data::Keywords;
@@ -33,6 +34,7 @@ bool CUserRecord::init(const std::string& dbPath)
 		return false;
 	}
 	infof("%s, %d: Init UserRecord with %s successfully.", __FILE__, __LINE__, dbPath.c_str());
+	/*
 	try
 	{
 		Statement create(*m_session_ptr);
@@ -53,6 +55,32 @@ bool CUserRecord::init(const std::string& dbPath)
 		warnf("%s, %d: Create table User failed[%s].", __FILE__, __LINE__, e.message().c_str());
 		return false;
 	}
+	*/
+	return true;
+}
+
+bool CUserRecord::resetUser(const std::string& dbPath, const std::string& bakDbPath)
+{
+	if(m_session_ptr != NULL)
+	{	
+		m_session_ptr->close();
+		delete m_session_ptr;
+	}
+	std::ifstream ifs(bakDbPath.c_str(), std::ios::in|std::ios::binary);
+	std::ofstream ofs(dbPath.c_str(), std::ios::out|std::ios::trunc|std::ios::binary);
+	ofs << ifs.rdbuf();
+	ifs.close();
+	ofs.close();
+	try
+	{
+		m_session_ptr = new Session("SQLite",dbPath);
+	}
+	catch(Exception& e)
+	{
+		warnf("%s, %d: Open UserRecord with %s failed.", __FILE__, __LINE__, dbPath.c_str());
+		return false;
+	}
+	infof("%s, %d: UserRecord reset successfully.", __FILE__, __LINE__);
 	return true;
 }
 

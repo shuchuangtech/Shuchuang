@@ -25,6 +25,7 @@ public:
 		return sh.get();
 	}
 	bool	init(const std::string& dbPath);
+	bool	resetOpRecord();
 	int		addRecord(OperationRecordNode& record);
 	int		addRecord(std::vector<OperationRecordNode>&);
 	int		deleteRecordsByDate(Poco::DateTime& date);

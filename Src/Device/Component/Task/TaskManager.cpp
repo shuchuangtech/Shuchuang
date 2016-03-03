@@ -343,3 +343,10 @@ bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 	return true;
 }
 
+bool CTaskManager::resetTasks(JSON::Object::Ptr& param, std::string& detail)
+{
+	m_task_config->clear();
+	m_config->setConfig("Tasks", m_task_config);
+	return true;
+}
+

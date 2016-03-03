@@ -37,6 +37,7 @@ public:
 		return sh.get();
 	}
 	bool init(const std::string& dbPath);
+	bool resetUser(const std::string& dbPath, const std::string& bakDbPath);
 	int addUser(UserRecordNode&);
 	int deleteUser(UserRecordNode&);
 	int updateUser(UserRecordNode&);

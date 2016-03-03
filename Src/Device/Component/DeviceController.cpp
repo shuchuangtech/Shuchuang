@@ -1,4 +1,5 @@
 #include "Device/Component/DeviceController.h"
+#include "Common/RPCDef.h"
 #include "Poco/Timestamp.h"
 #include "Poco/Timezone.h"
 #include "Common/PrintLog.h"
@@ -71,35 +72,35 @@ bool CDeviceController::checkDoor(JSON::Object::Ptr& param, std::string& detail)
 	if(value == 1)
 	{
 	#ifdef __SC_IN_NORMAL_CLOSE__
-		param->set("state", "close");	
+		param->set(DEVICE_STATE_STR, DEVICE_CLOSE_STR);	
 	#else
-		param->set("state", "open");
+		param->set(DEVICE_STATE_STR, DEVICE_OPEN_STR);
 	#endif
 	}
 	else
 	{
 	#ifdef __SC_IN_NORMAL_CLOSE__
-		param->set("state", "open");
+		param->set(DEVICE_STATE_STR, DEVICE_OPEN_STR);
 	#else
-		param->set("state", "close");
+		param->set(DEVICE_STATE_STR, DEVICE_CLOSE_STR);
 	#endif
 	}
 	
 	if(m_door_open)
 	{
-		param->set("switch", "open");
+		param->set(DEVICE_SWITCH_STR, DEVICE_OPEN_STR);
 	}
 	else
 	{
-		param->set("switch", "close");
+		param->set(DEVICE_SWITCH_STR, DEVICE_CLOSE_STR);
 	}
 	infof("%s, %d: Check door state:%s, switch state:%s.", __FILE__, __LINE__, param->getValue<std::string>("state").c_str(), m_door_open?"open":"close");
 #else
 	tracef("%s, %d: X86 does not implement checkDoor.", __FILE__, __LINE__);
 #endif
-	if(param->has("token"))
+	if(param->has(USER_TOKEN_STR))
 	{
-		param->remove("token");
+		param->remove(USER_TOKEN_STR);
 	}
 	return true;
 }
@@ -199,6 +200,16 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 		infof("%s, %d: Door closed by manual[User:%s].", __FILE__, __LINE__, op.username.c_str());
 	}
 	m_op_manager->addRecord(op);
+	if(param->has("token"))
+	{
+		param->remove("token");
+	}
+	return true;
+}
+
+bool CDeviceController::resetConfig(JSON::Object::Ptr& param, std::string& detail)
+{
+
 	if(param->has("token"))
 	{
 		param->remove("token");

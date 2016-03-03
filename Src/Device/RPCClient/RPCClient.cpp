@@ -230,6 +230,14 @@ void CRPCClient::runTask()
 				if(device->checkDoor(param, detail))
 					result = true;
 			}
+			else if(method == DEVICE_METHOD_RESET)
+			{
+				if(device->resetConfig(param, detail))
+					result = true;
+			}
+			else if(method == DEVICE_METHOD_RESTART)
+			{
+			}
 			else
 			{
 				result = false;

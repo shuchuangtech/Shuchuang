@@ -22,6 +22,8 @@ public:
 	bool openDoor(Poco::JSON::Object::Ptr& param, std::string& detail);
 	//close door
 	bool closeDoor(Poco::JSON::Object::Ptr& param, std::string& detail);
+	//reset config to default
+	bool resetConfig(Poco::JSON::Object::Ptr& param, std::string& detail);
 	//used inside programme
 	//error led
 	bool errOn();

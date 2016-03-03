@@ -24,6 +24,7 @@ public:
 	bool addTask(Poco::JSON::Object::Ptr& param, std::string& detail);
 	bool removeTask(Poco::JSON::Object::Ptr& param, std::string& detail);
 	bool modifyTask(Poco::JSON::Object::Ptr& param, std::string& detail);
+	bool resetTasks(Poco::JSON::Object::Ptr& param, std::string& detail);
 private:
 	void addToScheduleQueue(CTaskHandler::Ptr pTask);
 	bool taskExists(const TaskInfo& task);
