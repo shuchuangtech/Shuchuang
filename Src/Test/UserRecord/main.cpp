@@ -18,7 +18,7 @@ void testAdd()
 		Poco::Timestamp begin;
 		ret = ur->addUser(user[i]);
 		Poco::Timestamp end;
-		printf("add user %s ret:%d using %llu microseconds\n", user[i].username.c_str(), ret, end - begin);
+		printf("add user %s ret:%d using %lu microseconds\n", user[i].username.c_str(), ret, end - begin);
 	}
 	printf("==================testAdd finish=================\n");
 }
@@ -31,15 +31,15 @@ void testGet()
 	Poco::Timestamp begin1;
 	ret = ur->getUserByName(u1);
 	Poco::Timestamp end1;
-	printf("getUserByName ret %d using %llu microseconds\n"
+	printf("getUserByName ret %d using %lu microseconds\n"
 			"username:%s\n"
 			"password:%s\n"
 			"authority:%d\n"
-			"timeOfValidity:%lld\n"
+			"timeOfValidity:%ld\n"
 			"remainOpen:%d\n"
 			"token:%s\n"
-			"lastVerify:%lld\n"
-			"lastLogin:%lld\n",
+			"lastVerify:%ld\n"
+			"lastLogin:%ld\n",
 			ret, end1 - begin1,
 			u1.username.c_str(), u1.password.c_str(), u1.authority, u1.timeOfValidity, u1.remainOpen, u1.token.c_str(), u1.lastVerify, u1.lastLogin
 			);
@@ -47,15 +47,15 @@ void testGet()
 	Poco::Timestamp begin2;
 	ret = ur->getUserByToken(u2);
 	Poco::Timestamp end2;
-	printf("\ngetUserByToken ret %d using %llu microseconds\n"
+	printf("\ngetUserByToken ret %d using %lu microseconds\n"
 			"username:%s\n"
 			"password:%s\n"
 			"authority:%d\n"
-			"timeOfValidity:%lld\n"
+			"timeOfValidity:%ld\n"
 			"remainOpen:%d\n"
 			"token:%s\n"
-			"lastVerify:%lld\n"
-			"lastLogin:%lld\n",
+			"lastVerify:%ld\n"
+			"lastLogin:%ld\n",
 			ret, end2 - begin2,
 			u2.username.c_str(), u2.password.c_str(), u2.authority, u2.timeOfValidity, u2.remainOpen, u2.token.c_str(), u2.lastVerify, u2.lastLogin
 			);
@@ -64,7 +64,7 @@ void testGet()
 	Poco::Timestamp begin3;
 	ret= ur->getUsersByAuth(8, vec);
 	Poco::Timestamp end3;
-	printf("\ngetUsersByAuth, auth=8, ret %d, vec size %u using %llu microseconds\n", ret, vec.size(), end3 - begin3);
+	printf("\ngetUsersByAuth, auth=8, ret %d, vec size %zu using %lu microseconds\n", ret, vec.size(), end3 - begin3);
 	for(unsigned int i = 0; i < vec.size(); i++)
 	{
 		UserRecordNode urn = vec[i];
@@ -72,11 +72,11 @@ void testGet()
 			"username:%s\n"
 			"password:%s\n"
 			"authority:%d\n"
-			"timeOfValidity:%lld\n"
+			"timeOfValidity:%ld\n"
 			"remainOpen:%d\n"
 			"token:%s\n"
-			"lastVerify:%lld\n"
-			"lastLogin:%lld\n",
+			"lastVerify:%ld\n"
+			"lastLogin:%ld\n",
 			i,
 			urn.username.c_str(), urn.password.c_str(), urn.authority, urn.timeOfValidity, urn.remainOpen, urn.token.c_str(), urn.lastVerify, urn.lastLogin
 			);
@@ -86,7 +86,7 @@ void testGet()
 	Poco::Timestamp begin4;
 	ret = ur->getUsersByOpen(10, vec);
 	Poco::Timestamp end4;
-	printf("getUsersByOpen, open=120000, ret %d, vec size %u using %llu microseconds\n", ret, vec.size(), end4 - begin4);
+	printf("getUsersByOpen, open=120000, ret %d, vec size %zu using %lu microseconds\n", ret, vec.size(), end4 - begin4);
 	for(unsigned int i = 0; i < vec.size(); i++)
 	{
 		UserRecordNode urn = vec[i];
@@ -94,11 +94,11 @@ void testGet()
 			"username:%s\n"
 			"password:%s\n"
 			"authority:%d\n"
-			"timeOfValidity:%lld\n"
+			"timeOfValidity:%ld\n"
 			"remainOpen:%d\n"
 			"token:%s\n"
-			"lastVerify:%lld\n"
-			"lastLogin:%lld\n",
+			"lastVerify:%ld\n"
+			"lastLogin:%ld\n",
 			i,
 			urn.username.c_str(), urn.password.c_str(), urn.authority, urn.timeOfValidity, urn.remainOpen, urn.token.c_str(), urn.lastVerify, urn.lastLogin
 			);
@@ -108,7 +108,7 @@ void testGet()
 	Poco::Timestamp begin5;
 	ret = ur->getAllUsers(vec);
 	Poco::Timestamp end5;
-	printf("getAllUsers, ret %d, vec size %u using %llu microseconds\n", ret, vec.size(), end5 - begin5);
+	printf("getAllUsers, ret %d, vec size %zu using %lu microseconds\n", ret, vec.size(), end5 - begin5);
 	for(unsigned int i = 0; i < vec.size(); i++)
 	{
 		UserRecordNode urn = vec[i];
@@ -116,11 +116,11 @@ void testGet()
 			"username:%s\n"
 			"password:%s\n"
 			"authority:%d\n"
-			"timeOfValidity:%lld\n"
+			"timeOfValidity:%ld\n"
 			"remainOpen:%d\n"
 			"token:%s\n"
-			"lastVerify:%lld\n"
-			"lastLogin:%lld\n",
+			"lastVerify:%ld\n"
+			"lastLogin:%ld\n",
 			i,
 			urn.username.c_str(), urn.password.c_str(), urn.authority, urn.timeOfValidity, urn.remainOpen, urn.token.c_str(), urn.lastVerify, urn.lastLogin
 			);
@@ -139,15 +139,15 @@ void testUpdate()
 	Poco::Timestamp end;
 	UserRecordNode u2 = {"huangjian", "", 0, 0, 0, "", 0, 0};
 	ur->getUserByName(u2);
-	printf("after updateUser using %llu to update\n"
+	printf("after updateUser using %lu to update\n"
 			"username:%s\n"
 			"password:%s\n"
 			"authority:%d\n"
-			"timeOfValidity:%lld\n"
+			"timeOfValidity:%ld\n"
 			"remainOpen:%d\n"
 			"token:%s\n"
-			"lastVerify:%lld\n"
-			"lastLogin:%lld\n",
+			"lastVerify:%ld\n"
+			"lastLogin:%ld\n",
 			end - begin,
 			u2.username.c_str(), u2.password.c_str(), u2.authority, u2.timeOfValidity, u2.remainOpen, u2.token.c_str(), u2.lastVerify, u2.lastLogin
 			);
@@ -163,7 +163,7 @@ void testDelete()
 		Poco::Timestamp begin;
 		ur->deleteUser(user[i]);
 		Poco::Timestamp end;
-		printf("delete %s using %llu microseconds\n", user[i].username.c_str(), end - begin);
+		printf("delete %s using %lu microseconds\n", user[i].username.c_str(), end - begin);
 	}
 	printf("==================testDelete finish=================\n");
 }
@@ -171,14 +171,16 @@ void testDelete()
 int main(int argc, char** argv)
 {
 	ur = CUserRecord::instance();
-	ur->init("/home/hj/Dev_Env/Shuchuang/test.db");
+	ur->init("/home/huang_jian/Dev_Env/Shuchuang/ori.db");
 	testAdd();
 	getchar();
 	testGet();
 	getchar();
 	testUpdate();
 	getchar();
-	testDelete();
+	testDelete();	
+	ur->resetUser("/home/huang_jian/Dev_Env/Shuchuang/ori.db", "/home/huang_jian/Dev_Env/Shuchuang/bak.db");
+	testAdd();
 	return 0;
 }
 

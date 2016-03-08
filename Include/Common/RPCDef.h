@@ -40,6 +40,8 @@ request
 //record
 #define RECORD_STARTTIME_STR "starttime"
 #define RECORD_ENDTIME_STR "endtime"
+#define RECORD_LIMIT_STR "limit"
+#define RECORD_OFFSET_STR "offset"
 #define RECORD_RECORDS_STR "records"
 //device
 #define DEVICE_STATE_STR "state"

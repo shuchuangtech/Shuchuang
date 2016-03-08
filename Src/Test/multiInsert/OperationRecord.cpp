@@ -92,6 +92,29 @@ bool COperationRecord::init(const std::string& dbPath)
 	return true;
 }
 
+bool COperationRecord::resetOpRecord()
+{
+	if(m_session_ptr == NULL)
+	{
+		warnf("%s, %d: Please init database first.", __FILE__, __LINE__);
+		return -1;
+	}
+	Statement sreset(*m_session_ptr);
+	sreset << "DELETE * FROM `Operation`";
+	int ret = 0;
+	try
+	{
+		ret = sreset.execute();
+	}
+	catch(Exception& e)
+	{
+		warnf("%s, %d: Reset Operation failed[%s].", __FILE__, __LINE__, e.message().c_str());
+		return false;
+	}
+	infof("%s, %d: Reset Operation successfully, %d records deleted.", __FILE__, __LINE__, ret);
+	return true;
+}
+
 int COperationRecord::addRecord(OperationRecordNode& record)
 {
 	if(m_session_ptr == NULL)

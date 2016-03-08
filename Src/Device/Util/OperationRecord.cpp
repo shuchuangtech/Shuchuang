@@ -191,7 +191,7 @@ int COperationRecord::deleteRecordsByDate(DateTime& date)
 	return ret;
 }
 
-int COperationRecord::getRecords(Timestamp& start, Timestamp& end, std::vector<OperationRecordNode>& data_set)
+int COperationRecord::getRecords(Timestamp& start, Timestamp& end, int limit, int offset, std::vector<OperationRecordNode>& data_set)
 {
 	if(m_session_ptr == NULL)
 	{
@@ -204,9 +204,11 @@ int COperationRecord::getRecords(Timestamp& start, Timestamp& end, std::vector<O
 	Timestamp tend = end - 1;
 	Int64 stend = tend.epochMicroseconds();
 	Statement sselect(*m_session_ptr);
-	sselect << "SELECT `Timestamp`, `Operation`, `Username`, `Schema` FROM `Operation` WHERE `Timestamp` BETWEEN ? AND ?",
+	sselect << "SELECT `Timestamp`, `Operation`, `Username`, `Schema` FROM `Operation` WHERE `Timestamp` BETWEEN ? AND ? LIMIT ? OFFSET ?",
 			use(ststart),
-			use(stend);
+			use(stend),
+			use(limit),
+			use(offset);
 	int ret = 0;
 	try
 	{

@@ -29,7 +29,7 @@ public:
 	int		addRecord(OperationRecordNode& record);
 	int		addRecord(std::vector<OperationRecordNode>&);
 	int		deleteRecordsByDate(Poco::DateTime& date);
-	int		getRecords(Poco::Timestamp& start, Poco::Timestamp& end, std::vector<OperationRecordNode>&);
+	int		getRecords(Poco::Timestamp& start, Poco::Timestamp& end, int limit, int offset, std::vector<OperationRecordNode>&);
 private:
 	Poco::Data::Session*		m_session_ptr;
 };

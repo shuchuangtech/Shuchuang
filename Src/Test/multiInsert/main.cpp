@@ -111,7 +111,7 @@ int main(int argc, char** argv)
 	if(argc > 1)
 		repeat = atoi(argv[1]);
 	op = COperationRecord::instance();
-	op->init("/home/hj/Dev_Env/Shuchuang/testinsert.db");
+	op->init("/home/huang_jian/Dev_Env/Shuchuang/testinsert.db");
 	insertByVector();
 	insertSingle();
 	insertByTransaction();
