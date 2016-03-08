@@ -27,7 +27,7 @@ bool CRegMsgHandler::receiveBytes(Timespan timeout)
 	ss.setReceiveTimeout(timeout);
 	try
 	{
-		if(ss.receiveBytes(buf, 512) <= 0)
+		if(ss.receiveBytes(buf, 511) <= 0)
 		{
 			if(m_type == 1 && m_socket->state == SocketTime::Connected)
 			{
@@ -46,7 +46,7 @@ bool CRegMsgHandler::receiveBytes(Timespan timeout)
 			while(ss.available())
 			{
 				memset(buf, 0, 512);
-				if(ss.receiveBytes(buf, 512) > 0)
+				if(ss.receiveBytes(buf, 511) > 0)
 				{
 					m_recv_buf += buf;
 					tracepoint();
