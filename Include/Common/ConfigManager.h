@@ -17,6 +17,8 @@ public:
 	CConfigManager();
 	~CConfigManager();
 	bool init(const std::string path);
+	bool resetConfig();
+	bool getAllConfig(Poco::JSON::Object::Ptr& config);
 	bool getConfig(const std::string configName, Poco::JSON::Object::Ptr& config);
 	bool getConfig(const std::string configName, Poco::JSON::Array::Ptr& config);
 	bool setConfig(const std::string configName, Poco::JSON::Object::Ptr config);

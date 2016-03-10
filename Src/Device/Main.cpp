@@ -59,12 +59,13 @@ int main(int argc, char** argv)
 	}
 	else
 	{
+		warnf("%s, %d: Uses default user database and operation database", __FILE__, __LINE__);
 #ifdef __SC_ARM__
-		userdata = "/mnt/nand1-1/Application/oprecord.db";
-		opdata = "/mnt/nand1-1/Application/user.db";
+		opdata = "/mnt/nand1-1/Application/oprecord.db";
+		userdata = "/mnt/nand1-1/Application/user.db";
 #else
-		userdata = "/home/huang_jian/Dev_Env/Shuchuang/user.db";
-		opdata = "/home/huang_jian/Dev_Env/Shuchuang/oprecord.db";
+		opdata = "/home/huang_jian/Dev_Env/Shuchuang/user.db";
+		userdata = "/home/huang_jian/Dev_Env/Shuchuang/oprecord.db";
 #endif
 	}
 	//初始化用户中心

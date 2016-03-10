@@ -2,7 +2,7 @@
 #include "Common/PrintLog.h"
 #include "Poco/Data/SQLite/Connector.h"
 #include "Poco/Data/RecordSet.h"
-#include <fstream>
+#include "Poco/File.h"
 using namespace Poco;
 using namespace Poco::Data;
 using namespace Poco::Data::Keywords;
@@ -66,11 +66,8 @@ bool CUserRecord::resetUser(const std::string& dbPath, const std::string& bakDbP
 		m_session_ptr->close();
 		delete m_session_ptr;
 	}
-	std::ifstream ifs(bakDbPath.c_str(), std::ios::in|std::ios::binary);
-	std::ofstream ofs(dbPath.c_str(), std::ios::out|std::ios::trunc|std::ios::binary);
-	ofs << ifs.rdbuf();
-	ifs.close();
-	ofs.close();
+	File backUpUserDB(bakDbPath);
+	backUpUserDB.copyTo(dbPath);
 	try
 	{
 		m_session_ptr = new Session("SQLite",dbPath);

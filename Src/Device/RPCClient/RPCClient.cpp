@@ -5,6 +5,7 @@
 #include "Device/Component/Task/TaskManager.h"
 #include "Device/Component/DeviceController.h"
 #include "Device/Component/Record/OperationManager.h"
+#include "Device/Component/System/SystemManager.h"
 #include "Poco/Dynamic/Var.h"
 #include "Poco/TaskNotification.h"
 #include "Poco/JSON/Object.h"
@@ -84,6 +85,7 @@ void CRPCClient::runTask()
 	CTaskManager* task = NULL;
 	CDeviceController* device = NULL;
 	COpManager*		record = NULL;	
+	CSystemManager* system = NULL;
 	DynamicStruct ds_request;
 	std::string token = "";
 	try
@@ -230,11 +232,6 @@ void CRPCClient::runTask()
 				if(device->checkDoor(param, detail))
 					result = true;
 			}
-			else if(method == DEVICE_METHOD_RESET)
-			{
-				if(device->resetConfig(param, detail))
-					result = true;
-			}
 			else if(method == DEVICE_METHOD_RESTART)
 			{
 			}
@@ -252,6 +249,22 @@ void CRPCClient::runTask()
 			if(method == RECORD_METHOD_GET)
 			{
 				if(record->getRecords(param, detail))
+					result = true;
+			}
+			else
+			{
+				result = false;
+				detail = "201";
+				goto done;
+			}
+		}
+		else if(component == COMPONENT_SYSTEM_STR)
+		{
+			if(system == NULL)
+				system = CSystemManager::instance();
+			if(method == SYSTEM_METHOD_RESET)
+			{
+				if(system->resetConfig(param, detail))
 					result = true;
 			}
 			else

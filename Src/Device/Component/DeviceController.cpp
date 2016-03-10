@@ -207,16 +207,6 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 	return true;
 }
 
-bool CDeviceController::resetConfig(JSON::Object::Ptr& param, std::string& detail)
-{
-
-	if(param->has("token"))
-	{
-		param->remove("token");
-	}
-	return true;
-}
-
 bool CDeviceController::errOn()
 {
 	if(m_fd == 0)

@@ -6,74 +6,71 @@
 #include "Poco/Dynamic/Struct.h"
 #include "Poco/Dynamic/VarHolder.h"
 #include <stdio.h>
+#include <iostream>
 using namespace Poco;
 int main()
 {
-	/*
-	JSON::Object::Ptr pObj = new JSON::Object;
-	JSON::Array::Ptr pArr = new JSON::Array;
-	DynamicStruct attr30;
-	attr30["a1"] = 123;
-	attr30["a2"] = "abc";
-	DynamicStruct attr31;
-	attr31["a3"] = 345;
-	attr31["a4"] = "cba";
-
-	pArr->add(attr30);
-	pArr->add(attr31);
-	
-	pObj->set("array", pArr);
-	DynamicStruct ds = *pObj;
-	printf("%s\n", ds.toString().c_str());
-
-	Dynamic::Array arr = *pArr;
-	for(unsigned int i = 0; i < arr.size(); i++)
-	{
-		Dynamic::Var var = arr[i];
-		printf("arr[%d]: %s\n", i, var.toString().c_str());
-	}
-	*/
-	initPrintLogger();
+	initPrintLogger("./testlog");
 	CConfigManager* config = CConfigManager::instance();
-	config->init("./testConfig");
-	
-	Poco::JSON::Object::Ptr pObj = new JSON::Object;
-	pObj->set("attr1", "aaa");
-	DynamicStruct attr2;
-	attr2["attr21"] = "abc";
-	attr2["attr22"] = "cba";
-	pObj->set("attr2", attr2);
-	JSON::Array::Ptr pArr = new JSON::Array;
-	DynamicStruct attr30;
-	attr30["a1"] = 123;
-	attr30["a2"] = "abc";
-	DynamicStruct attr31;
-	attr31["a3"] = 345;
-	attr31["a4"] = "cba";
-	pArr->add(attr30);
-	pArr->add(attr31);
-	JSON::Object::Ptr pConfig = new JSON::Object;
-	pConfig->set("array", pArr);
-	pConfig->set("object", pObj);
+	std::cout << "Config Editor is running." << std::endl;
+	std::cout << "Input config file path:";
+	std::string path = "";
+	std::cin >> path;
+	config->init(path);
+	JSON::Object::Ptr pConfig;
+	config->getAllConfig(pConfig);
 	DynamicStruct ds = *pConfig;
-	config->setConfig("array", pArr);
-	config->setConfig("array2", pArr);
-	config->setConfig("object", pObj);
-	config->setConfig("object2", pObj);
-	/*
-	JSON::Object::Ptr pObj = new JSON::Object;
-	config->getConfig("object", pObj);
-	DynamicStruct ds_obj = *pObj;
-	printf("object:\n%s\n", ds_obj.toString().c_str());
-	JSON::Array::Ptr pArr = new JSON::Array;
-	config->getConfig("array", pArr);
-	Dynamic::Array arr = *pArr;
-	for(unsigned int i = 0; i < arr.size(); i++)
+	std::cout << ds.toString().c_str() << std::endl;
+	std::cout << "1.Edit exists config\n2.Add new config" << std::endl;
+	int choice;
+	std::cin >> choice;
+	if(choice == 1)
 	{
-		Dynamic::Var var = arr[i];
-		printf("array[%d]:%s\n", i, var.toString().c_str());
+		std::cout << "Input config name:";
+		std::string configName = "";
+		std::cin >> configName;
 	}
-	*/
+	else if(choice == 2)
+	{
+		std::cout << "Input config name:";
+		std::string configName = "";
+		std::cin >> configName;
+		std::cout << "Add config, end with key name 'end'" << std::endl;
+		std::string confKey = "";
+		std::cout << "key:";
+		std::cin >> confKey;
+		JSON::Object::Ptr pConfObj = new JSON::Object;
+		while(confKey != "end")
+		{
+			std::cout << "Value type:1.string, 2.int, 3.array";
+			std::cin >> choice;
+			std::cout << "value:";
+			switch(choice)
+			{
+				case 1:
+				{
+					std::string confValue = "";
+					std::cin >> confValue;
+					pConfObj->set(confKey, confValue);
+					break;
+				}
+				case 2:
+				{
+					int confValue = 0;
+					std::cin >> confValue;
+					pConfObj->set(confKey, confValue);
+					break;
+				}
+			}
+			std::cout << "key:";
+			std::cin >> confKey;
+		}
+		config->setConfig(configName, pConfObj);
+	}
+	else
+	{
+	}
+
 	return 0;
 }
 

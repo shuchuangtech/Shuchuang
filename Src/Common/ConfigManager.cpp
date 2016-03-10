@@ -58,6 +58,43 @@ bool CConfigManager::init(const std::string path)
 	}
 }
 
+bool CConfigManager::resetConfig()
+{
+	if(m_config.isNull())
+		return false;
+	Mutex::ScopedLock lock(m_mutex);
+	std::string str = m_config->getString("root");
+	JSON::Parser parser;
+	Dynamic::Var var = parser.parse(str);
+	JSON::Object::Ptr pObj = var.extract<JSON::Object::Ptr>();
+	if(pObj->has("Reset") && pObj->isObject("Reset"))
+	{
+		JSON::Object::Ptr config = pObj->getObject("Reset");
+		std::string backupConfig = config->getValue<std::string>("Config");
+		File file(backupConfig);
+		file.copyTo(m_path);
+		infof("%s, %d: Config manager reset config successfully.", __FILE__, __LINE__);
+		return true;
+	}
+	else
+	{
+		warnf("%s, %d: Config manager reset config failed.", __FILE__, __LINE__);
+		return false;
+	}
+}
+
+bool CConfigManager::getAllConfig(JSON::Object::Ptr& config)
+{
+	if(m_config.isNull())
+		return false;
+	Mutex::ScopedLock lock(m_mutex);
+	std::string str = m_config->getString("root");
+	JSON::Parser parser;
+	Dynamic::Var var = parser.parse(str);
+	config = var.extract<JSON::Object::Ptr>();
+	return true;
+}
+
 bool CConfigManager::getConfig(const std::string configName, JSON::Object::Ptr& config)
 {
 	if(m_config.isNull() || configName.empty())

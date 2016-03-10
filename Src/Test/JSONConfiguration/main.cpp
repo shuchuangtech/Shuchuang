@@ -34,20 +34,33 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 		int ret = scanf("%d", &i);
 		if(ret && i == 1)
 		{
-			pDataPath->set("User", "/mnt/nand1-1/Application/user.db");
-			pDataPath->set("Operation", "/mnt/nand1-1/Application/oprecord.db");
+			pDataPath->set("User", "/mnt/nand1-2/Application/user.db");
+			pDataPath->set("Operation", "/mnt/nand1-2/Application/oprecord.db");
 		}
 		else if(ret && i == 2)
 		{
-			pDataPath->set("User", "/home/hj/Dev_Env/Shuchuang/user.db");
-			pDataPath->set("Operation", "/home/hj/Dev_Env/Shuchuang/oprecord.db");
+			pDataPath->set("User", "/home/huang_jian/Dev_Env/Shuchuang/user.db");
+			pDataPath->set("Operation", "/home/huang_jian/Dev_Env/Shuchuang/oprecord.db");
 		}
 		//JSON::Object::Ptr nil = NULL;
+		JSON::Object::Ptr pReset = new JSON::Object;
+		if(ret && i == 1)
+		{
+			pReset->set("UserDB", "/mnt/nand1-2/Application/backup/user.db");
+			pReset->set("Config", "/mnt/nand1-2/Application/backup/global.conf");
+		}
+		else if(ret && i == 2)
+		{
+			pReset->set("UserDB", "/home/huang_jian/Dev_Env/Shuchuang/backup/user.db");
+			pReset->set("Config", "/home/huang_jian/Dev_Env/Shuchuang/backup/global.conf");
+		}
+
 		//pTasks->add(nil);
 		pNode->set("Tasks", pTasks);
 		pNode->set("DeviceInfo", pDeviceInfo);
 		pNode->set("RegProxy", pRegProxy);
 		pNode->set("DataPath", pDataPath);
+		pNode->set("Reset", pReset);
 	}
 	else if(choice == 2)
 	{
@@ -62,10 +75,14 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 
 		JSON::Object::Ptr pHTTPServer = new JSON::Object;
 		pHTTPServer->set("port", 8777);
+		
+		JSON::Object::Ptr pUpdate = new JSON::Object;
+		pUpdate->set("DirPath", "./update");
 
 		pNode->set("RegServer", pRegServer);
 		pNode->set("HTTPSAcceptor", pHTTPSAcceptor);
 		pNode->set("HTTPServer", pHTTPServer);
+		pNode->set("Update", pUpdate);
 	}
 	pRoot->set("root", pNode);
 }
