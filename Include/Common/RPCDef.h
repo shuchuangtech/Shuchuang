@@ -53,6 +53,12 @@ request
 #define SYSTEM_VERSION_STR "version"
 #define SYSTEM_BUILDTIME_STR "buildtime"
 #define SYSTEM_CHECKSUM_STR "checksum"
+//update
+#define UPDATE_TYPE_STR "type"
+#define UPDATE_VERSION_STR "version"
+#define UPDATE_BUILDTIME_STR "buildtime"
+#define UPDATE_CHECKSUM_STR "checksum"
+#define UPDATE_NEWFEATURE_STR "newfeature"
 //Component>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #define COMPONENT_USER_STR "user"
 #define COMPONENT_TASK_STR "task"
@@ -60,6 +66,7 @@ request
 #define COMPONENT_RECORD_STR "record"
 #define COMPONENT_SERVER_STR "server"
 #define COMPONENT_SYSTEM_STR "system"
+#define COMPONENT_UPDATE_STR "update"
 //Method>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 //user
 #define USER_METHOD_LOGIN "login"
@@ -86,6 +93,8 @@ request
 //system
 #define SYSTEM_METHOD_RESET "reset"
 #define SYSTEM_METHOD_UPDATE "update"
+//update
+#define UPDATE_METHOD_CHECK "check"
 //result>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 #define RESULT_GOOD_STR "good"
 #define RESULT_FAIL_STR "failed"

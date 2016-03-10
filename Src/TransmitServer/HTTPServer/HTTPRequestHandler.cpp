@@ -1,5 +1,6 @@
 #include "TransmitServer/HTTPServer/HTTPRequestHandler.h"
 #include "TransmitServer/RegServer/RequestInfo.h"
+#include "TransmitServer/UpdateManager/UpdateManager.h"
 #include "Common/RPCDef.h"
 #include "Common/PrintLog.h"
 #include "Poco/Dynamic/Var.h"
@@ -145,6 +146,36 @@ void CHTTPRequestHandler::handleRequest(HTTPServerRequest& request, HTTPServerRe
 			}
 			res->remove(KEY_PARAM_STR);
 			res->set(KEY_PARAM_STR, param);
+		}
+		else
+		{
+			res->set(KEY_RESULT_STR, RESULT_FAIL_STR);
+			res->set(KEY_DETAIL_STR, "106");
+		}
+		DynamicStruct ds_res = *res;
+		infof("%s, %d: Send Http response[%s].", __FILE__, __LINE__, ds_res.toString().c_str());
+		response.sendBuffer(ds_res.toString().c_str(), ds_res.toString().length());
+		res = NULL;
+		return;
+	}
+	else if(component == COMPONENT_UPDATE_STR)
+	{
+		std::string detail = "";
+		if(method == UPDATE_METHOD_CHECK)
+		{
+			CUpdateManager* update_manager = CUpdateManager::instance();
+			JSON::Object::Ptr pParam = obj->getObject(KEY_PARAM_STR);
+			if(update_manager->checkUpdate(pParam, detail))
+			{
+				res->set(KEY_RESULT_STR, RESULT_GOOD_STR);
+				res->remove(KEY_PARAM_STR);
+				res->set(KEY_PARAM_STR, pParam);
+			}
+			else
+			{
+				res->set(KEY_RESULT_STR, RESULT_FAIL_STR);
+				res->set(KEY_DETAIL_STR, detail);
+			}
 		}
 		else
 		{

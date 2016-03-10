@@ -1,6 +1,7 @@
 #include "TransmitServer/RegServer/RegServer.h"
 #include "TransmitServer/DeviceManager.h"
 #include "TransmitServer/HTTPServer/HTTPServer.h"
+#include "TransmitServer/UpdateManager/UpdateManager.h"
 #include "Common/PrintLog.h"
 #include "Poco/Semaphore.h"
 #include "Poco/Types.h"
@@ -26,6 +27,8 @@ int main(int argc, char** argv)
 	reg_server->start();
 	CHTTPServer* http_server = CHTTPServer::instance();
 	http_server->start();
+	CUpdateManager* update_manager = CUpdateManager::instance();
+	update_manager->init();
 	try{
 		Poco::Semaphore sem(0, 1);
 		sem.wait();

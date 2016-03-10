@@ -31,7 +31,8 @@ SRC_DIR += Src/Common \
 		   Src/TransmitServer \
 		   Src/TransmitServer/RegServer \
 		   Src/TransmitServer/HTTPServer \
-		   Src/TransmitServer/HTTPSAcceptor
+		   Src/TransmitServer/HTTPSAcceptor \
+		   Src/TransmitServer/UpdateManager
 else
 TEST = $(test)
 SRC_DIR +=Src/Test/$(test) \
