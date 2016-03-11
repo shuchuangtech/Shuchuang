@@ -1,4 +1,4 @@
-#include "Device/RequestNotification.h"
+#include "Device/Notification/RequestNotification.h"
 #include "Common/PrintLog.h"
 using namespace Poco;
 RequestNotification::RequestNotification(UInt64 id, std::string request, JSON::Object::Ptr& response)

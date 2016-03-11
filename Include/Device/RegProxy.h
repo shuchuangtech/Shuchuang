@@ -5,10 +5,10 @@
 #include "Poco/Net/StreamSocket.h"
 #include "Poco/Net/SecureStreamSocket.h"
 #include "Poco/Timestamp.h"
-#include "Device/RequestNotification.h"
+#include "Device/Notification/RequestNotification.h"
 #include "Poco/NotificationCenter.h"
 #include "Poco/SingletonHolder.h"
-#include "Device/RPCServer.h"
+#include "Device/RPC/RPCServer.h"
 class CRegProxy
 {
 public:

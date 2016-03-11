@@ -15,8 +15,8 @@ TEST = Device
 SRC_DIR += Src/Common \
 		  Src/Device \
 		  Src/Device/RegProxy \
-		  Src/Device/RPCServer \
-		  Src/Device/RPCClient \
+		  Src/Device/Notification \
+		  Src/Device/RPC \
 		  Src/Device/Network \
 		  Src/Device/Component \
 		  Src/Device/Component/User \

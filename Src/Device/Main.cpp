@@ -1,6 +1,6 @@
 #include <iostream>
 #include "Device/RegProxy.h"
-#include "Device/RPCServer.h"
+#include "Device/RPC/RPCServer.h"
 #include "Device/Component/User/UserManager.h"
 #include "Device/Component/Task/TaskManager.h"
 #include "Device/Component/Record/OperationManager.h"
