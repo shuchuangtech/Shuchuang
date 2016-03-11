@@ -6,6 +6,7 @@
 #include "Poco/Thread.h"
 #include "Poco/JSON/Object.h"
 #include "Poco/Mutex.h"
+#include "Device/Notification/MessageNotification.h"
 class COpManager : public Poco::Runnable
 {
 public:
@@ -24,6 +25,7 @@ public:
 	bool getRecords(Poco::JSON::Object::Ptr& param, std::string& detail);
 	//interface to DeviceControler
 	bool addRecord(OperationRecordNode& node);
+	void handleNotification(MessageNotification* pNf);
 private:
 	void writeAllRecords();
 	COperationRecord*	m_op_record;

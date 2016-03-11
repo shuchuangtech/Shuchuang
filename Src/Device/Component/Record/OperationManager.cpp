@@ -5,6 +5,8 @@
 #include "Poco/Timespan.h"
 #include "Poco/Timestamp.h"
 #include "Poco/JSON/Array.h"
+#include "Poco/NotificationCenter.h"
+#include "Poco/Observer.h"
 using namespace Poco;
 COpManager::COpManager()
 {
@@ -20,6 +22,8 @@ COpManager::~COpManager()
 bool COpManager::init(const std::string& dbPath)
 {
 	m_op_record = COperationRecord::instance();
+	Observer<COpManager, MessageNotification> ob(*this, &COpManager::handleNotification);
+	NotificationCenter::defaultCenter().addObserver(ob);
 	return m_op_record->init(dbPath);
 }
 
@@ -89,6 +93,17 @@ void COpManager::run()
 			lastDeleteTime = now;
 		}
 		Thread::sleep(60 * 1000);
+	}
+}
+
+void COpManager::handleNotification(MessageNotification* pNf)
+{
+	MessageNotification::Ptr pNoti(pNf);
+	std::string notiName = pNoti->getName();
+	if(notiName == "SystemWillReboot")
+	{
+		infof("%s, %d: OpManager receive SystemWillReboot notification, now write all op records", __FILE__, __LINE__);
+		writeAllRecords();
 	}
 }
 
