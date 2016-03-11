@@ -5,6 +5,7 @@
 #include "Device/Component/Task/TaskManager.h"
 #include "Device/Component/Record/OperationManager.h"
 #include "Device/Component/DeviceController.h"
+#include "Device/Component/System/SystemManager.h"
 #include "Poco/Types.h"
 #include "Poco/Thread.h"
 #include "Common/ConfigManager.h"
@@ -42,6 +43,9 @@ int main(int argc, char** argv)
 	//setPrintLogLevel(LEVEL_INFO);
 #endif
 	infof("Shuchuang application build at %s, git version: sha1(%s) dirty(%s)", getMKTIME(), getGITSHA1(), getGITDIRTY());
+	//system manager
+	CSystemManager* system = CSystemManager::instance();
+	//synchonize time
 	//init config manager
 	CConfigManager* config = CConfigManager::instance();
 	config->init(configPath.c_str());

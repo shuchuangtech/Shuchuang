@@ -54,6 +54,19 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 			pReset->set("UserDB", "/home/huang_jian/Dev_Env/Shuchuang/backup/user.db");
 			pReset->set("Config", "/home/huang_jian/Dev_Env/Shuchuang/backup/global.conf");
 		}
+		//Update
+		JSON::Object::Ptr pUpdate = new JSON::Object;
+		pUpdate->set("server", "shuchuangtech.com");
+		pUpdate->set("username", "sc");
+		pUpdate->set("password", "SCDevicePublic123");
+		if(ret && i == 1)
+		{
+			pUpdate->set("appPath", "/mnt/nand1-2/Application/DeviceTest");
+		}
+		else if(ret && i == 2)
+		{
+			pUpdate->set("appPath", "/home/huang_jian/Dev_Env/Shuchuang/DeviceTest");
+		}
 
 		//pTasks->add(nil);
 		pNode->set("Tasks", pTasks);
@@ -61,6 +74,7 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 		pNode->set("RegProxy", pRegProxy);
 		pNode->set("DataPath", pDataPath);
 		pNode->set("Reset", pReset);
+		pNode->set("Update", pUpdate);
 	}
 	else if(choice == 2)
 	{

@@ -30,17 +30,65 @@ void resetSystem()
 
 }
 
+void updateSystem()
+{
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
+	/*
+	std::cout << "version:";
+	std::string version = "";
+	std::cin >> version;
+
+	std::cout << "type:";
+	std::string type = "";
+	std::cin >> type;
+
+	std::cout << "buildtime:";
+	char buildtime_str[64];
+	fflush(stdin);
+	std::cin.getline(buildtime_str, 64);
+	std::string buildtime = buildtime_str;
+
+	std::cout << "checksum:";
+	std::string checksum;
+	std::cin >> checksum;
+*/
+	DynamicStruct ds;
+	ds["type"] = "request";
+	ds["action"] = "system.update";
+	DynamicStruct param;
+	param["uuid"] = g_uuid;
+	param["token"] = g_token;
+	param["type"] = "sc-lock0001";
+	param["version"] = "6c9923ca";
+	param["checksum"] = "057fdde6e79dbcacbc6e8ef31ee78b37";
+	param["buildtime"] = "2016-03-11 17:44:41 +0800";
+	ds["param"] = param;
+
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
+}
+
 void showSystemOperation()
 {
 	while(1)
 	{
-		std::cout << "Action:" << std::endl << "1.Reset" << std::endl << "0.Return" << std::endl;
+		std::cout << "Action:" << std::endl << "1.Reset" << std::endl << "2.Update" << std::endl << "0.Return" << std::endl;
 		int choice;
 		std::cin >> choice;
 		switch(choice)
 		{
 			case 1:
 				resetSystem();
+				break;
+			case 2:
+				updateSystem();
 				break;
 			case 0:
 				return;

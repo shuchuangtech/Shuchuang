@@ -2,6 +2,7 @@
 #define __DEVICE_COMPONENT_SYSTEM_MANAGER_H__
 #include "Poco/SingletonHolder.h"
 #include "Poco/JSON/Object.h"
+#include "Poco/Timer.h"
 class CSystemManager
 {
 public:
@@ -15,8 +16,19 @@ public:
 	//user interface
 	bool resetConfig(Poco::JSON::Object::Ptr& param, std::string& detail);
 	bool startUpdate(Poco::JSON::Object::Ptr& param, std::string& detail);
+	void rebootSystem();
 	//internal interface
 	bool synchronizeTime();
+	std::string getFileMD5(const std::string& filePath);
+	//timerHandler
+	void handleUpdate(Poco::Timer& timer);
+private:
+	Poco::Timer m_timer;
+	bool m_updating;
+	std::string m_version;
+	std::string m_type;
+	std::string m_checksum;
+	std::string m_buildtime;
 };
 #endif
 

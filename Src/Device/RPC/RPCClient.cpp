@@ -267,6 +267,11 @@ void CRPCClient::runTask()
 				if(system->resetConfig(param, detail))
 					result = true;
 			}
+			if(method == SYSTEM_METHOD_UPDATE)
+			{
+				if(system->startUpdate(param, detail))
+					result = true;
+			}
 			else
 			{
 				result = false;
