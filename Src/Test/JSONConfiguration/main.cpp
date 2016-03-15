@@ -62,10 +62,12 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 		if(ret && i == 1)
 		{
 			pUpdate->set("appPath", "/mnt/nand1-2/Application/DeviceTest");
+			pUpdate->set("infoPath", "/mnt/nand1-2/Application/Version.info");
 		}
 		else if(ret && i == 2)
 		{
 			pUpdate->set("appPath", "/home/huang_jian/Dev_Env/Shuchuang/DeviceTest");
+			pUpdate->set("infoPath", "/home/huang_jian/Dev_Env/Shuchuang/Version.info");
 		}
 
 		//pTasks->add(nil);

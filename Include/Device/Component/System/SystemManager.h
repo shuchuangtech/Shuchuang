@@ -16,6 +16,7 @@ public:
 	//user interface
 	bool resetConfig(Poco::JSON::Object::Ptr& param, std::string& detail);
 	bool startUpdate(Poco::JSON::Object::Ptr& param, std::string& detail);
+	bool getDevVersion(Poco::JSON::Object::Ptr& param, std::string& detail);
 	void rebootSystem();
 	//internal interface
 	bool synchronizeTime();
@@ -23,12 +24,9 @@ public:
 	//timerHandler
 	void handleUpdate(Poco::Timer& timer);
 private:
-	Poco::Timer m_timer;
+	Poco::Timer* m_timer;
 	bool m_updating;
-	std::string m_version;
-	std::string m_type;
-	std::string m_checksum;
-	std::string m_buildtime;
+	std::string m_update_version;
 };
 #endif
 

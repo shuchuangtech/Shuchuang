@@ -1,4 +1,7 @@
 #include "TransmitServer/UpdateManager/UpdateManager.h"
+#include "Poco/JSON/Parser.h"
+#include "Poco/JSON/Array.h"
+#include "Poco/Util/JSONConfiguration.h"
 #include "Common/PrintLog.h"
 #include "Common/ConfigManager.h"
 #include "Common/RPCDef.h"
@@ -60,39 +63,26 @@ bool CUpdateManager::checkUpdate(JSON::Object::Ptr& param, std::string& detail)
 		warnf("%s, %d: UpdateManager checkUpdate failed, %s update info file not exists.", __FILE__, __LINE__, devType.c_str());
 		return false;
 	}
-	FileInputStream fis(path.toString());
-	char t_buf[128] = {0, };
-	JSON::Object::Ptr pUpdate = new JSON::Object;
-	//version
-	fis.getline(t_buf, 128);
-	std::string version = t_buf;
-	pUpdate->set(UPDATE_VERSION_STR, version);
-	memset(t_buf, 0, 128);
-	//buildtime
-	fis.getline(t_buf, 128);
-	std::string timestamp = t_buf;
-	pUpdate->set(UPDATE_BUILDTIME_STR, timestamp);
-	memset(t_buf, 0, 128);
-	//checksum
-	fis.getline(t_buf, 128);
-	std::string checksum = t_buf;
-	pUpdate->set(UPDATE_CHECKSUM_STR, checksum);
-	JSON::Array::Ptr pNew = new JSON::Array;
-	while(1)
+	Util::JSONConfiguration updateConf;
+	try
 	{
-		memset(t_buf, 0, 128);
-		fis.getline(t_buf, 128);
-		if(!fis.eof())
-		{
-			std::string newfeature = t_buf;
-			pNew->add(newfeature);
-		}
-		else
-		{
-			break;
-		}
+		updateConf.load(path.toString());
 	}
-	fis.close();
+	catch(Exception& e)
+	{
+		detail = "453";
+		warnf("%s, %d: Load JSON Configuration file failed.", __FILE__, __LINE__);
+		return false;
+	}
+	std::string version = updateConf.getString(UPDATE_VERSION_STR);
+	std::string buildtime = updateConf.getString(UPDATE_BUILDTIME_STR);
+	JSON::Object::Ptr pUpdate = new JSON::Object;
+	pUpdate->set(UPDATE_VERSION_STR, version);
+	pUpdate->set(UPDATE_BUILDTIME_STR, buildtime);
+	std::string newfeature = updateConf.getRawString(UPDATE_NEWFEATURE_STR);
+	JSON::Parser parser;
+	Dynamic::Var var = parser.parse(newfeature);
+	JSON::Array::Ptr pNew = var.extract<JSON::Array::Ptr>();
 	pUpdate->set(UPDATE_NEWFEATURE_STR, pNew);
 	param->set("update", pUpdate);
 	return true;

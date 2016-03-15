@@ -93,6 +93,7 @@ request
 //system
 #define SYSTEM_METHOD_RESET "reset"
 #define SYSTEM_METHOD_UPDATE "update"
+#define SYSTEM_METHOD_VERSION "version"
 //update
 #define UPDATE_METHOD_CHECK "check"
 //result>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>

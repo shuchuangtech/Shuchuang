@@ -6,6 +6,7 @@
 #include "Poco/Net/SecureStreamSocket.h"
 #include "Poco/Timestamp.h"
 #include "Device/Notification/RequestNotification.h"
+#include "Device/Notification/MessageNotification.h"
 #include "Poco/NotificationCenter.h"
 #include "Poco/SingletonHolder.h"
 #include "Device/RPC/RPCServer.h"
@@ -34,6 +35,7 @@ public:
 	void start();
 	void stop();
 	void handleNf(RequestNotification* pNf);
+	void handleMessage(MessageNotification *pNf);
 private:
 	bool registerToServer();
 	bool getRegisterToken();

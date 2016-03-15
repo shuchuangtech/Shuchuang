@@ -62,12 +62,33 @@ void updateSystem()
 	DynamicStruct param;
 	param["uuid"] = g_uuid;
 	param["token"] = g_token;
-	param["type"] = "sc-lock0001";
-	param["version"] = "6c9923ca";
-	param["checksum"] = "057fdde6e79dbcacbc6e8ef31ee78b37";
-	param["buildtime"] = "2016-03-11 17:44:41 +0800";
+	std::string version = "";
+	std::cout << "update version:";
+	std::cin >> version;
+	param["version"] = version;
 	ds["param"] = param;
 
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
+		return;
+	}
+}
+
+void checkVersion()
+{
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
+	DynamicStruct ds;
+	ds["type"] = "request";
+	ds["action"] = "system.version";
+	DynamicStruct param;
+	param["uuid"] = g_uuid;
+	param["token"] = g_token;
+	ds["param"] = param;
 	if(!sendRequest(ds.toString()))
 	{
 		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
@@ -79,7 +100,7 @@ void showSystemOperation()
 {
 	while(1)
 	{
-		std::cout << "Action:" << std::endl << "1.Reset" << std::endl << "2.Update" << std::endl << "0.Return" << std::endl;
+		std::cout << "Action:" << std::endl << "1.Reset" << std::endl << "2.Update" << std::endl << "3.Check Device Version" << std::endl << "0.Return" << std::endl;
 		int choice;
 		std::cin >> choice;
 		switch(choice)
@@ -89,6 +110,9 @@ void showSystemOperation()
 				break;
 			case 2:
 				updateSystem();
+				break;
+			case 3:
+				checkVersion();
 				break;
 			case 0:
 				return;

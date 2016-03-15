@@ -44,6 +44,17 @@ CRegProxy::~CRegProxy()
 	}
 }
 
+void CRegProxy::handleMessage(MessageNotification* pNf)
+{
+	MessageNotification::Ptr pNoti(pNf);
+	if(pNoti->getName() == "SystemWillReboot")
+	{
+		infof("%s, %d: RegProxy receive SystemWillReboot notification, now disconnect from server.", __FILE__, __LINE__);
+		stop();
+		dealError(PLAIN_SOCKET);
+	}
+}
+
 void CRegProxy::handleNf(RequestNotification* pNf)
 {
 	RequestNotification::Ptr p(pNf);
@@ -111,6 +122,8 @@ void CRegProxy::start()
 	}
 	Observer<CRegProxy, RequestNotification> observer(*this, &CRegProxy::handleNf);
 	m_rpc->addObserver(observer);
+	Observer<CRegProxy, MessageNotification> ob(*this, &CRegProxy::handleMessage);
+	NotificationCenter::defaultCenter().addObserver(ob);
 	CDeviceController::instance()->errOn();
 	m_timer.setPeriodicInterval(0);
 	m_timer.setStartInterval(500);

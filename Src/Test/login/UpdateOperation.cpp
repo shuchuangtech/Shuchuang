@@ -11,7 +11,7 @@ void checkUpdate()
 	ds["type"] = "request";
 	ds["action"] = "update.check";
 	DynamicStruct param;
-	param["type"] = "sc-lock01";
+	param["type"] = "sc-lock0001";
 	param["uuid"] = "any";
 	ds["param"] = param;
 	if(!sendRequest(ds.toString()))

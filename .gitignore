@@ -13,7 +13,6 @@ Bin
 Build/obj
 Lib
 Compile
-Config
 log
 my.crt
 my.key
