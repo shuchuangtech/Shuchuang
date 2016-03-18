@@ -158,6 +158,26 @@ void CRPCClient::runTask()
 			if(user->passwd(param, detail))
 				result = true;
 		}
+		else if(method == USER_METHOD_ADD)
+		{
+			if(user->addUser(param, detail))
+				result = true;
+		}
+		else if(method == USER_METHOD_DELETE)
+		{
+			if(user->deleteUser(param, detail))
+				result = true;
+		}
+		else if(method == USER_METHOD_TOPUP)
+		{
+			if(user->topUpUser(param, detail))
+				result = true;
+		}
+		else if(method == USER_METHOD_LIST)
+		{
+			if(user->listUser(param, detail))
+				result = true;
+		}
 		else
 		{
 			result = false;
@@ -184,6 +204,14 @@ void CRPCClient::runTask()
 		}
 		if(component == COMPONENT_TASK_STR)
 		{	
+			//component task need admin authority
+			if(user->userAuthority(token) != CUserManager::USER_AUTHORITY_ADMIN)
+			{
+				detail = "403";
+				result = false;
+				param->remove(KEY_TOKEN_STR);
+				goto done;
+			}
 			if(task == NULL)
 				task = CTaskManager::instance();
 			if(method == TASK_METHOD_ADD)
@@ -210,8 +238,10 @@ void CRPCClient::runTask()
 			{
 				result = false;
 				detail = "201";
+				param->remove(KEY_TOKEN_STR);
 				goto done;
 			}
+			param->remove(KEY_TOKEN_STR);
 		}
 		else if(component == COMPONENT_DEVICE_STR)
 		{
@@ -239,8 +269,10 @@ void CRPCClient::runTask()
 			{
 				result = false;
 				detail = "201";
+				param->remove(KEY_TOKEN_STR);
 				goto done;
 			}
+			param->remove(KEY_TOKEN_STR);
 		}
 		else if(component == COMPONENT_RECORD_STR)
 		{
@@ -255,11 +287,20 @@ void CRPCClient::runTask()
 			{
 				result = false;
 				detail = "201";
+				param->remove(KEY_TOKEN_STR);
 				goto done;
 			}
+			param->remove(KEY_TOKEN_STR);
 		}
 		else if(component == COMPONENT_SYSTEM_STR)
 		{
+			if(user->userAuthority(token) != CUserManager::USER_AUTHORITY_ADMIN)
+			{
+				detail = "403";
+				result = false;
+				param->remove(KEY_TOKEN_STR);
+				goto done;
+			}
 			if(system == NULL)
 				system = CSystemManager::instance();
 			if(method == SYSTEM_METHOD_RESET)
@@ -281,14 +322,17 @@ void CRPCClient::runTask()
 			{
 				result = false;
 				detail = "201";
+				param->remove(KEY_TOKEN_STR);
 				goto done;
 			}
+			param->remove(KEY_TOKEN_STR);
 		}
 		else
 		{
 			warnf("%s, %d: Invalid component.", __FILE__, __LINE__);
 			result = false;
 			detail = "200";
+			param->remove(KEY_TOKEN_STR);
 			goto done;
 		}
 	}

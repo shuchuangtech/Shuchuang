@@ -12,8 +12,8 @@ CDeviceController::CDeviceController()
 {
 	m_fd = 0;
 	m_door_open = false;
-	m_user_record = CUserRecord::instance();
 	m_op_manager = COpManager::instance();
+	m_user_manager = CUserManager::instance();
 }
 
 CDeviceController::~CDeviceController()
@@ -113,6 +113,22 @@ bool CDeviceController::openDoor(JSON::Object::Ptr& param, std::string& detail)
 		detail = "420";
 		return false;
 	}
+	if(m_door_open)
+	{
+		return true;
+	}
+	std::string token = "";
+	if(!param.isNull())
+	{
+		token = param->getValue<std::string>(REG_TOKEN_STR);
+		param->remove(REG_TOKEN_STR);
+		if(!m_user_manager->canUserOpenDoor(token))
+		{
+			warnf("%s, %d: User cannot open door.", __FILE__, __LINE__);
+			detail = "421";
+			return false;
+		}
+	}
 #ifdef __SC_ARM__
 #ifdef __SC_ON_NORMAL_CLOSE__
 	ioctl(m_fd, SC_RELAY_ON, 0);
@@ -140,19 +156,15 @@ bool CDeviceController::openDoor(JSON::Object::Ptr& param, std::string& detail)
 		//manual
 	{
 		op.schema = 0;
-		UserRecordNode user = {"", "", 0, 0, 0, "", 0, 0};
-		user.token = param->getValue<std::string>("token");
-		if(m_user_record->getUserByToken(user) > 0)
+		std::string username = "";
+		if(m_user_manager->getUserNameFromToken(token, username))
 		{
-			op.username = user.username;
+			op.username = username;
 		}
+		m_user_manager->userOpenDoor(token);
 		infof("%s, %d: Door opened by manual[User:%s].", __FILE__, __LINE__, op.username.c_str());
 	}
 	m_op_manager->addRecord(op);
-	if(param->has("token"))
-	{
-		param->remove("token");
-	}
 	return true;
 }
 
@@ -163,6 +175,16 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 		warnf("%s, %d: Maybe should call openDevice first.", __FILE__, __LINE__);
 		detail = "420";
 		return false;
+	}
+	if(!m_door_open)
+	{
+		return true;
+	}
+	std::string token;
+	if(!param.isNull())
+	{
+		token = param->getValue<std::string>(REG_TOKEN_STR);
+		param->remove(REG_TOKEN_STR);
 	}
 #ifdef __SC_ARM__
 #ifdef __SC_ON_NORMAL_CLOSE__
@@ -191,19 +213,15 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 		//manual
 	{
 		op.schema = 0;
-		UserRecordNode user = {"", "", 0, 0, 0, "", 0, 0};
-		user.token = param->getValue<std::string>("token");
-		if(m_user_record->getUserByToken(user) > 0)
+		std::string username;
+		if(m_user_manager->getUserNameFromToken(token, username))
 		{
-			op.username = user.username;
+			op.username = username;
 		}
 		infof("%s, %d: Door closed by manual[User:%s].", __FILE__, __LINE__, op.username.c_str());
 	}
 	m_op_manager->addRecord(op);
-	if(param->has("token"))
-	{
-		param->remove("token");
-	}
+	param->remove("token");
 	return true;
 }
 

@@ -1,7 +1,6 @@
 #include "Device/Component/Record/OperationManager.h"
 #include "Common/PrintLog.h"
 #include "Common/RPCDef.h"
-#include "Poco/DateTime.h"
 #include "Poco/Timespan.h"
 #include "Poco/Timestamp.h"
 #include "Poco/JSON/Array.h"
@@ -9,10 +8,10 @@
 #include "Poco/Observer.h"
 using namespace Poco;
 COpManager::COpManager()
+:m_lastDeleteTime(2000, 1, 1, 0, 0, 0)
 {
 	m_started = false;
 	m_op_record = NULL;
-	m_thread = NULL;
 }
 
 COpManager::~COpManager()
@@ -35,9 +34,10 @@ bool COpManager::start()
 		return false;
 	}
 	m_cache_map.clear();
-	m_thread = new Thread("OpManager");
+	m_timer = new Timer(0, 60 * 1000);
 	m_started = true;
-	m_thread->start(*this);
+	TimerCallback<COpManager> callBack(*this, &COpManager::timerCallback);
+	m_timer->start(callBack);
 	infof("%s, %d: Operation record manager start successfully.", __FILE__, __LINE__);
 	return true;
 }
@@ -50,7 +50,7 @@ bool COpManager::stop()
 		return false;
 	}
 	writeAllRecords();
-	m_thread->join();
+	m_timer->stop();
 	m_started = false;
 	infof("%s, %d: Operation record manager stop successfully.", __FILE__, __LINE__);
 	return true;
@@ -69,30 +69,25 @@ void COpManager::writeAllRecords()
 	}
 }
 
-void COpManager::run()
+void COpManager::timerCallback(Timer& timer)
 {
 	//set lastCheckTime to 2000-1-1 0:0:0 to triger process
-	DateTime lastDeleteTime(2000, 1, 1, 0, 0, 0);
-	while(m_started)
+	writeAllRecords();
+	DateTime now;
+	Timespan diff = now - m_lastDeleteTime;
+	if(diff.days() > 0)
 	{
-		writeAllRecords();
-		DateTime now;
-		Timespan diff = now - lastDeleteTime;
-		if(diff.days() > 0)
-		{
-			DateTime today(now.year(),
-						now.month(),
-						now.day(),
-						0,
-						0,
-						0);
-			Timespan thirtyday(30, 0, 0, 0, 0);
-			DateTime deleteDay = today - thirtyday;
-			int ret = m_op_record->deleteRecordsByDate(deleteDay);
-			infof("%s, %d: Operation %d records on %04d-%02d-%02d deleted.", __FILE__, __LINE__, ret, deleteDay.year(), deleteDay.month(), deleteDay.day());
-			lastDeleteTime = now;
-		}
-		Thread::sleep(60 * 1000);
+		DateTime today(now.year(),
+					now.month(),
+					now.day(),
+					0,
+					0,
+					0);
+		Timespan thirtyday(30, 0, 0, 0, 0);
+		DateTime deleteDay = today - thirtyday;
+		int ret = m_op_record->deleteRecordsByDate(deleteDay);
+		infof("%s, %d: Operation %d records on %04d-%02d-%02d deleted.", __FILE__, __LINE__, ret, deleteDay.year(), deleteDay.month(), deleteDay.day());
+		m_lastDeleteTime = now;
 	}
 }
 

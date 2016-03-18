@@ -4,6 +4,8 @@
 #include "Poco/JSON/Parser.h"
 #include "Common/PrintLog.h"
 #include "Poco/SHA1Engine.h"
+#include "Poco/DateTime.h"
+
 using namespace Poco;
 extern std::string g_uuid;
 extern std::string g_username;
@@ -14,14 +16,16 @@ extern std::string generateMD5Password(std::string prefix, std::string password,
 void login();
 void logout();
 void passwd();
-
-
+void addUser();
+void deleteUser();
+void topUpUser();
+void listUser();
 void showUserOperation()
 {
 	while(1)
 	{
 		std::cout << "Action:" << std::endl << "1.Login" << std::endl << "2.Change password" << std::endl;
-		std::cout << "3.Logout" << std::endl << "0.Return" << std::endl;
+		std::cout << "3.Logout" << std::endl << "4.Add user" << std::endl << "5.Delete user"<< std::endl << "6.Top up user" << std::endl << "7.List user" << std::endl  << "0.Return" << std::endl;
 		int choice;
 		std::cin >> choice;
 		switch(choice)
@@ -34,6 +38,18 @@ void showUserOperation()
 				break;
 			case 3:
 				logout();
+				break;
+			case 4:
+				addUser();
+				break;
+			case 5:
+				deleteUser();
+				break;
+			case 6:
+				topUpUser();
+				break;
+			case 7:
+				listUser();
 				break;
 			case 0:
 				return;
@@ -56,6 +72,10 @@ void login()
 	DynamicStruct param;
 	param["username"] = g_username;
 	param["uuid"] = g_uuid;
+	std::string binduser;
+	std::cout << "Binduser:";
+	std::cin >> binduser;
+	param["binduser"] = binduser;
 	ds["param"] = param;
 	if(!sendRequest(ds.toString()))
 	{
@@ -193,5 +213,130 @@ void logout()
 		warnf("%s, %d: Test faild\n", __FILE__, __LINE__);
 		return;
 	}
+}
+
+void addUser()
+{
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
+	DynamicStruct ds;
+	ds["type"] = "request";
+	ds["action"] = "user.add";
+	DynamicStruct param;
+	param["uuid"] = g_uuid;
+	param["token"] = g_token;
+	std::string username;
+	std::cout << "Username:";
+	std::cin >> username;
+	param["username"] = username;
+	std::cout << "Binduser:";
+	std::string binduser;
+	std::cin >> binduser;
+	param["binduser"] = binduser;
+	std::string password;
+	std::cout << "Password:";
+	std::cin >> password;
+	SHA1Engine sha1;
+	sha1.update(password);
+	const DigestEngine::Digest& digestPass = sha1.digest();
+	std::string sha1pass = DigestEngine::digestToHex(digestPass);
+	param["password"] = sha1pass;
+	std::cout << "Authority:";
+	int auth;
+	std::cin >> auth;
+	param["authority"] = auth;
+	std::cout << "RemainOpen:";
+	int remainOpen = 0;
+	std::cin >> remainOpen;
+	param["remainopen"] = remainOpen;
+	std::cout << "TimeOfValidity:" << std::endl << "Year:";
+	int year;
+	std::cin >> year;
+	std::cout << "Month:";
+	int month;
+	std::cin >> month;
+	std::cout << "Day:";
+	int day;
+	std::cin >> day;
+	DateTime date(year, month, day);
+	param["timeofvalidity"] = date.timestamp().epochMicroseconds();
+	ds["param"] = param;
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test failed\n", __FILE__, __LINE__);
+		return;
+	}
+}
+
+void deleteUser()
+{
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
+	DynamicStruct ds;
+	ds["type"] = "request";
+	ds["action"] = "user.delete";
+	DynamicStruct param;
+	param["uuid"] = g_uuid;
+	param["token"] = g_token;
+	std::string username;
+	std::cout << "Username:";
+	std::cin >> username;
+	param["username"] = username;
+	ds["param"] = param;
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test failed\n", __FILE__, __LINE__);
+		return;
+	}
+}
+
+void topUpUser()
+{
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
+	DynamicStruct ds;
+	ds["type"] = "request";
+	ds["action"] = "user.topup";
+	DynamicStruct param;
+	param["uuid"] = g_uuid;
+	param["token"] = g_token;
+	std::string username;
+	std::cout << "Username:";
+	std::cin >> username;
+	int remainOpen;
+	std::cout << "RemainOpen:";
+	std::cin >> remainOpen;
+	param["username"] = username;
+	param["remainopen"] = remainOpen;
+	std::cout << "TimeOfValidity:" << std::endl << "Year:";
+	int year;
+	std::cin >> year;
+	std::cout << "Month:";
+	int month;
+	std::cin >> month;
+	std::cout << "Day:";
+	int day;
+	std::cin >> day;
+	DateTime date(year, month, day);
+	param["timeofvalidity"] = date.timestamp().epochMicroseconds();
+	ds["param"] = param;
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test failed\n", __FILE__, __LINE__);
+		return;
+	}
+}
+
+void listUser()
+{
 }
 

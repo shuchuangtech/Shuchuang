@@ -4,6 +4,7 @@
 #include "Poco/Timestamp.h"
 #include "Poco/DateTime.h"
 #include "Poco/Timezone.h"
+#include "Common/RPCDef.h"
 #define min(x,y) ((x) < (y) ? (x) : (y))
 using namespace Poco;
 CTaskManager::CTaskManager()
@@ -122,38 +123,34 @@ bool CTaskManager::getTasks(JSON::Object::Ptr& param, std::string& detail)
 		array->add(ds);
 	}
 	param->set("tasks", array);
-	if(param->has("token"))
-	{
-		param->remove("token");
-	}
 	m_mutex.unlock();
 	return true;
 }
 
 void CTaskManager::taskInfoToStruct(const TaskInfo& task, DynamicStruct& ds)
 {
-	ds["id"] = task.id;
-	ds["option"] = task.option;
-	ds["hour"]= task.hour;
-	ds["minute"] = task.minute;
-	ds["weekday"] = task.weekday;
-	ds["active"] = task.active;
+	ds[TASK_ID_STR] = task.id;
+	ds[TASK_OPTION_STR] = task.option;
+	ds[TASK_HOUR_STR]= task.hour;
+	ds[TASK_MINUTE_STR] = task.minute;
+	ds[TASK_WEEKDAY_STR] = task.weekday;
+	ds[TASK_ACTIVE_STR] = task.active;
 }
 
 void CTaskManager::structToTaskInfo(const DynamicStruct& ds, TaskInfo& task)
 {
 	Dynamic::Var var;
-	var = ds["id"];
+	var = ds[TASK_ID_STR];
 	task.id = var.extract<Int64>();
-	var = ds["option"];
+	var = ds[TASK_OPTION_STR];
 	task.option = var.extract<int>();
-	var = ds["hour"];
+	var = ds[TASK_HOUR_STR];
 	task.hour = var.extract<int>();
-	var = ds["minute"];
+	var = ds[TASK_MINUTE_STR];
 	task.minute = var.extract<int>();
-	var = ds["weekday"];
+	var = ds[TASK_WEEKDAY_STR];
 	task.weekday = var.extract<int>();
-	var = ds["active"];
+	var = ds[TASK_ACTIVE_STR];
 	task.active = var.extract<int>();
 }
 
@@ -222,12 +219,8 @@ bool CTaskManager::addTask(JSON::Object::Ptr& param, std::string& detail)
 		addToScheduleQueue(pTask);
 	}
 	m_mutex.unlock();
-	pObjTask->set("id", task.id);
+	pObjTask->set(TASK_ID_STR, task.id);
 	param->set("task", pObjTask);
-	if(param->has("token"))
-	{
-		param->remove("token");
-	}
 	infof("%s, %d: Task added[id:%lld, option:%d, hour:%d, minute:%d, weekday:%d].", __FILE__, __LINE__, task.id, task.option, task.hour, task.minute, task.weekday);
 	return true;
 }
@@ -240,12 +233,12 @@ bool CTaskManager::removeTask(JSON::Object::Ptr& param, std::string& detail)
 		return false;
 	}
 	JSON::Object::Ptr pObjTask = param->getObject("task");
-	if(pObjTask.isNull() || !pObjTask->has("id"))
+	if(pObjTask.isNull() || !pObjTask->has(TASK_ID_STR))
 	{
 		detail = "432";
 		return false;
 	}
-	Int64 id = pObjTask->getValue<Int64>("id");
+	Int64 id = pObjTask->getValue<Int64>(TASK_ID_STR);
 	m_mutex.lock();
 	std::map<Int64, CTaskHandler::Ptr>::iterator it = m_task_map.find(id);
 	if(it == m_task_map.end())
@@ -268,14 +261,10 @@ bool CTaskManager::removeTask(JSON::Object::Ptr& param, std::string& detail)
 			m_task_config->remove(i);
 			m_config->setConfig("Tasks", m_task_config);
 			tracef("Task (%lld, %d, %d, %d, %d) deleted.", taskConfig_id,
-					ds["option"].extract<int>(), ds["hour"].extract<int>(),
-					ds["minute"].extract<int>(), ds["weekday"].extract<int>());
+					ds[TASK_OPTION_STR].extract<int>(), ds[TASK_HOUR_STR].extract<int>(),
+					ds[TASK_MINUTE_STR].extract<int>(), ds[TASK_WEEKDAY_STR].extract<int>());
 			break;
 		}
-	}
-	if(param->has("token"))
-	{
-		param->remove("token");
 	}
 	m_mutex.unlock();
 	return true;
@@ -289,7 +278,7 @@ bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 		return false;
 	}
 	JSON::Object::Ptr pObjTask = param->getObject("task");
-	if(pObjTask.isNull() || !pObjTask->has("id") || !pObjTask->has("option") || !pObjTask->has("hour") || !pObjTask->has("minute") || !pObjTask->has("weekday") || !pObjTask->has("active"))
+	if(pObjTask.isNull() || !pObjTask->has(TASK_ID_STR) || !pObjTask->has(TASK_OPTION_STR) || !pObjTask->has(TASK_HOUR_STR) || !pObjTask->has(TASK_MINUTE_STR) || !pObjTask->has(TASK_WEEKDAY_STR) || !pObjTask->has(TASK_ACTIVE_STR))
 	{
 		detail = "432";
 		return false;
@@ -348,10 +337,6 @@ bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 			infof("%s, %d: Task[%lld] modified (%d, %d, %d, %d).", __FILE__, __LINE__, task.id, task.option, task.hour, task.minute, task.weekday);
 			break;
 		}
-	}
-	if(param->has("token"))
-	{
-		param->remove("token");
 	}
 	m_mutex.unlock();
 	return true;

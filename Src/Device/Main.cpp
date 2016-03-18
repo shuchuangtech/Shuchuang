@@ -74,8 +74,9 @@ int main(int argc, char** argv)
 	}
 	//初始化用户中心
 	CUserManager* user = CUserManager::instance();
-	op->init(opdata);
 	user->init(userdata);
+	user->start();
+	op->init(opdata);
 	op->start();
 	pDataConfig = NULL;
 	//init gpio

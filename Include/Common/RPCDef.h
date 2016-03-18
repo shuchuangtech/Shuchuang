@@ -23,10 +23,14 @@ request
 //param>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 //user
 #define USER_USERNAME_STR "username"
+#define USER_BINDUSER_STR "binduser"
 #define USER_PASSWORD_STR "password"
 #define USER_TOKEN_STR "token"
 #define USER_CHALLENGE_STR "challenge"
 #define USER_NEW_PASS_STR "newpassword"
+#define USER_AUTHORITY_STR "authority"
+#define USER_REMAINOPEN_STR "remainopen"
+#define USER_TIMEOFVALIDITY_STR "timeofvalidity"
 //register
 #define REG_TOKEN_STR "token"
 #define REG_UUID_STR "uuid"
@@ -37,6 +41,12 @@ request
 #define REG_TIMESTAMP_STR "timestamp"
 #define REG_KEY_STR "key"
 //task
+#define TASK_ID_STR "id"
+#define TASK_OPTION_STR "option"
+#define TASK_HOUR_STR "hour"
+#define TASK_MINUTE_STR "minute"
+#define TASK_WEEKDAY_STR "weekday"
+#define TASK_ACTIVE_STR "active"
 //record
 #define RECORD_STARTTIME_STR "starttime"
 #define RECORD_ENDTIME_STR "endtime"
@@ -72,6 +82,10 @@ request
 #define USER_METHOD_LOGIN "login"
 #define USER_METHOD_LOGOUT "logout"
 #define USER_METHOD_PASSWD "passwd"
+#define USER_METHOD_ADD "add"
+#define USER_METHOD_DELETE "delete"
+#define USER_METHOD_TOPUP "topup"
+#define USER_METHOD_LIST "list"
 //task
 #define TASK_METHOD_ADD "add"
 #define TASK_METHOD_REMOVE "remove"

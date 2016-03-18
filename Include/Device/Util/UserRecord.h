@@ -16,6 +16,7 @@ struct _UserRecordNode
 	//Timestamp in UTC
 	std::string		username;
 	std::string		password;
+	std::string		binduser;
 	int				authority;
 	Poco::Int64		timeOfValidity;
 	int				remainOpen;

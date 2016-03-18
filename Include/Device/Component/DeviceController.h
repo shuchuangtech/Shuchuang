@@ -2,8 +2,8 @@
 #define __DEVICE_COMPONENT_DEVICE_CONTROLLER_H__
 #include "Poco/SingletonHolder.h"
 #include "Poco/JSON/Object.h"
-#include "Device/Util/UserRecord.h"
 #include "Device/Component/Record/OperationManager.h"
+#include "Device/Component/User/UserManager.h"
 class CDeviceController
 {
 public:
@@ -29,7 +29,7 @@ public:
 private:
 	int	m_fd;
 	bool				m_door_open;
-	CUserRecord*		m_user_record;
+	CUserManager*		m_user_manager;
 	COpManager*			m_op_manager;
 };
 #endif
