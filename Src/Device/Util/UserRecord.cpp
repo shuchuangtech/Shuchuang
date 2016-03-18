@@ -95,10 +95,11 @@ int CUserRecord::addUser(UserRecordNode& user)
 		return -1;
 	}
 	Statement sinsert(*m_session_ptr);
-	sinsert << "INSERT INTO `User` (`Username`, `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin`)"
-	<< "VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+	sinsert << "INSERT INTO `User` (`Username`, `Password`, `BindUser`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin`)"
+	<< "VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
 				use(user.username),
 				use(user.password),
+				use(user.binduser),
 				use(user.authority),
 				use(user.timeOfValidity),
 				use(user.remainOpen),
@@ -182,8 +183,9 @@ int CUserRecord::getSingleUser(const std::string& col_name, UserRecordNode& user
 	Statement sselect(*m_session_ptr);
 	if(col_name == "Username")
 	{
-		sselect << "SELECT `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` WHERE `Username`=?",
+		sselect << "SELECT `Password`, `BindUser`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` WHERE `Username`=?",
 			into(user.password),
+			into(user.binduser),
 			into(user.authority),
 			into(user.timeOfValidity),
 			into(user.remainOpen),
@@ -194,9 +196,10 @@ int CUserRecord::getSingleUser(const std::string& col_name, UserRecordNode& user
 	}
 	else if(col_name == "Token")
 	{
-		sselect << "SELECT `Username`, `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `LastVerify`, `LastLogin` FROM `User` WHERE `Token`=?",
+		sselect << "SELECT `Username`, `Password`, `BindUser`, `Authority`, `TimeOfValidity`, `RemainOpen`, `LastVerify`, `LastLogin` FROM `User` WHERE `Token`=?",
 			into(user.username),
 			into(user.password),
+			into(user.binduser),
 			into(user.authority),
 			into(user.timeOfValidity),
 			into(user.remainOpen),
@@ -232,17 +235,17 @@ int CUserRecord::getMultiUsers(const std::string& col_name, int col_value, std::
 	Statement sselect(*m_session_ptr);
 	if(col_name == "Authority")
 	{	
-		sselect << "SELECT `Username`, `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` WHERE `Authority`=?",
+		sselect << "SELECT `Username`, `Password`, `BindUser`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` WHERE `Authority`=?",
 				use(col_value);
 	}
 	else if(col_name == "RemainOpen")
 	{
-		sselect << "SELECT `Username`, `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` WHERE `RemainOpen`=?",
+		sselect << "SELECT `Username`, `Password`, `BindUser`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` WHERE `RemainOpen`=?",
 				use(col_value);
 	}
 	else if(col_name == "All")
 	{
-		sselect << "SELECT `Username`, `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User`";
+		sselect << "SELECT `Username`, `Password`, `BindUser`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User`";
 	}
 	else
 	{
@@ -267,6 +270,7 @@ int CUserRecord::getMultiUsers(const std::string& col_name, int col_value, std::
 		std::size_t col = 0;
 		user_node.username = rs[col++].convert<std::string>();
 		user_node.password = rs[col++].convert<std::string>();
+		user_node.binduser = rs[col++].convert<std::string>();
 		user_node.authority = rs[col++].convert<int>();
 		user_node.timeOfValidity = rs[col++].convert<Int64>();
 		user_node.remainOpen = rs[col++].convert<int>();
@@ -293,8 +297,9 @@ int CUserRecord::updateUser(UserRecordNode& user)
 		return -1;
 	}
 	Statement supdate(*m_session_ptr);
-	supdate << "UPDATE `User` SET `Password`=?, `Authority`=?, `TimeOfValidity`=?, `RemainOpen`=?, `Token`=?, `LastVerify`=?, `LastLogin`=? WHERE `Username`=?",
+	supdate << "UPDATE `User` SET `Password`=?, `BindUser`=?, `Authority`=?, `TimeOfValidity`=?, `RemainOpen`=?, `Token`=?, `LastVerify`=?, `LastLogin`=? WHERE `Username`=?",
 		use(user.password),
+		use(user.binduser),
 		use(user.authority),
 		use(user.timeOfValidity),
 		use(user.remainOpen),
