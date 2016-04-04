@@ -71,7 +71,7 @@ bool CUpdateManager::checkUpdate(JSON::Object::Ptr& param, std::string& detail)
 	catch(Exception& e)
 	{
 		detail = "453";
-		warnf("%s, %d: Load JSON Configuration file failed.", __FILE__, __LINE__);
+		warnf("%s, %d: Load JSON Configuration[%s] file failed.", __FILE__, __LINE__, path.toString().c_str());
 		return false;
 	}
 	std::string version = updateConf.getString(UPDATE_VERSION_STR);
