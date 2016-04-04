@@ -91,6 +91,20 @@ void CUserManager::timerCallback(Timer& timer)
 		m_cache_map.erase(itemp);
 	}
 	m_cache_mutex.unlock();
+	m_challenge_mutex.lock();
+	std::map<std::string, ChallengeNodePtr>::iterator it2;
+	for(it2 = m_challenge_map.begin(); it2 != m_challenge_map.end(); )
+	{
+		std::map<std::string, ChallengeNodePtr>::iterator itemp = it2++;
+		DateTime now;
+		Timespan diff = now - itemp->second->generateTime;
+		if(diff.totalSeconds() > 60)
+		{
+			itemp->second = NULL;
+			m_challenge_map.erase(itemp);
+		}
+	}
+	m_challenge_mutex.unlock();
 }
 
 bool CUserManager::canUserOpenDoor(const std::string& token)
@@ -229,7 +243,7 @@ bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 		return false;
 	}
 	m_challenge_mutex.lock();
-	std::map<std::string, std::string>::iterator it = m_challenge_map.find(username);
+	std::map<std::string, ChallengeNodePtr>::iterator it = m_challenge_map.find(username);
 	if(it == m_challenge_map.end())
 		//login step 1. generate a new challenge and token
 	{
@@ -272,7 +286,9 @@ bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 		userNode.token = token;
 		userNode.binduser = pParam->getValue<std::string>(USER_BINDUSER_STR);
 		m_user_record->updateUser(userNode);
-		m_challenge_map.insert(std::make_pair<std::string, std::string>(username, challenge));
+		ChallengeNodePtr pChallenge = new ChallengeNode;
+		pChallenge->challenge = challenge;
+		m_challenge_map.insert(std::make_pair<std::string, ChallengeNodePtr>(username, pChallenge));
 		m_challenge_mutex.unlock();
 		pParam->set(USER_CHALLENGE_STR, challenge);
 		pParam->set(USER_TOKEN_STR, token);
@@ -282,7 +298,7 @@ bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 	else
 		//login step 2. verify challenged password
 	{
-		std::string challenge = it->second;
+		std::string challenge = it->second->challenge;
 		m_challenge_map.erase(it);
 		m_challenge_mutex.unlock();
 		if(!pParam->has(USER_TOKEN_STR))
@@ -343,14 +359,16 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 	std::string username = userNode.username;
 
 	m_challenge_mutex.lock();
-	std::map<std::string, std::string>::iterator it = m_challenge_map.find(username);
+	std::map<std::string, ChallengeNodePtr>::iterator it = m_challenge_map.find(username);
 	if(it == m_challenge_map.end())
 		//step 1
 	{
 		std::string challenge = "";
 		generateNewMD5String(challenge);
+		ChallengeNodePtr pChallenge = new ChallengeNode;
+		pChallenge->challenge = challenge;
 		pParam->set(USER_CHALLENGE_STR, challenge);
-		m_challenge_map.insert(std::make_pair<std::string, std::string>(username, challenge));
+		m_challenge_map.insert(std::make_pair<std::string, ChallengeNodePtr>(username, pChallenge));
 		m_challenge_mutex.unlock();
 		infof("%s, %d: User %s change password step 1 finished, challenge:%s", __FILE__, __LINE__, username.c_str(), challenge.c_str());
 		return true;
@@ -358,7 +376,7 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 	else
 		//step 2
 	{
-		std::string challenge = it->second;
+		std::string challenge = it->second->challenge;
 		m_challenge_map.erase(it);
 		m_challenge_mutex.unlock();
 		if(!pParam->has(USER_NEW_PASS_STR) || !pParam->has(USER_PASSWORD_STR))
@@ -517,10 +535,7 @@ bool CUserManager::topUpUser(JSON::Object::Ptr& pParam, std::string& detail)
 	{
 		userNode.timeOfValidity = timeOfValidity;
 	}
-	if(remainOpen > 0)
-	{
-		userNode.remainOpen = remainOpen;
-	}
+	userNode.remainOpen = remainOpen;
 	if(!m_user_record->updateUser(userNode))
 	{
 		warnf("%s, %d: TopUp User timeOfValidity or remainOpen failed.", __FILE__, __LINE__);
@@ -557,6 +572,43 @@ bool CUserManager::logout(JSON::Object::Ptr& pParam, std::string& detail)
 
 bool CUserManager::listUser(JSON::Object::Ptr& pParam, std::string& detail)
 {
+	std::string token = pParam->getValue<std::string>(REG_TOKEN_STR);
+	pParam->remove(REG_TOKEN_STR);
+	if(userAuthority(token) != USER_AUTHORITY_ADMIN)
+	{
+		warnf("%s, %d: User has no authority to list users.", __FILE__, __LINE__);
+		detail = "412";
+		return false;
+	}
+	if(pParam.isNull() || !pParam->has(USER_LIMIT_STR) || !pParam->has(USER_OFFSET_STR))
+	{
+		detail = "400";
+		return false;
+	}
+	int limit = pParam->getValue<int>(USER_LIMIT_STR);
+	int offset = pParam->getValue<int>(USER_OFFSET_STR);
+	std::vector<UserRecordNode> data_set;
+	data_set.clear();
+	int ret = m_user_record->getUsers(limit, offset, data_set);
+	if(ret < 0)
+	{
+		warnf("%s, %d: Get user record failed.", __FILE__, __LINE__);
+		detail = "415";
+		return false;
+	}
+	JSON::Array::Ptr pArray = new JSON::Array;;
+	for(int i = 0; i < ret; i++)
+	{
+		DynamicStruct ds;
+		ds["id"] = i;
+		ds[USER_BINDUSER_STR] = data_set[i].binduser;
+		ds[USER_TIMEOFVALIDITY_STR] = data_set[i].timeOfValidity;
+		ds[USER_REMAINOPEN_STR] = data_set[i].remainOpen;
+		ds[USER_USERNAME_STR] = data_set[i].username;
+		ds[USER_AUTHORITY_STR] = data_set[i].authority;
+		pArray->add(ds);
+	}
+	pParam->set("Users", pArray);
 	return true;
 }
 
