@@ -100,7 +100,7 @@ bool COperationRecord::resetOpRecord()
 		return -1;
 	}
 	Statement sreset(*m_session_ptr);
-	sreset << "DELETE * FROM `Operation`";
+	sreset << "DELETE FROM `Operation`";
 	int ret = 0;
 	try
 	{

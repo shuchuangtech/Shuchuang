@@ -125,17 +125,14 @@ bool COpManager::getRecords(JSON::Object::Ptr& param, std::string& detail)
 		return false;
 	}
 	JSON::Array::Ptr pArray = new JSON::Array;
-	if(ret > 0)
+	for(int i = 0; i < ret; i++)
 	{
-		for(int i = 0; i < ret; i++)
-		{
-			DynamicStruct ds;
-			ds["Timestamp"] = data_set[i].timestamp;
-			ds["Operation"] = data_set[i].operation;
-			ds["Username"] = data_set[i].username;
-			ds["Schema"] = data_set[i].schema;
-			pArray->add(ds);
-		}
+		DynamicStruct ds;
+		ds["Timestamp"] = data_set[i].timestamp;
+		ds["Operation"] = data_set[i].operation;
+		ds["Username"] = data_set[i].username;
+		ds["Schema"] = data_set[i].schema;
+		pArray->add(ds);
 	}
 	DateTime dtstart(tsstart);
 	DateTime dtend(tsend);

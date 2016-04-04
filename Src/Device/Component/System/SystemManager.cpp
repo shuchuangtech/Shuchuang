@@ -1,4 +1,5 @@
 #include "Device/Component/System/SystemManager.h"
+#include "Device/Component/Task/TaskManager.h"
 #include "Common/ConfigManager.h"
 #include "Device/Util/UserRecord.h"
 #include "Device/Util/OperationRecord.h"
@@ -58,6 +59,8 @@ bool CSystemManager::resetConfig(JSON::Object::Ptr& param, std::string& detail)
 		detail = "463";
 		return false;
 	}
+	CTaskManager* task = CTaskManager::instance();
+	task->resetTasks();
 	return true;
 }
 
@@ -101,7 +104,7 @@ bool CSystemManager::getDevVersion(Poco::JSON::Object::Ptr& param, std::string& 
 	File file(infoPath);
 	if(!file.exists())
 	{
-		detail = "469";
+		detail = "465";
 		return false;
 	}
 	Util::JSONConfiguration info;
@@ -115,7 +118,7 @@ bool CSystemManager::getDevVersion(Poco::JSON::Object::Ptr& param, std::string& 
 	}
 	catch(Exception& e)
 	{
-		detail = "469";
+		detail = "465";
 		warnf("%s, %d: Load device info file failed, %s", __FILE__, __LINE__, e.message().c_str());
 		return false;
 	}
