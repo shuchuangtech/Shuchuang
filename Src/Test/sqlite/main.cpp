@@ -15,6 +15,7 @@ struct User
 	std::string password;
 	int authority;
 	Poco::Int64 timeOfValidity;
+	std::string binduser;
 	int	remainOpen;
 	std::string token;
 	Poco::Int64 lastVerify;
@@ -48,6 +49,7 @@ void generateUser(const std::string& uuid)
 			"`Id` INTEGER PRIMARY KEY AUTOINCREMENT,"
 			"`Username` VARCHAR(64) NOT NULL UNIQUE,"
 			"`Password` VARCHAR(64) NOT NULL,"
+			"`BindUser` VARCHAR(64),"
 			"`Authority` TINYINT,"
 			"`TimeOfValidity` BIGINT,"
 			"`RemainOpen` INTEGER,"
@@ -74,13 +76,15 @@ void generateUser(const std::string& uuid)
 	user.timeOfValidity = tov.timestamp().epochMicroseconds();
 	user.remainOpen = -1;
 	user.token = "";
+	user.binduser = "";
 	user.lastVerify = 0;
 	user.lastLogin = 0;
 	
 	Poco::Data::Statement insert(*session);
-	insert << "INSERT INTO `User` (`Username`, `Password`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin`) VALUES(?, ?, ?, ?, ?, ?, ?, ?)",
+	insert << "INSERT INTO `User` (`Username`, `Password`, `BindUser`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		   use(user.username),
 		   use(user.password),
+		   use(user.binduser),
 		   use(user.authority),
 		   use(user.timeOfValidity),
 		   use(user.remainOpen),
@@ -105,13 +109,15 @@ void generateBackup(const std::string uuid)
 	std::string dirPath = "/home/huang_jian/samba/";
 	dirPath += uuid;
 	std::string oriPath = dirPath + "/user.db";
-	std::string backPath = dirPath + "user_bak.db"
+	std::string backPath = dirPath + "user_bak.db";
 	std::ifstream ifs("/home/huang_jian/samba/");
 }
 
 int main(int argc, char** argv)
 {
 	Poco::Data::SQLite::Connector::registerConnector();
+	generateUser("SC0000000011");
+	/*
 	for(int i = 1; i <= 500; i++)
 	{
 		char uuid[13] = {0, };
@@ -119,6 +125,7 @@ int main(int argc, char** argv)
 	//	generateUser(uuid);
 		generateBackup(uuid);
 	}
+	*/
 	return 0;
 }
 

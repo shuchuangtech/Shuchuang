@@ -93,6 +93,14 @@ void getOpRecords()
 	Int64 ts_end = dt_end.timestamp().epochMicroseconds();
 	param["starttime"] = ts_start;
 	param["endtime"] = ts_end;
+	std::cout << "offset";
+	int offset;
+	std::cin >> offset;
+	std::cout << "limit";
+	int limit;
+	std::cin >> limit;
+	param["offset"] = offset;
+	param["limit"] = limit;
 	ds["param"] = param;
 	if(!sendRequest(ds.toString()))
 	{
