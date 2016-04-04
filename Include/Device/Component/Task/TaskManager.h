@@ -24,10 +24,10 @@ public:
 	bool addTask(Poco::JSON::Object::Ptr& param, std::string& detail);
 	bool removeTask(Poco::JSON::Object::Ptr& param, std::string& detail);
 	bool modifyTask(Poco::JSON::Object::Ptr& param, std::string& detail);
-	bool resetTasks(Poco::JSON::Object::Ptr& param, std::string& detail);
+	bool resetTasks();
 private:
 	void addToScheduleQueue(CTaskHandler::Ptr pTask);
-	bool taskExists(const TaskInfo& task);
+	Poco::Int64 taskExists(const TaskInfo& task);
 	void loadTasksConfig();
 	void taskInfoToStruct(const TaskInfo&, Poco::DynamicStruct&);
 	void structToTaskInfo(const Poco::DynamicStruct&, TaskInfo&);

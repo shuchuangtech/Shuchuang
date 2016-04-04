@@ -31,6 +31,8 @@ request
 #define USER_AUTHORITY_STR "authority"
 #define USER_REMAINOPEN_STR "remainopen"
 #define USER_TIMEOFVALIDITY_STR "timeofvalidity"
+#define USER_LIMIT_STR "limit"
+#define USER_OFFSET_STR "offset"
 //register
 #define REG_TOKEN_STR "token"
 #define REG_UUID_STR "uuid"

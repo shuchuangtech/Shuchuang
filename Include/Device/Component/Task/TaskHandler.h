@@ -11,14 +11,14 @@ public:
 	~CTaskHandler();
 	void			run();
 	void			setTaskInfo(TaskInfo task);
-	Poco::UInt64	getId();
+	Poco::Int64		getId();
 	int				getOption();
 	int				getHour();
 	int				getMinute();
 	Poco::UInt8		getWeekday();
 	bool			isActive();
 private:
-	Poco::UInt64	m_id;
+	Poco::Int64		m_id;
 	bool			m_active;
 	bool			m_running;
 	int				m_option;
