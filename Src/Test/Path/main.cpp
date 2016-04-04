@@ -7,11 +7,7 @@ int main(int argc, char** argv)
 	if(argc < 2)
 		return 0;
 	Path path(argv[1]);
-	path.append("SC0000000001");
-	printf("%s\n", path.toString().c_str());
-	printf("is dir %s\n", path.isDirectory()?"true":"false");
-	File file1("./file1");
-	file1.copyTo("./file2");
+	printf("%s is directory %s\n", path.toString().c_str(), path.isDirectory()?"true":"false");
 	return 0;
 }
 

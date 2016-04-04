@@ -1,11 +1,8 @@
-#include "release.h"
 #include "Poco/MD5Engine.h"
 #include "Poco/FileStream.h"
 #include "Poco/JSON/Object.h"
 #include "Poco/JSON/Array.h"
 #include "Poco/Util/JSONConfiguration.h"
-extern const char* getMKTIME();
-extern const char* getGITSHA1();
 using namespace Poco;
 std::string fileMD5(const std::string file)
 {
@@ -33,11 +30,20 @@ int main(int argc, char** argv)
 		return 0;
 	std::string file = argv[1];
 	std::string filemd5 = fileMD5(file);
-	std::string version = getGITSHA1();
-	std::string buildtime = getMKTIME();
+	FileInputStream fis("/home/huang_jian/Dev_Env/Shuchuang/Include/release.h", std::ios::in);
+	std::string version = "";
+	char buf[128] = {0, };
+	fis.getline(buf, 128, '\n');
+	version = buf;
+	memset(buf, 0, 128);
+	fis.getline(buf, 128, '\n');
+	std::string buildtime = "";
+	memset(buf, 0, 128);
+	fis.getline(buf, 128, '\n');
+	buildtime = buf;
 	JSON::Object::Ptr pInfo = new JSON::Object;
-	pInfo->set("version", version);
-	pInfo->set("buildtime", buildtime);
+	pInfo->set("version", version.substr(21, 8));
+	pInfo->set("buildtime", buildtime.substr(19, 25));
 	pInfo->set("checksum", filemd5);
 	JSON::Array::Ptr pArr = new JSON::Array;
 	pArr->add("1.new1");
