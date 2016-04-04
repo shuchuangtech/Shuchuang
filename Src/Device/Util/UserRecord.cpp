@@ -157,21 +157,6 @@ int CUserRecord::getUserByToken(UserRecordNode& user)
 	return getSingleUser("Token", user);
 }
 
-int CUserRecord::getUsersByAuth(int auth, std::vector<UserRecordNode>(& data_set))
-{
-	return getMultiUsers("Authority", auth, data_set);
-}
-
-int CUserRecord::getUsersByOpen(int open, std::vector<UserRecordNode>(& data_set))
-{
-	return getMultiUsers("RemainOpen", open, data_set);
-}
-
-int CUserRecord::getAllUsers(std::vector<UserRecordNode>(& data_set))
-{
-	return getMultiUsers("All", 0, data_set);
-}
-
 int CUserRecord::getSingleUser(const std::string& col_name, UserRecordNode& user)
 {
 	if(m_session_ptr == NULL)
@@ -225,7 +210,7 @@ int CUserRecord::getSingleUser(const std::string& col_name, UserRecordNode& user
 	return ret;
 }
 
-int CUserRecord::getMultiUsers(const std::string& col_name, int col_value, std::vector<UserRecordNode>(& data_set))
+int CUserRecord::getUsers(int limit, int offset, std::vector<UserRecordNode>(& data_set))
 {
 	if(m_session_ptr == NULL)
 	{
@@ -233,25 +218,9 @@ int CUserRecord::getMultiUsers(const std::string& col_name, int col_value, std::
 		return -1;
 	}
 	Statement sselect(*m_session_ptr);
-	if(col_name == "Authority")
-	{	
-		sselect << "SELECT `Username`, `Password`, `BindUser`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` WHERE `Authority`=?",
-				use(col_value);
-	}
-	else if(col_name == "RemainOpen")
-	{
-		sselect << "SELECT `Username`, `Password`, `BindUser`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` WHERE `RemainOpen`=?",
-				use(col_value);
-	}
-	else if(col_name == "All")
-	{
-		sselect << "SELECT `Username`, `Password`, `BindUser`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User`";
-	}
-	else
-	{
-		warnf("%s, %d: Not supported select col name[%s].", __FILE__, __LINE__, col_name.c_str());
-		return -1;
-	}
+	sselect << "SELECT `Username`, `Password`, `BindUser`, `Authority`, `TimeOfValidity`, `RemainOpen`, `Token`, `LastVerify`, `LastLogin` FROM `User` LIMIT ? OFFSET ?",
+			use(limit),
+			use(offset);
 	int ret = 0;
 	try
 	{

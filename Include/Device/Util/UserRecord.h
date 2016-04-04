@@ -44,12 +44,9 @@ public:
 	int updateUser(UserRecordNode&);
 	int getUserByName(UserRecordNode&);
 	int getUserByToken(UserRecordNode&);
-	int getAllUsers(std::vector<UserRecordNode>&);
-	int getUsersByAuth(int auth, std::vector<UserRecordNode>&);
-	int getUsersByOpen(int open, std::vector<UserRecordNode>&);
+	int getUsers(int limit, int offset, std::vector<UserRecordNode>&);
 private:
 	int getSingleUser(const std::string&, UserRecordNode&);
-	int getMultiUsers(const std::string&, int, std::vector<UserRecordNode>&);
 	Poco::Data::Session*		m_session_ptr;
 };
 #endif
