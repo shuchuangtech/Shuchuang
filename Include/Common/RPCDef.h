@@ -42,6 +42,7 @@ request
 #define REG_STATE_STR "state"
 #define REG_TIMESTAMP_STR "timestamp"
 #define REG_KEY_STR "key"
+#define REG_MOBILETOKEN_STR "mobiletoken"
 //task
 #define TASK_ID_STR "id"
 #define TASK_OPTION_STR "option"
@@ -106,6 +107,8 @@ request
 #define SERVER_METHOD_TOKEN "token"
 #define SERVER_METHOD_REGISTER "register"
 #define SERVER_METHOD_KEEPALIVE "keepalive"
+#define SERVER_METHOD_BIND "bind"
+#define SERVER_METHOD_UNBIND "unbind"
 //system
 #define SYSTEM_METHOD_RESET "reset"
 #define SYSTEM_METHOD_UPDATE "update"

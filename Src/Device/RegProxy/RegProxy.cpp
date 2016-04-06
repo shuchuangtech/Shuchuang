@@ -23,9 +23,6 @@ CRegProxy::CRegProxy()
 	m_ssl_sock = 0;
 	m_token = "";
 	m_uuid = "SC0000000000";
-	m_dev_name = m_uuid;
-	m_dev_type = "default";
-	m_manufacture = "Shuchuangtech";
 }
 
 CRegProxy::~CRegProxy()
@@ -52,6 +49,43 @@ void CRegProxy::handleMessage(MessageNotification* pNf)
 		infof("%s, %d: RegProxy receive SystemWillReboot notification, now disconnect from server.", __FILE__, __LINE__);
 		stop();
 		dealError(PLAIN_SOCKET);
+	}
+	else if(pNoti->getName() == "DeviceBindMobile")
+	{
+		JSON::Object::Ptr pParam = pNoti->getParam();
+		if(!pParam.isNull())
+		{
+			DynamicStruct dp = *pParam;
+			std::string mobile = pParam->getValue<std::string>(REG_MOBILETOKEN_STR);
+			DynamicStruct ds;
+			ds[KEY_TYPE_STR] = TYPE_REQUEST_STR;
+			char action[32] = {0, };
+			snprintf(action, 32, "%s.%s", COMPONENT_SERVER_STR, SERVER_METHOD_BIND);
+			ds[KEY_ACTION_STR] = action;
+			DynamicStruct param;
+			param[REG_UUID_STR] = m_uuid;
+			param[REG_MOBILETOKEN_STR] = mobile;
+			ds[KEY_PARAM_STR] = param;
+			if(m_sock->sendBytes(ds.toString().c_str(), ds.toString().length()) > 0)
+			{
+				infof("%s, %d: Send mobile bind request[%s].", __FILE__, __LINE__, ds.toString().c_str());
+			}
+		}
+	}
+	else if(pNoti->getName() == "DeviceUnbindMobile")
+	{
+		DynamicStruct ds;
+		ds[KEY_TYPE_STR] = TYPE_REQUEST_STR;
+		char action[32] = {0, };
+		snprintf(action, 32, "%s.%s", COMPONENT_SERVER_STR, SERVER_METHOD_UNBIND);
+		ds[KEY_ACTION_STR] = action;
+		DynamicStruct param;
+		param[REG_UUID_STR] = m_uuid;
+		ds[KEY_PARAM_STR] = param;
+		if(m_sock->sendBytes(ds.toString().c_str(), ds.toString().length()) > 0)
+		{
+			infof("%s, %d: Send mobile unbind request[%s].", __FILE__, __LINE__, ds.toString().c_str());
+		}
 	}
 }
 
@@ -106,20 +140,9 @@ void CRegProxy::start()
 		m_ssl_port = (UInt16)pConfig->get("ssl_port").extract<int>();
 		m_reg_port = (UInt16)pConfig->get("reg_port").extract<int>();
 	}
-	pConfig = NULL;
-	config->getConfig("DeviceInfo", pConfig);
-	if(pConfig.isNull())
-	{
-		errorf("%s, %d: Please set default RegProxy config first.", __FILE__, __LINE__);
-		return;
-	}
-	else
-	{
-		m_uuid = pConfig->getValue<std::string>("uuid");
-		m_dev_name = pConfig->getValue<std::string>("name");
-		m_dev_type = pConfig->getValue<std::string>("type");
-		m_manufacture = pConfig->getValue<std::string>("manufacture");
-	}
+	JSON::Object::Ptr pDevInfo = NULL;
+	config->getConfig("DeviceInfo", pDevInfo);
+	m_uuid = pDevInfo->getValue<std::string>("uuid");
 	Observer<CRegProxy, RequestNotification> observer(*this, &CRegProxy::handleNf);
 	m_rpc->addObserver(observer);
 	Observer<CRegProxy, MessageNotification> ob(*this, &CRegProxy::handleMessage);
@@ -371,15 +394,22 @@ void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 {
 	DynamicStruct ds;
 	ds[KEY_TYPE_STR] = TYPE_REQUEST_STR;
+	CConfigManager* config = CConfigManager::instance();
 	switch(ra)
 	{
 		case ACTION_GETTOKEN :
 		{
 			DynamicStruct param;
 			ds[KEY_ACTION_STR] = "server.token";
-			param[REG_DEV_NAME_STR] = m_dev_name;
-			param[REG_DEV_TYPE_STR] = m_dev_type;
-			param[REG_DEV_MANU_STR] = m_manufacture;
+			JSON::Object::Ptr pDevInfo;
+			config->getConfig("DeviceInfo", pDevInfo);
+			JSON::Object::Ptr pAPNS;
+			config->getConfig("APNS", pAPNS);
+			std::string mobile = pAPNS->getValue<std::string>("MobileToken");
+			param[REG_MOBILETOKEN_STR] = mobile;
+			param[REG_DEV_NAME_STR] = pDevInfo->getValue<std::string>("name");
+			param[REG_DEV_TYPE_STR] = pDevInfo->getValue<std::string>("type");
+			param[REG_DEV_MANU_STR] = pDevInfo->getValue<std::string>("manufacture");
 			param[REG_UUID_STR] = m_uuid;
 			ds[KEY_PARAM_STR] = param;
 			break;

@@ -7,6 +7,7 @@ class MessageNotification : public Poco::Notification
 public:
 	typedef Poco::AutoPtr<MessageNotification> Ptr;
 	MessageNotification();
+	MessageNotification(const std::string& name, const Poco::JSON::Object::Ptr& param);
 	~MessageNotification();
 	bool setName(const std::string& name);
 	bool setParam(const Poco::JSON::Object::Ptr& param);

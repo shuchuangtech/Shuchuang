@@ -8,6 +8,7 @@ CDeviceManager::CDeviceManager()
 :m_thread("DeviceManager")
 {
 	m_started = false;
+	m_apns = NULL;
 	m_noti_center = new NotificationCenter();
 }
 
@@ -35,6 +36,8 @@ bool CDeviceManager::start()
 		warnf("%s, %d: Device manager has already started.", __FILE__, __LINE__);
 		return false;
 	}
+	m_apns = CApplePush::instance();
+	m_apns->init();
 	m_started = true;
 	m_thread.start(*this);
 	infof("%s, %d: Device manager start successfully.", __FILE__, __LINE__);
@@ -90,7 +93,7 @@ void CDeviceManager::run()
 	}
 }
 
-bool CDeviceManager::addDevice(const std::string uuid, UInt64 id, const std::string devType, std::string& token)
+bool CDeviceManager::addDevice(const std::string uuid, UInt64 id, const std::string devType, std::string& token, const std::string& mobile_token)
 {
 	DeviceMapIt it;
 	Mutex::ScopedLock lock(m_mutex);
@@ -114,7 +117,7 @@ bool CDeviceManager::addDevice(const std::string uuid, UInt64 id, const std::str
 	md5.update(uid.toString());
 	const DigestEngine::Digest& digest = md5.digest();
 	token = DigestEngine::digestToHex(digest);
-	DeviceInfo* di = new DeviceInfo(uuid, id, devType, token);
+	DeviceInfo* di = new DeviceInfo(uuid, id, devType, token, mobile_token);
 	m_device_map.insert(std::make_pair<std::string, DeviceInfo*>(uuid, di));
 	infof("%s, %d: Device added[%s:%s]", __FILE__, __LINE__, uuid.c_str(), token.c_str());
 	return true;
@@ -160,6 +163,12 @@ bool CDeviceManager::deviceOnline(const std::string uuid, const std::string toke
 	it->second->online = true;
 	it->second->id = sock_id;
 	m_device_id_map.insert(std::make_pair<UInt64, std::string>(sock_id, uuid));
+	std::string mobile_token = it->second->bindMobileToken;
+	if(!mobile_token.empty())
+	{
+		std::string content = "您的设备" + it->second->uuid + "已经上线";
+		m_apns->pushBmob(mobile_token, content);
+	}
 	infof("%s, %d: Device[%s] online.", __FILE__, __LINE__, uuid.c_str());
 	return true;
 }
@@ -172,6 +181,7 @@ bool CDeviceManager::deviceOffline(const std::string uuid)
 	{
 		return true;
 	}
+	std::string mobile_token = it->second->bindMobileToken;
 	delete it->second;
 	UInt64 id = it->second->id;
 	m_device_map.erase(it);
@@ -181,7 +191,12 @@ bool CDeviceManager::deviceOffline(const std::string uuid)
 		return true;
 	}
 	m_device_id_map.erase(it_id);
-	tracef("%s, %d: Device offline[%s:%lu]", __FILE__, __LINE__, uuid.c_str(), id);
+	if(!mobile_token.empty())
+	{
+		std::string push = "您的设备" + uuid + "已离线， 如有异常请及时查看";
+		m_apns->pushBmob(mobile_token, push);
+	}
+	infof("%s, %d: Device offline[%s:%lu]", __FILE__, __LINE__, uuid.c_str(), id);
 	return true;
 }
 
@@ -200,9 +215,39 @@ bool CDeviceManager::deviceOffline(const UInt64 id)
 	{
 		return true;
 	}
+	std::string mobile_token = it_dev->second->bindMobileToken;
 	delete it_dev->second;
 	m_device_map.erase(it_dev);
-	tracef("%s, %d: Device offline[%s]", __FILE__, __LINE__, uuid.c_str());
+	if(!mobile_token.empty())
+	{
+		std::string push = "您的设备" + uuid + "已离线， 如有异常请及时查看";
+		m_apns->pushBmob(mobile_token, push);
+	}
+	infof("%s, %d: Device offline[%s]", __FILE__, __LINE__, uuid.c_str());
+	return true;
+}
+
+bool CDeviceManager::bindMobile(const std::string uuid, const std::string mobile)
+{
+	Mutex::ScopedLock lock(m_mutex);
+	DeviceMapIt it = m_device_map.find(uuid);
+	if(it == m_device_map.end())
+	{
+		return false;
+	}
+	it->second->bindMobileToken = mobile;
+	return true;
+}
+
+bool CDeviceManager::unbindMobile(const std::string uuid)
+{
+	Mutex::ScopedLock lock(m_mutex);
+	DeviceMapIt it = m_device_map.find(uuid);
+	if(it == m_device_map.end())
+	{
+		return false;
+	}
+	it->second->bindMobileToken = "";
 	return true;
 }
 

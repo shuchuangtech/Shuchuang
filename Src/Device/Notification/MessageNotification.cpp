@@ -6,6 +6,12 @@ MessageNotification::MessageNotification()
 	m_param = NULL;
 }
 
+MessageNotification::MessageNotification(const std::string& name, const JSON::Object::Ptr& param)
+{
+	m_name = name;
+	m_param = param;
+}
+
 MessageNotification::~MessageNotification()
 {
 	m_param = NULL;
@@ -19,7 +25,7 @@ bool MessageNotification::setName(const std::string& name)
 
 bool MessageNotification::setParam(const JSON::Object::Ptr& param)
 {
-	m_param = new JSON::Object(param);
+	m_param = param;
 	return true;
 }
 

@@ -7,6 +7,8 @@
 #include "Poco/Dynamic/Struct.h"
 #include "Poco/MD5Engine.h"
 #include "Poco/Timespan.h"
+#include "Poco/NotificationCenter.h"
+#include "Common/ConfigManager.h"
 using namespace Poco;
 CUserManager::CUserManager()
 {
@@ -39,6 +41,8 @@ bool CUserManager::start()
 	TimerCallback<CUserManager> callback(*this, &CUserManager::timerCallback);
 	m_timer.setPeriodicInterval(60 * 1000);
 	m_timer.start(callback);
+	Observer<CUserManager, MessageNotification> ob(*this, &CUserManager::handleNotification);
+	NotificationCenter::defaultCenter().addObserver(ob);
 	infof("%s, %d: CUserManager timer start successully.", __FILE__, __LINE__);
 	return true;
 }
@@ -53,6 +57,39 @@ bool CUserManager::stop()
 	m_timer.stop();
 	infof("%s, %d: CUserManager timer stop successfully.", __FILE__, __LINE__);
 	return true;
+}
+
+void CUserManager::handleNotification(MessageNotification* pNf)
+{
+	MessageNotification::Ptr pNoti(pNf);
+	std::string notiName = pNoti->getName();
+	if(notiName == "SystemWillReboot")
+	{
+		writeCache();
+		infof("%s, %d: UserManager receive SystemWillReboot notification, now write all open door cache.", __FILE__, __LINE__);
+	}
+}
+
+void CUserManager::writeCache()
+{
+	m_cache_mutex.lock();
+	std::map<std::string, int>::iterator it;
+	for(it = m_cache_map.begin(); it != m_cache_map.end(); )
+	{
+		std::map<std::string, int>::iterator itemp = it++;
+		std::string token = itemp->first;
+		UserRecordNode userNode = {"", "", "", 0, 0, 0, "", 0, 0};
+		userNode.token = token;
+		m_user_record->getUserByToken(userNode);
+		if(userNode.remainOpen > 0)
+		{
+			userNode.remainOpen = userNode.remainOpen - itemp->second;
+			m_user_record->updateUser(userNode);
+			infof("%s, %d: User %s remainOpen minus %d.", __FILE__, __LINE__, userNode.username.c_str(), userNode.remainOpen);
+		}
+		m_cache_map.erase(itemp);
+	}
+	m_cache_mutex.unlock();
 }
 
 bool CUserManager::userOpenDoor(const std::string& token)
@@ -73,24 +110,7 @@ bool CUserManager::userOpenDoor(const std::string& token)
 
 void CUserManager::timerCallback(Timer& timer)
 {
-	m_cache_mutex.lock();
-	std::map<std::string, int>::iterator it;
-	for(it = m_cache_map.begin(); it != m_cache_map.end(); )
-	{
-		std::map<std::string, int>::iterator itemp = it++;
-		std::string token = itemp->first;
-		UserRecordNode userNode = {"", "", "", 0, 0, 0, "", 0, 0};
-		userNode.token = token;
-		m_user_record->getUserByToken(userNode);
-		if(userNode.remainOpen > 0)
-		{
-			userNode.remainOpen = userNode.remainOpen - itemp->second;
-			m_user_record->updateUser(userNode);
-			infof("%s, %d: User %s remainOpen minus %d.", __FILE__, __LINE__, userNode.username.c_str(), userNode.remainOpen);
-		}
-		m_cache_map.erase(itemp);
-	}
-	m_cache_mutex.unlock();
+	writeCache();
 	m_challenge_mutex.lock();
 	std::map<std::string, ChallengeNodePtr>::iterator it2;
 	for(it2 = m_challenge_map.begin(); it2 != m_challenge_map.end(); )
@@ -324,6 +344,26 @@ bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 			userNode.lastVerify = now.epochMicroseconds();
 			m_user_record->updateUser(userNode);
 			infof("%s, %d: User %s login step 2 finished, login successfully.", __FILE__, __LINE__, username.c_str());
+			if(username == "admin" && pParam->has(REG_MOBILETOKEN_STR))
+			{
+				std::string mobile = pParam->getValue<std::string>(REG_MOBILETOKEN_STR);
+				CConfigManager* config = CConfigManager::instance();
+				JSON::Object::Ptr pAPNS = NULL;
+				config->getConfig("APNS", pAPNS);
+				if(pAPNS->getValue<std::string>("MobileToken") != mobile)
+				{
+					pAPNS->remove("MobileToken");
+					pAPNS->set("MobileToken", mobile);
+					config->setConfig("APNS", pAPNS);
+					MessageNotification::Ptr pNoti = new MessageNotification;
+					JSON::Object::Ptr pNotiParam = new JSON::Object;
+					pNotiParam->set(REG_MOBILETOKEN_STR, mobile);
+					DynamicStruct dp = *pNotiParam;
+					pNoti->setParam(pNotiParam);
+					pNoti->setName("DeviceBindMobile");
+					NotificationCenter::defaultCenter().postNotification(pNoti);
+				}
+			}
 			return true;
 		}
 		else
@@ -566,6 +606,12 @@ bool CUserManager::logout(JSON::Object::Ptr& pParam, std::string& detail)
 	userNode.token = "";
 	userNode.binduser = "";
 	m_user_record->updateUser(userNode);
+	if(userNode.username == "admin")
+	{
+		MessageNotification::Ptr pNoti = new MessageNotification;
+		pNoti->setName("DeviceUnbindMobile");
+		NotificationCenter::defaultCenter().postNotification(pNoti);
+	}
 	infof("%s, %d; User %s logout and unbind successfully.", __FILE__, __LINE__, userNode.username.c_str());
 	return true;
 }

@@ -25,6 +25,9 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 		pRegProxy->set("host", "shuchuangtech.com");
 		pRegProxy->set("ssl_port", 12222);
 		pRegProxy->set("reg_port", 13333);
+		//APNS
+		JSON::Object::Ptr pAPNS = new JSON::Object;
+		pAPNS->set("MobileToken", "");
 		//Tasks
 		JSON::Array::Ptr pTasks = new JSON::Array;
 		//DataPath
@@ -39,8 +42,8 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 		}
 		else if(ret && i == 2)
 		{
-			pDataPath->set("User", "/home/huang_jian/Dev_Env/Shuchuang/user.db");
-			pDataPath->set("Operation", "/home/huang_jian/Dev_Env/Shuchuang/oprecord.db");
+			pDataPath->set("User", "/home/huang_jian/Dev_Env/Shuchuang/Config/test1/user.db");
+			pDataPath->set("Operation", "/home/huang_jian/Dev_Env/Shuchuang/Config/test1/oprecord.db");
 		}
 		//JSON::Object::Ptr nil = NULL;
 		JSON::Object::Ptr pReset = new JSON::Object;
@@ -51,8 +54,8 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 		}
 		else if(ret && i == 2)
 		{
-			pReset->set("UserDB", "/home/huang_jian/Dev_Env/Shuchuang/backup/user.db");
-			pReset->set("Config", "/home/huang_jian/Dev_Env/Shuchuang/backup/global.conf");
+			pReset->set("UserDB", "/home/huang_jian/Dev_Env/Shuchuang/Config/test1/backup/user.db");
+			pReset->set("Config", "/home/huang_jian/Dev_Env/Shuchuang/backup/Config/test1/global.conf");
 		}
 		//Update
 		JSON::Object::Ptr pUpdate = new JSON::Object;
@@ -71,6 +74,7 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 		}
 
 		//pTasks->add(nil);
+		pNode->set("APNS", pAPNS);
 		pNode->set("Tasks", pTasks);
 		pNode->set("DeviceInfo", pDeviceInfo);
 		pNode->set("RegProxy", pRegProxy);
@@ -78,27 +82,40 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 		pNode->set("Reset", pReset);
 		pNode->set("Update", pUpdate);
 	}
-	else if(choice == 2)
+else if(choice == 2)
 	{
 		JSON::Object::Ptr pRegServer = new JSON::Object;
 		pRegServer->set("ssl_port", 12222);
 		pRegServer->set("reg_port", 13333);
 
-		JSON::Object::Ptr pHTTPSAcceptor = new JSON::Object;
-		pHTTPSAcceptor->set("port", 9888);
-		pHTTPSAcceptor->set("cert", "./cert.pem");
-		pHTTPSAcceptor->set("privkey", "privkey.pem");
-
 		JSON::Object::Ptr pHTTPServer = new JSON::Object;
 		pHTTPServer->set("port", 8777);
+		pHTTPServer->set("port", 9888);
+		pHTTPServer->set("cert", "./cert.pem");
+		pHTTPServer->set("privkey", "./privkey.pem");
 		
 		JSON::Object::Ptr pUpdate = new JSON::Object;
-		pUpdate->set("DirPath", "./update");
+		pUpdate->set("DirPath", "./update/");
+		
+		JSON::Object::Ptr pAPNS = new JSON::Object;
+		JSON::Array::Ptr pProxy = new JSON::Array;
+		pProxy->add("bmob");
+		pAPNS->set("Proxy", pProxy);
+		JSON::Object::Ptr pBmob = new JSON::Object;
+		pBmob->set("Host", "api.bmob.cn");
+		pBmob->set("URI", "/1/push");
+		pBmob->set("APPID", "27f1f3599a223cfa40bb5c5e5daedd7a");
+		pBmob->set("APPKey", "0952518ed9dd101fab4c5c02d957f62d");
+		pAPNS->set("bmob", pBmob);
+
+		JSON::Object::Ptr pMode = new JSON::Object;
+		pMode->set("mode", 0);
 
 		pNode->set("RegServer", pRegServer);
-		pNode->set("HTTPSAcceptor", pHTTPSAcceptor);
 		pNode->set("HTTPServer", pHTTPServer);
 		pNode->set("Update", pUpdate);
+		pNode->set("APNS", pAPNS);
+		pNode->set("UserMode", pMode);
 	}
 	pRoot->set("root", pNode);
 }

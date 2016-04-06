@@ -8,6 +8,8 @@
 #include "Poco/DateTime.h"
 #include "Device/Util/UserRecord.h"
 #include "Poco/Timer.h"
+#include "Poco/Observer.h"
+#include "Device/Notification/MessageNotification.h"
 class CUserManager
 {
 public:
@@ -40,6 +42,8 @@ public:
 	bool	userOpenDoor(const std::string& token);
 	bool	canUserOpenDoor(const std::string& token);
 	void	timerCallback(Poco::Timer& timer);
+	void	handleNotification(MessageNotification* pNf);
+	void	writeCache();
 private:
 	struct _ChallengeNode {
 		std::string challenge;

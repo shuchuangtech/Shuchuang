@@ -113,6 +113,7 @@ void login()
 	std::string passmd5 = generateMD5Password("login", pass, challenge);;
 	param["password"] = passmd5;
 	param["token"] = token;
+	param["mobiletoken"] = "ec77339fd0393bd84155b383501e368eb116801532ffcba775bf0d208f384d0a"; 
 	ds["param"] = param;
 
 	if(!sendRequest(ds.toString()))

@@ -106,7 +106,7 @@ bool CRegMsgHandler::handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 		result->set(KEY_DETAIL_STR, "201");
 		return false;
 	}	
-	if(!param.contains(REG_UUID_STR) || !param.contains(REG_DEV_TYPE_STR) || !param.contains(REG_DEV_NAME_STR) || !param.contains(REG_DEV_MANU_STR))
+	if(!param.contains(REG_UUID_STR) || !param.contains(REG_DEV_TYPE_STR) || !param.contains(REG_DEV_NAME_STR) || !param.contains(REG_DEV_MANU_STR) || !param.contains(REG_MOBILETOKEN_STR))
 	{
 		warnf("%s, %d: Param missing.", __FILE__, __LINE__);
 		result->set(KEY_DETAIL_STR, "104");
@@ -117,6 +117,7 @@ bool CRegMsgHandler::handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 	std::string dev_uuid = param[REG_UUID_STR].toString();
 	std::string dev_type = param[REG_DEV_TYPE_STR].toString();
 	std::string dev_name = param[REG_DEV_NAME_STR].toString();
+	std::string mobile_token = param[REG_MOBILETOKEN_STR].toString();
 	Timestamp now;
 	Int64 tms = now.epochMicroseconds();
 	char tms_str[32];
@@ -128,7 +129,7 @@ bool CRegMsgHandler::handleSslMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 	const DigestEngine::Digest& digest = md5.digest();
 	std::string md5key = DigestEngine::digestToHex(digest);
 	CDeviceManager* dm = CDeviceManager::instance();
-	if(dm->addDevice(dev_uuid, (UInt64)m_socket->socket.impl(), dev_type, token))
+	if(dm->addDevice(dev_uuid, (UInt64)m_socket->socket.impl(), dev_type, token, mobile_token))
 	{
 		result->set(KEY_RESULT_STR, RESULT_GOOD_STR);
 		result->remove(KEY_PARAM_STR);
@@ -220,6 +221,42 @@ bool CRegMsgHandler::handleRegMsg(JSON::Object::Ptr request, JSON::Object::Ptr r
 		CDeviceManager* dm = CDeviceManager::instance();
 		dm->keepAliveDevice(dev_uuid);
 		result->set(KEY_RESULT_STR, RESULT_GOOD_STR);
+	}
+	else if(method == SERVER_METHOD_BIND)
+	{
+		if(!param.contains(REG_MOBILETOKEN_STR))
+		{
+			warnf("%s, %d: Param missing.", __FILE__, __LINE__);
+			result->set(KEY_DETAIL_STR, 104);
+			result->set(KEY_RESULT_STR, RESULT_FAIL_STR);
+			return false;
+		}
+		std::string dev_uuid = param[REG_UUID_STR].toString();
+		std::string mobile_token = param[REG_MOBILETOKEN_STR];
+		CDeviceManager* dm = CDeviceManager::instance();
+		if(dm->bindMobile(dev_uuid, mobile_token))
+		{
+			result->set(KEY_RESULT_STR, RESULT_GOOD_STR);
+		}
+		else
+		{
+			result->set(KEY_RESULT_STR, RESULT_FAIL_STR);
+		}
+		return true;
+	}
+	else if(method == SERVER_METHOD_UNBIND)
+	{
+		std::string dev_uuid = param[REG_UUID_STR].toString();
+		CDeviceManager* dm = CDeviceManager::instance();
+		if(dm->unbindMobile(dev_uuid))
+		{
+			result->set(KEY_RESULT_STR, RESULT_GOOD_STR);
+		}
+		else
+		{
+			result->set(KEY_RESULT_STR, RESULT_FAIL_STR);
+		}
+		return true;
 	}
 	else
 	{

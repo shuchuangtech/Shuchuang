@@ -53,9 +53,6 @@ private:
 	std::string						m_reg_host;
 	Poco::UInt16					m_reg_port;
 	std::string						m_uuid;
-	std::string						m_dev_name;
-	std::string						m_dev_type;
-	std::string						m_manufacture;
 	Poco::Timestamp::TimeDiff		m_checkPeriod;
 	Poco::Timestamp::TimeDiff		m_keepAliveTimeout;
 	Poco::Timestamp					m_lastCheckTime;
