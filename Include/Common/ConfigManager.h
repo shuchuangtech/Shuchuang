@@ -3,8 +3,6 @@
 #include "Poco/SingletonHolder.h"
 #include "Poco/JSON/Object.h"
 #include "Poco/JSON/Array.h"
-#include "Poco/AutoPtr.h"
-#include "Poco/Util/JSONConfiguration.h"
 #include "Poco/Mutex.h"
 class CConfigManager
 {
@@ -24,9 +22,8 @@ public:
 	bool setConfig(const std::string configName, Poco::JSON::Object::Ptr config);
 	bool setConfig(const std::string configName, Poco::JSON::Array::Ptr config);
 private:
-	Poco::AutoPtr<Poco::Util::JSONConfiguration>	m_config;
-	std::string		m_path;
-	Poco::Mutex			m_mutex;
+	std::string						m_path;
+	Poco::Mutex						m_mutex;
 };
 #endif
 

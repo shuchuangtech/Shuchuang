@@ -72,6 +72,10 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 			pUpdate->set("appPath", "/home/huang_jian/Dev_Env/Shuchuang/DeviceTest");
 			pUpdate->set("infoPath", "/home/huang_jian/Dev_Env/Shuchuang/Version.info");
 		}
+		
+		//UserMode
+		JSON::Object::Ptr pMode = new JSON::Object;
+		pMode->set("mode", 0);
 
 		//pTasks->add(nil);
 		pNode->set("APNS", pAPNS);
@@ -81,6 +85,7 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int choice)
 		pNode->set("DataPath", pDataPath);
 		pNode->set("Reset", pReset);
 		pNode->set("Update", pUpdate);
+		pNode->set("UserMode", pMode);
 	}
 else if(choice == 2)
 	{
@@ -108,14 +113,10 @@ else if(choice == 2)
 		pBmob->set("APPKey", "0952518ed9dd101fab4c5c02d957f62d");
 		pAPNS->set("bmob", pBmob);
 
-		JSON::Object::Ptr pMode = new JSON::Object;
-		pMode->set("mode", 0);
-
 		pNode->set("RegServer", pRegServer);
 		pNode->set("HTTPServer", pHTTPServer);
 		pNode->set("Update", pUpdate);
 		pNode->set("APNS", pAPNS);
-		pNode->set("UserMode", pMode);
 	}
 	pRoot->set("root", pNode);
 }

@@ -1,4 +1,5 @@
 #include "Common/ConfigManager.h"
+#include "Poco/Util/JSONConfiguration.h"
 #include "Poco/JSON/Parser.h"
 #include "Poco/Dynamic/Var.h"
 #include "Poco/File.h"
@@ -8,12 +9,10 @@ using namespace Poco;
 CConfigManager::CConfigManager()
 {
 	m_path = "";
-	m_config = NULL;
 }
 
 CConfigManager::~CConfigManager()
 {
-	m_config = NULL;
 }
 
 bool CConfigManager::init(const std::string path)
@@ -23,29 +22,43 @@ bool CConfigManager::init(const std::string path)
 	{
 		m_path = path + "/" + "global.conf";
 		File file(m_path);
+		Util::JSONConfiguration jsonConf;
 		if(file.exists())
 		{
 			try
 			{
-				m_config = new Util::JSONConfiguration(m_path);
+				jsonConf.load(m_path);
 			}
 			catch(Exception& e)
 			{
 				warnf("%s, %d: Load config file error.", __FILE__, __LINE__);
 				return false;
 			}
-			if(!m_config->has("root"))
+			if(!jsonConf.has("root"))
 			{
 				warnf("%s, %d: Config doesn't has root node.", __FILE__, __LINE__);
 				return false;
 			}
+			else {
+				std::string str = jsonConf.getString("root");
+				JSON::Parser parser;
+				try
+				{
+					Dynamic::Var var = parser.parse(str);
+					JSON::Object::Ptr config = var.extract<JSON::Object::Ptr>();
+				}
+				catch(Exception& e)
+				{
+					warnf("%s, %d: Global config is not JSON format.", __FILE__, __LINE__);
+					return false;
+				}
+				return true;
+			}
 		}
 		else
 		{
-			m_config = new Util::JSONConfiguration;
-			DynamicStruct ds;
-			ds["default"] = "default";
-			m_config->setString("root", ds.toString());
+			warnf("%s, %d: Config file not exists.", __FILE__, __LINE__);
+			return false;
 		}
 		infof("%s, %d: ConfigManager init successfully, directory path %s", __FILE__, __LINE__, path.c_str());
 		return true;
@@ -60,17 +73,11 @@ bool CConfigManager::init(const std::string path)
 
 bool CConfigManager::resetConfig()
 {
-	if(m_config.isNull())
-		return false;
-	Mutex::ScopedLock lock(m_mutex);
-	std::string str = m_config->getString("root");
-	JSON::Parser parser;
-	Dynamic::Var var = parser.parse(str);
-	JSON::Object::Ptr pObj = var.extract<JSON::Object::Ptr>();
-	if(pObj->has("Reset") && pObj->isObject("Reset"))
+	JSON::Object::Ptr pReset;
+	getConfig("Reset", pReset);
+	if(!pReset.isNull() && pReset->has("Config"))
 	{
-		JSON::Object::Ptr config = pObj->getObject("Reset");
-		std::string backupConfig = config->getValue<std::string>("Config");
+		std::string backupConfig = pReset->getValue<std::string>("Config");
 		File file(backupConfig);
 		file.copyTo(m_path);
 		infof("%s, %d: Config manager reset config successfully.", __FILE__, __LINE__);
@@ -85,10 +92,9 @@ bool CConfigManager::resetConfig()
 
 bool CConfigManager::getAllConfig(JSON::Object::Ptr& config)
 {
-	if(m_config.isNull())
-		return false;
 	Mutex::ScopedLock lock(m_mutex);
-	std::string str = m_config->getString("root");
+	Util::JSONConfiguration jsonConf(m_path);
+	std::string str = jsonConf.getString("root");
 	JSON::Parser parser;
 	Dynamic::Var var = parser.parse(str);
 	config = var.extract<JSON::Object::Ptr>();
@@ -97,10 +103,11 @@ bool CConfigManager::getAllConfig(JSON::Object::Ptr& config)
 
 bool CConfigManager::getConfig(const std::string configName, JSON::Object::Ptr& config)
 {
-	if(m_config.isNull() || configName.empty())
+	if(configName.empty())
 		return false;
 	Mutex::ScopedLock lock(m_mutex);
-	std::string str = m_config->getString("root");
+	Util::JSONConfiguration jsonConf(m_path);
+	std::string str = jsonConf.getString("root");
 	JSON::Parser parser;
 	Dynamic::Var var = parser.parse(str);
 	JSON::Object::Ptr pObj = var.extract<JSON::Object::Ptr>();
@@ -118,10 +125,11 @@ bool CConfigManager::getConfig(const std::string configName, JSON::Object::Ptr& 
 
 bool CConfigManager::getConfig(const std::string configName, JSON::Array::Ptr& config)
 {
-	if(m_config.isNull() || configName.empty())
+	if(configName.empty())
 		return false;
 	Mutex::ScopedLock lock(m_mutex);
-	std::string str = m_config->getString("root");
+	Util::JSONConfiguration jsonConf(m_path);
+	std::string str = jsonConf.getString("root");
 	JSON::Parser parser;
 	Dynamic::Var var = parser.parse(str);
 	JSON::Object::Ptr pObj = var.extract<JSON::Object::Ptr>();
@@ -139,11 +147,11 @@ bool CConfigManager::getConfig(const std::string configName, JSON::Array::Ptr& c
 
 bool CConfigManager::setConfig(const std::string configName, JSON::Object::Ptr config)
 {
-	tracepoint();
-	if(m_config.isNull() || configName.empty() || config.isNull())
+	if(configName.empty() || config.isNull())
 		return false;
 	Mutex::ScopedLock lock(m_mutex);
-	std::string str = m_config->getString("root");
+	Util::JSONConfiguration jsonConf(m_path);
+	std::string str = jsonConf.getString("root");
 	JSON::Parser parser;
 	Dynamic::Var var = parser.parse(str);
 	JSON::Object::Ptr pObj = var.extract<JSON::Object::Ptr>();
@@ -163,21 +171,22 @@ bool CConfigManager::setConfig(const std::string configName, JSON::Object::Ptr c
 	{
 		pObj->set(configName, config);
 	}
-	DynamicStruct ds = *pObj;
-	m_config->remove("root");
-	m_config->setString("root", ds.toString());
+	JSON::Object::Ptr pRoot = new JSON::Object;
+	pRoot->set("root", pObj);
 	FileOutputStream fos(m_path);
-	m_config->save(fos);
+	Util::JSONConfiguration saveJson(pRoot);
+	saveJson.save(fos);
 	fos.close();
 	return true;
 }
 
 bool CConfigManager::setConfig(const std::string configName, JSON::Array::Ptr config)
 {
-	if(m_config.isNull() || configName.empty() || config.isNull())
+	if(configName.empty() || config.isNull())
 		return false;
 	Mutex::ScopedLock lock(m_mutex);
-	std::string str = m_config->getString("root");
+	Util::JSONConfiguration jsonConf(m_path);
+	std::string str = jsonConf.getString("root");
 	JSON::Parser parser;
 	Dynamic::Var var = parser.parse(str);
 	JSON::Object::Ptr pObj = var.extract<JSON::Object::Ptr>();
@@ -197,11 +206,11 @@ bool CConfigManager::setConfig(const std::string configName, JSON::Array::Ptr co
 	{
 		pObj->set(configName, config);
 	}
-	DynamicStruct ds = *pObj;
-	m_config->remove("root");
-	m_config->setString("root", ds.toString());
+	JSON::Object::Ptr pRoot = new JSON::Object;
+	pRoot->set("root", pObj);
 	FileOutputStream fos(m_path);
-	m_config->save(fos);
+	Util::JSONConfiguration saveJson(pRoot);
+	saveJson.save(fos);
 	fos.close();
 	return true;
 }
