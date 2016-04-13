@@ -262,6 +262,16 @@ void CRPCClient::runTask()
 				if(device->checkDoor(param, detail))
 					result = true;
 			}
+			else if(method == DEVICE_METHOD_CHMODE)
+			{
+				if(device->changeMode(param, detail))
+					result = true;
+			}
+			else if(method == DEVICE_METHOD_GETMODE)
+			{
+				if(device->getMode(param, detail))
+					result = true;
+			}
 			else if(method == DEVICE_METHOD_RESTART)
 			{
 			}

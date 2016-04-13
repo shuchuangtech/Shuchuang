@@ -61,6 +61,7 @@ request
 #define DEVICE_SWITCH_STR "switch"
 #define DEVICE_OPEN_STR "open"
 #define DEVICE_CLOSE_STR "close"
+#define DEVICE_MODE_STR "mode"
 //system
 #define SYSTEM_TYPE_STR "type"
 #define SYSTEM_VERSION_STR "version"
@@ -100,6 +101,8 @@ request
 #define DEVICE_METHOD_CHECK "check"
 #define DEVICE_METHOD_RESET "reset"
 #define DEVICE_METHOD_RESTART "restart"
+#define DEVICE_METHOD_CHMODE "chmode"
+#define DEVICE_METHOD_GETMODE "getmode"
 //record
 #define RECORD_METHOD_GET "get"
 //server

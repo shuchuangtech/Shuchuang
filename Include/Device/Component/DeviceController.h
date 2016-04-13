@@ -22,12 +22,17 @@ public:
 	bool openDoor(Poco::JSON::Object::Ptr& param, std::string& detail);
 	//close door
 	bool closeDoor(Poco::JSON::Object::Ptr& param, std::string& detail);
+	//change user mode
+	bool changeMode(Poco::JSON::Object::Ptr& param, std::string& detail);
+	//get user mode
+	bool getMode(Poco::JSON::Object::Ptr& param, std::string& detail);
 	//used inside programme
 	//error led
 	bool errOn();
 	bool errOff();
 private:
-	int	m_fd;
+	int					m_fd;
+	int					m_user_mode;
 	bool				m_door_open;
 	CUserManager*		m_user_manager;
 	COpManager*			m_op_manager;

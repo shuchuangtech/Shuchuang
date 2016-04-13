@@ -1,4 +1,5 @@
 #include "Device/Component/DeviceController.h"
+#include "Common/ConfigManager.h"
 #include "Common/RPCDef.h"
 #include "Poco/Timestamp.h"
 #include "Poco/Timezone.h"
@@ -14,6 +15,10 @@ CDeviceController::CDeviceController()
 	m_door_open = false;
 	m_op_manager = COpManager::instance();
 	m_user_manager = CUserManager::instance();
+	CConfigManager* config = CConfigManager::instance();
+	JSON::Object::Ptr pMode;
+	config->getConfig("UserMode", pMode);
+	m_user_mode = pMode->getValue<int>("mode");
 }
 
 CDeviceController::~CDeviceController()
@@ -84,8 +89,11 @@ bool CDeviceController::checkDoor(JSON::Object::Ptr& param, std::string& detail)
 	#else
 		param->set(DEVICE_STATE_STR, DEVICE_CLOSE_STR);
 	#endif
-	}
-	
+	}	
+#else
+	param->set(DEVICE_STATE_STR, m_door_open?DEVICE_OPEN_STR:DEVICE_CLOSE_STR);
+	tracef("%s, %d: X86 does not implement checkDoor.", __FILE__, __LINE__);
+#endif
 	if(m_door_open)
 	{
 		param->set(DEVICE_SWITCH_STR, DEVICE_OPEN_STR);
@@ -95,9 +103,6 @@ bool CDeviceController::checkDoor(JSON::Object::Ptr& param, std::string& detail)
 		param->set(DEVICE_SWITCH_STR, DEVICE_CLOSE_STR);
 	}
 	infof("%s, %d: Check door state:%s, switch state:%s.", __FILE__, __LINE__, param->getValue<std::string>("state").c_str(), m_door_open?"open":"close");
-#else
-	tracef("%s, %d: X86 does not implement checkDoor.", __FILE__, __LINE__);
-#endif
 	if(param->has(USER_TOKEN_STR))
 	{
 		param->remove(USER_TOKEN_STR);
@@ -128,6 +133,12 @@ bool CDeviceController::openDoor(JSON::Object::Ptr& param, std::string& detail)
 			detail = "421";
 			return false;
 		}
+	}
+	if(m_user_mode == 1 && m_user_manager->userAuthority(token) != CUserManager::USER_AUTHORITY_ADMIN)
+	{
+		warnf("%s, %d: Device in admin mode, only admin can open door.", __FILE__, __LINE__);
+		detail = "421";
+		return false;
 	}
 #ifdef __SC_ARM__
 #ifdef __SC_ON_NORMAL_CLOSE__
@@ -186,6 +197,12 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 		token = param->getValue<std::string>(REG_TOKEN_STR);
 		param->remove(REG_TOKEN_STR);
 	}
+	if(m_user_mode == 1 && m_user_manager->userAuthority(token) != CUserManager::USER_AUTHORITY_ADMIN)
+	{
+		warnf("%s, %d: Device in admin mode, only admin can close door.", __FILE__, __LINE__);
+		detail = "421";
+		return false;
+	}
 #ifdef __SC_ARM__
 #ifdef __SC_ON_NORMAL_CLOSE__
 	ioctl(m_fd, SC_RELAY_OFF, 0);
@@ -222,6 +239,43 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 	}
 	m_op_manager->addRecord(op);
 	param->remove("token");
+	return true;
+}
+
+bool CDeviceController::changeMode(JSON::Object::Ptr& param, std::string& detail)
+{
+	if(param.isNull() || !param->has(DEVICE_MODE_STR))
+	{
+		detail = "400";
+		return false;
+	}
+	std::string token;
+	token = param->getValue<std::string>(REG_TOKEN_STR);
+	param->remove(REG_TOKEN_STR);
+	if(m_user_manager->userAuthority(token) != CUserManager::USER_AUTHORITY_ADMIN)
+	{
+		detail = "422";
+		return false;
+	}
+	if(m_user_mode != param->getValue<int>(DEVICE_MODE_STR))
+	{
+		m_user_mode = param->getValue<int>(DEVICE_MODE_STR);
+		CConfigManager* config = CConfigManager::instance();
+		JSON::Object::Ptr pMode = new JSON::Object;
+		pMode->set("mode", m_user_mode);
+		config->setConfig("UserMode", pMode);
+	}
+	return true;
+}
+
+bool CDeviceController::getMode(JSON::Object::Ptr& param, std::string& detail)
+{
+	if(param->has(DEVICE_MODE_STR))
+	{
+		param->remove(DEVICE_MODE_STR);
+	}
+	param->remove(REG_TOKEN_STR);
+	param->set(DEVICE_MODE_STR, m_user_mode);
 	return true;
 }
 
