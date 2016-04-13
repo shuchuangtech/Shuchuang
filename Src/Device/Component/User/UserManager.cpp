@@ -395,7 +395,7 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 	}
 	UserRecordNode userNode = {"", "", "", 0, 0, 0, "", 0, 0};
 	userNode.token = token;
-	infof("%s, %d: User change password.", __FILE__, __LINE__);
+	m_user_record->getUserByToken(userNode);
 	std::string username = userNode.username;
 
 	m_challenge_mutex.lock();
@@ -403,6 +403,7 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 	if(it == m_challenge_map.end())
 		//step 1
 	{
+		infof("%s, %d: User %s change password step 1.", __FILE__, __LINE__, username.c_str());
 		std::string challenge = "";
 		generateNewMD5String(challenge);
 		ChallengeNodePtr pChallenge = new ChallengeNode;
@@ -416,6 +417,7 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 	else
 		//step 2
 	{
+		infof("%s, %d: User %s change password step 2.", __FILE__, __LINE__, username.c_str());
 		std::string challenge = it->second->challenge;
 		m_challenge_map.erase(it);
 		m_challenge_mutex.unlock();
@@ -571,7 +573,7 @@ bool CUserManager::topUpUser(JSON::Object::Ptr& pParam, std::string& detail)
 	Int64 timeOfValidity = pParam->getValue<Int64>(USER_TIMEOFVALIDITY_STR);
 	int remainOpen = pParam->getValue<int>(USER_REMAINOPEN_STR);
 	Timestamp now;
-	if(timeOfValidity > now.epochMicroseconds() && timeOfValidity > userNode.timeOfValidity && timeOfValidity < loginNode.timeOfValidity)
+	if(timeOfValidity > now.epochMicroseconds() && timeOfValidity < loginNode.timeOfValidity)
 	{
 		userNode.timeOfValidity = timeOfValidity;
 	}
@@ -596,13 +598,8 @@ bool CUserManager::logout(JSON::Object::Ptr& pParam, std::string& detail)
 	std::string token = pParam->getValue<std::string>(USER_TOKEN_STR);
 	UserRecordNode userNode = {"", "", "", 0, 0, 0, "", 0, 0};
 	userNode.token = token;
-	infof("%s, %d: User logout.", __FILE__, __LINE__);
-	if(m_user_record->getUserByToken(userNode) == 0)
-	{
-		warnf("%s, %d: Can't find user by token %s.", __FILE__, __LINE__, token.c_str());
-		detail = "402";
-		return false;
-	}
+	m_user_record->getUserByToken(userNode);
+	infof("%s, %d: User %s logout.", __FILE__, __LINE__, userNode.username.c_str());
 	userNode.token = "";
 	userNode.binduser = "";
 	m_user_record->updateUser(userNode);

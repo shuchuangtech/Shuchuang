@@ -5,6 +5,7 @@
 #include "Poco/DateTime.h"
 #include "Poco/Timezone.h"
 #include "Common/RPCDef.h"
+#include "Poco/JSON/Parser.h"
 #define min(x,y) ((x) < (y) ? (x) : (y))
 using namespace Poco;
 CTaskManager::CTaskManager()
@@ -88,7 +89,11 @@ void CTaskManager::loadTasksConfig()
 		for(unsigned int i = 0; i < pArray->size(); i++)
 		{
 			TaskInfo t;
-			DynamicStruct ds = (DynamicStruct)(*(pArray->getObject(i)));
+			std::string taskConf = pArray->getElement<std::string>(i);
+			JSON::Parser parser;
+			Dynamic::Var var = parser.parse(taskConf);
+			JSON::Object::Ptr pTaskConf = var.extract<JSON::Object::Ptr>();
+			DynamicStruct ds = *pTaskConf;
 			m_task_config->add(ds);
 			structToTaskInfo(ds, t);
 			CTaskHandler::Ptr pTask = new CTaskHandler;
