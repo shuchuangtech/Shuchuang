@@ -498,7 +498,7 @@ bool CUserManager::addUser(JSON::Object::Ptr& pParam, std::string& detail)
 		detail = "413";
 		return false;
 	}
-	infof("%s, %d: User[username:%s, authority:%d, timeOfValidity:%ld, remainOpen:%d, bindUser:%s] add successully.", __FILE__, __LINE__, userNode.username.c_str(), userNode.authority, userNode.timeOfValidity, userNode.remainOpen, userNode.binduser.c_str());
+	infof("%s, %d: User[username:%s, authority:%d, timeOfValidity:%lld, remainOpen:%d, bindUser:%s] add successully.", __FILE__, __LINE__, userNode.username.c_str(), userNode.authority, userNode.timeOfValidity, userNode.remainOpen, userNode.binduser.c_str());
 	return true;
 }
 
@@ -584,7 +584,7 @@ bool CUserManager::topUpUser(JSON::Object::Ptr& pParam, std::string& detail)
 		detail = "417";
 		return false;
 	}
-	infof("%s, %d: User[%s] top up successfully, timeOfValidity:%ld, remainOpen:%d.", __FILE__, __LINE__, userNode.username.c_str(), timeOfValidity, remainOpen);
+	infof("%s, %d: User[%s] top up successfully, timeOfValidity:%lld, remainOpen:%d.", __FILE__, __LINE__, userNode.username.c_str(), timeOfValidity, remainOpen);
 	return true;
 }
 

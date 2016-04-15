@@ -23,7 +23,7 @@ void CTaskHandler::run()
 	UInt8 dayMask = TaskSunday >> dayOffset;
 	if(dayMask & m_weekday)
 	{
-		infof("%s, %d: TaskHandler[%ld] option %d run at %02d:%02d weekday %d.", __FILE__, __LINE__, m_id, m_option, m_hour, m_minute, m_weekday);
+		infof("%s, %d: TaskHandler[%lld] option %d run at %02d:%02d weekday %d.", __FILE__, __LINE__, m_id, m_option, m_hour, m_minute, m_weekday);
 		JSON::Object::Ptr nil = NULL;
 		std::string detail;
 		if(m_option == 0)
