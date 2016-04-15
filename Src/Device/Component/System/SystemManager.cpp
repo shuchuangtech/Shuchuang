@@ -17,8 +17,15 @@
 #include "Device/Notification/MessageNotification.h"
 #include "Poco/Thread.h"
 #include "Poco/DateTime.h"
+#include "Poco/Timezone.h"
 #include "Poco/DateTimeParser.h"
 #include "Poco/MD5Engine.h"
+#include "Poco/Net/NTPClient.h"
+#include "Poco/Net/IPAddress.h"
+#include "Poco/Delegate.h"
+#include "Poco/Net/NTPPacket.h"
+#include <time.h>
+#include <sys/time.h>
 extern const char* getMKTIME();
 using namespace Poco;
 CSystemManager::CSystemManager()
@@ -129,6 +136,49 @@ bool CSystemManager::getDevVersion(Poco::JSON::Object::Ptr& param, std::string& 
 	param->set(SYSTEM_VERSION_STR, version);
 	param->set(SYSTEM_BUILDTIME_STR, buildtime);
 	return true;
+}
+
+bool CSystemManager::synchronizeTime()
+{
+#ifdef __SC_ARM__
+	Net::NTPClient ntpc(Net::IPAddress::IPv4, 10 * 1000 * 1000);
+	ntpc.response += Poco::delegate(this, &CSystemManager::onNTPEvent);
+	JSON::Object::Ptr pReg;
+	CConfigManager::instance()->getConfig("RegProxy", pReg);
+	std::string host = pReg->getValue<std::string>("host");
+	ntpc.request(host);
+	ntpc.response -= Poco::delegate(this, &CSystemManager::onNTPEvent);
+#else
+	infof("%s, %d: X86 does not implement synchronizeTime.", __FILE__, __LINE__);
+#endif
+	return true;
+}
+
+void CSystemManager::onNTPEvent(const void *pSender, Net::NTPEventArgs& arg)
+{
+	tracef("%s, %d: NTP event called.", __FILE__, __LINE__);
+	char tz[32] = {0, };
+	snprintf(tz, 32, "TZ=WAUST-8WAUDT");
+	if(putenv(tz) < 0)
+	{
+		warnf("%s, %d: Putenv %s failed.", __FILE__, __LINE__, tz);
+	}
+	tzset();
+	Net::NTPPacket packet = arg.packet();
+	DateTime receiveTime(packet.receiveTime());
+	struct timeval tv;
+	Int64 ts = receiveTime.timestamp().epochMicroseconds();
+	tv.tv_sec = ts / 1000000;
+	tv.tv_usec = ts % 1000000;
+	if(settimeofday(&tv, (const struct timezone *)0) < 0)
+	{
+		warnf("%s, %d: Set systemtime failed.", __FILE__, __LINE__);
+	}
+	else
+	{
+		receiveTime.makeLocal(Timezone::utcOffset());
+		infof("%s, %d: Set systemtime successfully[%04d-%02d-%02d %02d:%02d:%02d].", __FILE__, __LINE__, receiveTime.year(), receiveTime.month(), receiveTime.day(), receiveTime.hour(), receiveTime.minute(), receiveTime.second());
+	}
 }
 
 void CSystemManager::handleUpdate(Timer& timer)

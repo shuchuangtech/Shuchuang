@@ -3,6 +3,7 @@
 #include "Poco/SingletonHolder.h"
 #include "Poco/JSON/Object.h"
 #include "Poco/Timer.h"
+#include "Poco/Net/NTPEventArgs.h"
 class CSystemManager
 {
 public:
@@ -22,6 +23,7 @@ public:
 	bool synchronizeTime();
 	std::string getFileMD5(const std::string& filePath);
 	//timerHandler
+	void onNTPEvent(const void* pSender, Poco::Net::NTPEventArgs& arg);
 	void handleUpdate(Poco::Timer& timer);
 private:
 	Poco::Timer* m_timer;

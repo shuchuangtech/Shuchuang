@@ -7,6 +7,7 @@
 #include "Poco/Delegate.h"
 #include "Poco/Thread.h"
 #include <stdio.h>
+#include <string.h>
 #include <time.h>
 class Target
 {
@@ -73,7 +74,7 @@ int main(int argc, char** argv)
 	{
 		printf("exception %s.\n", e.message().c_str());
 	}
-	Poco::Thread::sleep(1 * 1000);
+	//Poco::Thread::sleep(1 * 1000);
 	ntpc.response -= Poco::delegate(&target, &Target::onEvent);
 	Poco::DateTime now;
 	printf("before make local: %04d-%02d-%02d %02d:%02d:%02d.\n", now.year(), now.month(), now.day(), now.hour(), now.minute(), now.second());

@@ -43,12 +43,15 @@ int main(int argc, char** argv)
 	//setPrintLogLevel(LEVEL_INFO);
 #endif
 	infof("Shuchuang application build at %s, git version: sha1(%s) dirty(%s)", getMKTIME(), getGITSHA1(), getGITDIRTY());
-	//system manager
-	CSystemManager* system = CSystemManager::instance();
-	//synchonize time
 	//init config manager
 	CConfigManager* config = CConfigManager::instance();
 	config->init(configPath.c_str());
+	//system manager
+	CSystemManager* system = CSystemManager::instance();
+	system->synchronizeTime();
+	//init printlog again to adjust utcOffset
+	initPrintLogger("");
+	//task manager
 	CTaskManager* task = CTaskManager::instance();
 	//OpManager should before DeviceController
 	COpManager* op = COpManager::instance();
