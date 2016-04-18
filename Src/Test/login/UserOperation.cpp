@@ -339,5 +339,25 @@ void topUpUser()
 
 void listUser()
 {
+	if(g_token.empty())
+	{
+		printf("Please login first.\n");
+		return;
+	}
+	DynamicStruct ds;
+	ds["type"] = "request";
+	ds["action"] = "user.list";
+	DynamicStruct param;
+	param["uuid"] = g_uuid;
+	param["token"] = g_token;
+	param["limit"] = 10;
+	param["offset"] = 0;
+	ds["param"] = param;
+	if(!sendRequest(ds.toString()))
+	{
+		warnf("%s, %d: Test failed\n", __FILE__, __LINE__);
+		return;
+	}
+
 }
 

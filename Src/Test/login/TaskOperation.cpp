@@ -97,6 +97,9 @@ void addTask()
 	printf("Minute:");
 	int minute;
 	std::cin >> minute;
+	printf("Active:");
+	int active;
+	std::cin >> active;
 	printf("Weekday:");
 	char str[9];
 	std::cin >> str;
@@ -113,6 +116,7 @@ void addTask()
 	dsTask["hour"] = hour;
 	dsTask["minute"] = minute;
 	dsTask["weekday"] = weekday;
+	dsTask["active"] = active;
 	param["task"] = dsTask;
 	ds["param"] = param;
 	if(!sendRequest(ds.toString()))

@@ -57,6 +57,7 @@ void CRegProxy::handleMessage(MessageNotification* pNf)
 		{
 			DynamicStruct dp = *pParam;
 			std::string mobile = pParam->getValue<std::string>(REG_MOBILETOKEN_STR);
+			std::string installation = pParam->getValue<std::string>(REG_INSTALLATIONID_STR);
 			DynamicStruct ds;
 			ds[KEY_TYPE_STR] = TYPE_REQUEST_STR;
 			char action[32] = {0, };
@@ -65,6 +66,7 @@ void CRegProxy::handleMessage(MessageNotification* pNf)
 			DynamicStruct param;
 			param[REG_UUID_STR] = m_uuid;
 			param[REG_MOBILETOKEN_STR] = mobile;
+			param[REG_INSTALLATIONID_STR] = installation;
 			ds[KEY_PARAM_STR] = param;
 			if(m_sock->sendBytes(ds.toString().c_str(), ds.toString().length()) > 0)
 			{
@@ -406,7 +408,9 @@ void CRegProxy::createPacket(char* buf, UInt16 size, REQUEST_ACTION ra)
 			JSON::Object::Ptr pAPNS;
 			config->getConfig("APNS", pAPNS);
 			std::string mobile = pAPNS->getValue<std::string>("MobileToken");
+			std::string installation = pAPNS->getValue<std::string>("InstallationId");
 			param[REG_MOBILETOKEN_STR] = mobile;
+			param[REG_INSTALLATIONID_STR] = installation;
 			param[REG_DEV_NAME_STR] = pDevInfo->getValue<std::string>("name");
 			param[REG_DEV_TYPE_STR] = pDevInfo->getValue<std::string>("type");
 			param[REG_DEV_MANU_STR] = pDevInfo->getValue<std::string>("manufacture");

@@ -19,7 +19,7 @@ extern void showTaskOperation();
 extern void showRecordOperation();
 extern void showDoorOperation();
 extern void showSystemOperation();
-extern void showUpdateOperation();
+extern void showServerOperation();
 using namespace Poco;
 using namespace Poco::Net;
 std::string g_buf = "";
@@ -106,7 +106,7 @@ int main(int argc, char** argv)
 	while(1)
 	{
 		std::cout << "1.User operation" << std::endl << "2.Door operation" << std::endl << "3.Task operation" << std::endl;
-		std::cout << "4.Record operation" << std::endl << "5.System operation" << std::endl << "6.Update operation" << std::endl;
+		std::cout << "4.Record operation" << std::endl << "5.System operation" << std::endl << "6.Server operation" << std::endl;
 		std::cout << "0.Exit" << std::endl;
 		int choice;
 		std::cin >> choice;
@@ -127,7 +127,7 @@ int main(int argc, char** argv)
 			case 5:
 				showSystemOperation();break;
 			case 6:
-				showUpdateOperation();break;
+				showServerOperation();break;
 			default:
 				std::cout << "Error choice" << std::endl;
 				break;

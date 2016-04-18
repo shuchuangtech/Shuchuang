@@ -43,6 +43,7 @@ request
 #define REG_TIMESTAMP_STR "timestamp"
 #define REG_KEY_STR "key"
 #define REG_MOBILETOKEN_STR "mobiletoken"
+#define REG_INSTALLATIONID_STR "installationid"
 //task
 #define TASK_ID_STR "id"
 #define TASK_OPTION_STR "option"

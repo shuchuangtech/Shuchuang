@@ -344,20 +344,24 @@ bool CUserManager::login(JSON::Object::Ptr& pParam, std::string& detail)
 			userNode.lastVerify = now.epochMicroseconds();
 			m_user_record->updateUser(userNode);
 			infof("%s, %d: User %s login step 2 finished, login successfully.", __FILE__, __LINE__, username.c_str());
-			if(username == "admin" && pParam->has(REG_MOBILETOKEN_STR))
+			if(username == "admin" && (pParam->has(REG_MOBILETOKEN_STR) || pParam->has(REG_INSTALLATIONID_STR)))
 			{
-				std::string mobile = pParam->getValue<std::string>(REG_MOBILETOKEN_STR);
+				std::string mobile = pParam->has(REG_MOBILETOKEN_STR)?pParam->getValue<std::string>(REG_MOBILETOKEN_STR):"";
+				std::string installation = pParam->has(REG_INSTALLATIONID_STR)?pParam->getValue<std::string>(REG_INSTALLATIONID_STR):"";
 				CConfigManager* config = CConfigManager::instance();
 				JSON::Object::Ptr pAPNS = NULL;
 				config->getConfig("APNS", pAPNS);
-				if(pAPNS->getValue<std::string>("MobileToken") != mobile)
+				if(pAPNS->getValue<std::string>("MobileToken") != mobile || pAPNS->getValue<std::string>("InstallationId") != installation)
 				{
 					pAPNS->remove("MobileToken");
 					pAPNS->set("MobileToken", mobile);
+					pAPNS->remove("InstallationId");
+					pAPNS->set("InstallationId", installation);
 					config->setConfig("APNS", pAPNS);
 					MessageNotification::Ptr pNoti = new MessageNotification;
 					JSON::Object::Ptr pNotiParam = new JSON::Object;
 					pNotiParam->set(REG_MOBILETOKEN_STR, mobile);
+					pNotiParam->set(REG_INSTALLATIONID_STR, installation);
 					DynamicStruct dp = *pNotiParam;
 					pNoti->setParam(pNotiParam);
 					pNoti->setName("DeviceBindMobile");
@@ -388,6 +392,7 @@ bool CUserManager::passwd(JSON::Object::Ptr& pParam, std::string& detail)
 		return false;
 	}
 	std::string token = pParam->getValue<std::string>(USER_TOKEN_STR);
+	pParam->remove(USER_TOKEN_STR);
 	if(!verifyUser(token))
 	{
 		detail = "402";
@@ -603,6 +608,11 @@ bool CUserManager::logout(JSON::Object::Ptr& pParam, std::string& detail)
 	userNode.token = "";
 	userNode.binduser = "";
 	m_user_record->updateUser(userNode);
+	CConfigManager* config = CConfigManager::instance();
+	JSON::Object::Ptr pAPNS = new JSON::Object;
+	pAPNS->set("MobileToken", "");
+	pAPNS->set("InstallationId", "");
+	config->setConfig("APNS", pAPNS);
 	if(userNode.username == "admin")
 	{
 		MessageNotification::Ptr pNoti = new MessageNotification;

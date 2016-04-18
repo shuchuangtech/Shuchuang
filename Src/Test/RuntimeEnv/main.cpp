@@ -38,6 +38,7 @@ void initDefaultConfig(JSON::Object::Ptr& pRoot, int deviceOrServer, std::string
 		//APNS
 		JSON::Object::Ptr pAPNS = new JSON::Object;
 		pAPNS->set("MobileToken", "");
+		pAPNS->set("InstallationId", "");
 		//Tasks
 		JSON::Array::Ptr pTasks = new JSON::Array;
 		//DataPath
