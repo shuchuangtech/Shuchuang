@@ -601,6 +601,11 @@ bool CUserManager::logout(JSON::Object::Ptr& pParam, std::string& detail)
 		return false;
 	}
 	std::string token = pParam->getValue<std::string>(USER_TOKEN_STR);
+	if(!verifyUser(token))
+	{
+		detail = "402";
+		return false;
+	}
 	UserRecordNode userNode = {"", "", "", 0, 0, 0, "", 0, 0};
 	userNode.token = token;
 	m_user_record->getUserByToken(userNode);

@@ -254,7 +254,6 @@ int CUserRecord::getUsers(int limit, int offset, std::vector<UserRecordNode>(& d
 
 int CUserRecord::updateUser(UserRecordNode& user)
 {
-
 	if(m_session_ptr == NULL)
 	{
 		warnf("%s, %d: Please init database first.", __FILE__, __LINE__);
