@@ -1,18 +1,17 @@
 #include "Device/Component/Task/TaskHandler.h"
 #include "Common/PrintLog.h"
 #include "Poco/DateTime.h"
+#include "Device/Component/System/SystemManager.h"
 #include "Device/Component/DeviceController.h"
 using namespace Poco;
 CTaskHandler::CTaskHandler()
 {
 	m_running = false;
 	m_active = false;
-	tracef("%s, %d: TaskHandler created %llu.", __FILE__, __LINE__, (UInt64)this);
 }
 
 CTaskHandler::~CTaskHandler()
 {
-	tracef("%s, %d: TaskHandler destroyed %llu.", __FILE__, __LINE__, (UInt64)this);
 }
 
 void CTaskHandler::run()
@@ -20,6 +19,8 @@ void CTaskHandler::run()
 	m_running = true;
 	DateTime now;
 	int dayOffset = now.dayOfWeek();
+	int timeDiff = CSystemManager::instance()->getUTCOffset();
+	now.makeLocal(timeDiff);
 	UInt8 dayMask = TaskSunday >> dayOffset;
 	if(dayMask & m_weekday)
 	{

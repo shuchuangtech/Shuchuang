@@ -3,7 +3,7 @@
 #include "Common/PrintLog.h"
 #include "Poco/Timestamp.h"
 #include "Poco/DateTime.h"
-#include "Poco/Timezone.h"
+#include "Device/Component/System/SystemManager.h"
 #include "Common/RPCDef.h"
 #include "Poco/JSON/Parser.h"
 #define min(x,y) ((x) < (y) ? (x) : (y))
@@ -15,6 +15,7 @@ CTaskManager::CTaskManager()
 	m_config = NULL;
 	m_task_config = NULL;
 	m_task_map.clear();
+	m_utcOffset = CSystemManager::instance()->getUTCOffset();
 	m_config = CConfigManager::instance();
 	loadTasksConfig();
 }
@@ -37,7 +38,7 @@ bool CTaskManager::stopAllTasks(bool wait)
 	{
 		tracef("%s, %d: Task[%lld] canceled.", __FILE__, __LINE__, it->second->getId());
 		it->second->cancel();
-		it->second = NULL;
+		it->second->release();
 	}
 	infof("%s, %d: All tasks canceled.", __FILE__, __LINE__);
 	m_task_map.clear();
@@ -50,7 +51,7 @@ bool CTaskManager::stopAllTasks(bool wait)
 void CTaskManager::addToScheduleQueue(CTaskHandler::Ptr pTask)
 {
 	DateTime now;
-	now.makeLocal(Timezone::tzd());
+	now.makeLocal(m_utcOffset);
 	int hour = pTask->getHour();
 	int minute = pTask->getMinute();
 	DateTime base(now.year(),
@@ -71,7 +72,7 @@ void CTaskManager::addToScheduleQueue(CTaskHandler::Ptr pTask)
 		diffMinutes += 24 * 60;
 	DateTime executeTime = base + Timespan(0, 0, diffMinutes, 0, 0);
 	infof("%s, %d: Task scheduled, execute at %04d-%02d-%02d %02d:%02d first time.", __FILE__, __LINE__, executeTime.year(), executeTime.month(), executeTime.day(), executeTime.hour(), executeTime.minute());
-	executeTime.makeUTC(Timezone::tzd());
+	executeTime.makeUTC(m_utcOffset);
 	m_timer->schedule(pTask, executeTime.timestamp(), 24 * 60 * 60 * 1000);
 }
 
@@ -255,8 +256,8 @@ bool CTaskManager::removeTask(JSON::Object::Ptr& param, std::string& detail)
 		detail = "435";
 		return false;
 	}
-	CTaskHandler::Ptr pTask = it->second;
-	pTask->cancel();
+	it->second->cancel();
+	it->second->release();
 	infof("Task (%lld, %d, %d, %d, %d) canceled.", id, it->second->getOption(), it->second->getHour(), it->second->getMinute(), it->second->getWeekday());
 	m_task_map.erase(it);
 	for(unsigned int i = 0; i < m_task_config->size(); i++)
@@ -330,6 +331,7 @@ bool CTaskManager::modifyTask(JSON::Object::Ptr& param, std::string& detail)
 	//adjust TaskTimer and TaskHandler map
 	infof("%s, %d: old task[%lld](%d, %d, %d, %d) stopped.", __FILE__, __LINE__, it->second->getId(), it->second->getOption(), it->second->getHour(), it->second->getMinute(), it->second->getWeekday());
 	it->second->cancel();
+	it->second->release();
 	m_task_map.erase(it);
 	CTaskHandler::Ptr pTask = new CTaskHandler;
 	pTask->setTaskInfo(task);

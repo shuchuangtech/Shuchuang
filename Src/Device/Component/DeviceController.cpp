@@ -120,6 +120,7 @@ bool CDeviceController::openDoor(JSON::Object::Ptr& param, std::string& detail)
 	}
 	if(m_door_open)
 	{
+		infof("%s, %d: Door already opened.", __FILE__, __LINE__);
 		return true;
 	}
 	std::string token = "";
@@ -133,12 +134,12 @@ bool CDeviceController::openDoor(JSON::Object::Ptr& param, std::string& detail)
 			detail = "421";
 			return false;
 		}
-	}
-	if(m_user_mode == 1 && m_user_manager->userAuthority(token) != CUserManager::USER_AUTHORITY_ADMIN)
-	{
-		warnf("%s, %d: Device in admin mode, only admin can open door.", __FILE__, __LINE__);
-		detail = "421";
-		return false;
+		if(m_user_mode == 1 && m_user_manager->userAuthority(token) != CUserManager::USER_AUTHORITY_ADMIN)
+		{
+			warnf("%s, %d: Device in admin mode, only admin can open door.", __FILE__, __LINE__);
+			detail = "421";
+			return false;
+		}
 	}
 #ifdef __SC_ARM__
 #ifdef __SC_ON_NORMAL_CLOSE__
@@ -189,6 +190,7 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 	}
 	if(!m_door_open)
 	{
+		infof("%s, %d: Door already closed.", __FILE__, __LINE__);
 		return true;
 	}
 	std::string token;
@@ -196,12 +198,12 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 	{
 		token = param->getValue<std::string>(REG_TOKEN_STR);
 		param->remove(REG_TOKEN_STR);
-	}
-	if(m_user_mode == 1 && m_user_manager->userAuthority(token) != CUserManager::USER_AUTHORITY_ADMIN)
-	{
-		warnf("%s, %d: Device in admin mode, only admin can close door.", __FILE__, __LINE__);
-		detail = "421";
-		return false;
+		if(m_user_mode == 1 && m_user_manager->userAuthority(token) != CUserManager::USER_AUTHORITY_ADMIN)
+		{
+			warnf("%s, %d: Device in admin mode, only admin can close door.", __FILE__, __LINE__);
+			detail = "421";
+			return false;
+		}
 	}
 #ifdef __SC_ARM__
 #ifdef __SC_ON_NORMAL_CLOSE__
@@ -238,7 +240,6 @@ bool CDeviceController::closeDoor(JSON::Object::Ptr& param, std::string& detail)
 		infof("%s, %d: Door closed by manual[User:%s].", __FILE__, __LINE__, op.username.c_str());
 	}
 	m_op_manager->addRecord(op);
-	param->remove("token");
 	return true;
 }
 

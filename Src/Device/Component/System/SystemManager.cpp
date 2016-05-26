@@ -30,6 +30,7 @@ extern const char* getMKTIME();
 using namespace Poco;
 CSystemManager::CSystemManager()
 {
+	m_utcOffset = 0;
 	m_updating = false;
 	m_timer = NULL;
 }
@@ -176,9 +177,15 @@ void CSystemManager::onNTPEvent(const void *pSender, Net::NTPEventArgs& arg)
 	}
 	else
 	{
+		m_utcOffset = Timezone::utcOffset();
 		receiveTime.makeLocal(Timezone::utcOffset());
 		infof("%s, %d: Set systemtime successfully[%04d-%02d-%02d %02d:%02d:%02d].", __FILE__, __LINE__, receiveTime.year(), receiveTime.month(), receiveTime.day(), receiveTime.hour(), receiveTime.minute(), receiveTime.second());
 	}
+}
+
+int CSystemManager::getUTCOffset()
+{
+	return m_utcOffset;
 }
 
 void CSystemManager::handleUpdate(Timer& timer)

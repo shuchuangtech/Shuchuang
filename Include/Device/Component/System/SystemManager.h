@@ -25,10 +25,13 @@ public:
 	//timerHandler
 	void onNTPEvent(const void* pSender, Poco::Net::NTPEventArgs& arg);
 	void handleUpdate(Poco::Timer& timer);
+	//
+	int getUTCOffset();
 private:
-	Poco::Timer* m_timer;
-	bool m_updating;
-	std::string m_update_version;
+	Poco::Timer*	m_timer;
+	int				m_utcOffset;
+	bool			m_updating;
+	std::string		m_update_version;
 };
 #endif
 

@@ -31,6 +31,7 @@ private:
 	void loadTasksConfig();
 	void taskInfoToStruct(const TaskInfo&, Poco::DynamicStruct&);
 	void structToTaskInfo(const Poco::DynamicStruct&, TaskInfo&);
+	int										m_utcOffset;
 	Poco::Util::Timer*						m_timer;
 	CConfigManager*							m_config;
 	Poco::JSON::Array::Ptr					m_task_config;
