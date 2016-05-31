@@ -74,22 +74,17 @@ void CDeviceManager::run()
 	{
 		Thread::sleep(checkPeriod/1000);
 		Timestamp now;
-		m_mutex.lock();
 		for(DeviceMapIt it = m_device_map.begin(); it != m_device_map.end(); )
 		{
 			DeviceMapIt itemp = it++;
 			DeviceInfo* di = itemp->second;
 			if(now - di->time > 24 * checkPeriod)
 			{
-				m_device_map.erase(itemp);
-				m_device_id_map.erase(di->id);
+				deviceOffline(di->id);
 				//post notification to RegServer
 				m_noti_center->postNotification(new OfflineNotification(di->id, di->uuid));
-				infof("%s, %d: Device[%s：%llu] offline.", __FILE__, __LINE__, di->uuid.c_str(), di->id);
-				delete di;
 			}
 		}
-		m_mutex.unlock();
 	}
 }
 

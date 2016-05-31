@@ -589,9 +589,10 @@ bool CRegServer::sendRequest(RequestInfo* request)
 	if(dev == NULL)
 	{
 		JSON::Object::Ptr obj = new JSON::Object(*(request->request));
+		obj->remove(KEY_TYPE_STR);
 		obj->set(KEY_TYPE_STR, TYPE_RESPONSE_STR);
 		obj->set(KEY_RESULT_STR, RESULT_FAIL_STR);
-		obj->set(KEY_DETAIL_STR, "Device not found");
+		obj->set(KEY_DETAIL_STR, "404");
 		request->response = obj;
 		return false;
 	}
@@ -600,9 +601,10 @@ bool CRegServer::sendRequest(RequestInfo* request)
 	if(it == m_pReg_map.end())
 	{
 		JSON::Object::Ptr obj = new JSON::Object(*(request->request));
+		obj->remove(KEY_TYPE_STR);
 		obj->set(KEY_TYPE_STR, TYPE_RESPONSE_STR);
 		obj->set(KEY_RESULT_STR, RESULT_FAIL_STR);
-		obj->set(KEY_DETAIL_STR, "Device not found");
+		obj->set(KEY_DETAIL_STR, "404");
 		request->response = obj;
 		return false;
 	}
