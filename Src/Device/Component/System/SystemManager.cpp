@@ -231,7 +231,7 @@ void CSystemManager::handleUpdate(Timer& timer)
 	std::string devType = pDevInfo->getValue<std::string>("type");
 	//download update info
 	std::string infoPath = devType + "/Info";
-	FileOutputStream ofsInfo("./Info_temp", std::ios::out|std::ios::trunc);
+	FileOutputStream ofsInfo("/mnt/nand1-2/Application/Info_temp", std::ios::out|std::ios::trunc);
 	infof("%s, %d: Downloading update info %s.", __FILE__, __LINE__, infoPath.c_str());
 	try
 	{
@@ -257,7 +257,7 @@ void CSystemManager::handleUpdate(Timer& timer)
 	std::string update_checksum;
 	try
 	{
-		infoConf.load("./Info_temp");
+		infoConf.load("/mnt/nand1-2/Application/Info_temp");
 		update_version = infoConf.getString(UPDATE_VERSION_STR);
 		update_buildtime = infoConf.getString(UPDATE_BUILDTIME_STR);
 		update_checksum = infoConf.getString(UPDATE_CHECKSUM_STR);
@@ -265,7 +265,7 @@ void CSystemManager::handleUpdate(Timer& timer)
 	catch(Exception& e)
 	{
 		m_updating = false;
-		errorf("%s, %d: Load update info file failed.");
+		errorf("%s, %d: Load update info file failed.", __FILE__, __LINE__);
 		ftp.close();
 		return;
 	}
@@ -287,7 +287,7 @@ void CSystemManager::handleUpdate(Timer& timer)
 	}
 	//download update file
 	infof("%s, %d: Update information[version:%s, buildtime:%s].", __FILE__, __LINE__, update_version.c_str(), update_buildtime.c_str());
-	FileOutputStream ofs("./DeviceTest_temp", std::ios::out|std::ios::trunc|std::ios::binary);
+	FileOutputStream ofs("/mnt/nand1-2/Application/DeviceTest_temp", std::ios::out|std::ios::trunc|std::ios::binary);
 	std::string path = devType + "/" +  m_update_version + "/DeviceTest";
 	infof("%s, %d: Downloading update file: %s.", __FILE__, __LINE__, path.c_str());
 	try
@@ -310,17 +310,17 @@ void CSystemManager::handleUpdate(Timer& timer)
 	infof("%s, %d: Update file download finished.", __FILE__, __LINE__);
 	//checksum
 	infof("%s, %d: Checking update file MD5 checksum.", __FILE__, __LINE__);
-	if(getFileMD5("./DeviceTest_temp") != update_checksum)
+	if(getFileMD5("/mnt/nand1-2/Application/DeviceTest_temp") != update_checksum)
 	{
 		warnf("%s, %d: Update file MD5 not in accordance.", __FILE__, __LINE__);
 		m_updating = false;
 		return;
 	}
 	infof("%s, %d: Replace info file.", __FILE__, __LINE__);
-	File infoFile("./Info_temp");
+	File infoFile("/mnt/nand1-2/Application/Info_temp");
 	std::string localInfoPath = pUpdate->getValue<std::string>("infoPath");
 	infoFile.copyTo(localInfoPath);
-	File file("./DeviceTest_temp");
+	File file("/mnt/nand1-2/Application/DeviceTest_temp");
 	file.setExecutable(true);
 	infof("%s, %d: Delete download info file.", __FILE__, __LINE__);
 	infoFile.remove();
