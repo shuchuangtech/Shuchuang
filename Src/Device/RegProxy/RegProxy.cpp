@@ -102,14 +102,11 @@ void CRegProxy::handleNf(RequestNotification* pNf)
 			return;
 		}
 		JSON::Object::Ptr response = p->getResponse();
-		if(!response.isNull())
+		DynamicStruct ds = *response;
+		std::string ds_str = ds.toString();
+		if(m_sock->sendBytes(ds_str.c_str(), ds_str.length()) > 0)
 		{
-			DynamicStruct ds = *response;
-			std::string ds_str = ds.toString();
-			if(m_sock->sendBytes(ds_str.c_str(), ds_str.length()) > 0)
-			{
-				debugf("%s, %d: Receive notification and send:%s.", __FILE__, __LINE__, ds_str.c_str());
-			}
+			debugf("%s, %d: Receive notification and send:%s.", __FILE__, __LINE__, ds_str.c_str());
 		}
 	}
 }

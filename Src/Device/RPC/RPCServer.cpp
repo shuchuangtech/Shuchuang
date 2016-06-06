@@ -74,7 +74,6 @@ bool CRPCServer::addObserver(const AbstractObserver& o)
 bool CRPCServer::removeObserver(const AbstractObserver& o)
 {
 	m_center.removeObserver(o);
-	tracef("%s, %d: remove observer.", __FILE__, __LINE__);
 	return true;
 }
 
@@ -85,7 +84,6 @@ void CRPCServer::run()
 		Notification::Ptr pNf = m_queue.waitDequeueNotification();
 		if(pNf)
 		{
-			Mutex::ScopedLock lock(m_mutex);
 			RequestNotification* pR = pNf.cast<RequestNotification>();
 			CRPCClient* client;
 			std::string request = pR->getRequest();
@@ -108,7 +106,6 @@ void CRPCServer::handleFinish(TaskFinishedNotification* pNf)
 	AutoPtr<TaskNotification> p(pNf);
 	if(p)
 	{
-		Mutex::ScopedLock lock(m_mutex);
 		CRPCClient* client = (CRPCClient*)p->task();
 		JSON::Object::Ptr response = client->getResponse();
 		UInt64 id = client->getID();
@@ -117,8 +114,8 @@ void CRPCServer::handleFinish(TaskFinishedNotification* pNf)
 			DynamicStruct ds = *response;
 			std::string param = ds.toString();
 			tracef("%s, %d: Handle finish, result:%s.", __FILE__, __LINE__, param.c_str());
+			m_center.postNotification(new RequestNotification(id, "", response));
 		}
-		m_center.postNotification(new RequestNotification(id, "", response));
 		client->release();
 	}
 	else

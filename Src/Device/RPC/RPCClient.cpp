@@ -15,10 +15,12 @@ CRPCClient::CRPCClient()
 :Task("RPCClient")
 {
 	m_response = NULL;
+	tracef("%s, %d: RPCClient created[%ld]", __FILE__, __LINE__, this);
 }
 
 CRPCClient::~CRPCClient()
 {
+	tracef("%s, %d: RPCClient destroyed[%ld]", __FILE__, __LINE__, this);
 }
 
 JSON::Object::Ptr& CRPCClient::getResponse()

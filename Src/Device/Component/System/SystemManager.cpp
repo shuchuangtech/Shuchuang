@@ -147,7 +147,14 @@ bool CSystemManager::synchronizeTime()
 	JSON::Object::Ptr pReg;
 	CConfigManager::instance()->getConfig("RegProxy", pReg);
 	std::string host = pReg->getValue<std::string>("host");
-	ntpc.request(host);
+	try{
+		ntpc.request(host);
+	}
+	catch(Exception& e){
+		warnf("%s, %d: Synchronize time failed[%s].", __FILE__, __LINE__, e.message().c_str());
+		ntpc.response -= Poco::delegate(this, &CSystemManager::onNTPEvent);
+		return false;
+	}
 	ntpc.response -= Poco::delegate(this, &CSystemManager::onNTPEvent);
 #else
 	infof("%s, %d: X86 does not implement synchronizeTime.", __FILE__, __LINE__);
